@@ -63,17 +63,20 @@ export interface FeeSubmission {
   studentName: string;
   amount: string;
   transactionRef: string;
-  paymentMethod: 'UPI_MANUAL' | 'PHONEPE_GATEWAY';
+  paymentMethod: string;
   status: 'Pending' | 'Approved' | 'Rejected';
   date: string;
 }
 
+export interface GatewayConfig {
+    name: string; // Display Name e.g. "PhonePe"
+    enabled: boolean;
+    credentials: Record<string, string>; // Flexible Key-Value pairs
+}
+
 export interface SystemSettings {
-  paymentMode: 'manual' | 'phonepe';
-  adminUpiId: string;
   googleSiteKey: string;
-  phonePeSaltKey: string;
-  phonePeMerchantId: string;
+  gateways: Record<string, GatewayConfig>; // key: 'manual', 'phonepe', etc.
 }
 
 export interface TimetableEntry {

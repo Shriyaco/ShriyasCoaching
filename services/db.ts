@@ -48,8 +48,8 @@ class DatabaseService {
         .or(`teacher_custom_id.eq.${username},name.eq.${username}`);
     
     if (teachers && teachers.length > 0) {
-        const t = teachers[0];
-        if (t.status === 'Active' && (t.password === password || t.mobile === password)) {
+        const t = teachers.find(teacher => teacher.password === password || teacher.mobile === password);
+        if (t && t.status === 'Active') {
             return { id: t.id, username: t.name, role: 'teacher', status: 'Active' };
         }
     }
@@ -61,8 +61,8 @@ class DatabaseService {
         .or(`student_custom_id.eq.${username},name.eq.${username}`);
 
     if (students && students.length > 0) {
-        const s = students[0];
-        if (s.status === 'Active' && (s.password === password || s.mobile === password)) {
+        const s = students.find(student => student.password === password || student.mobile === password);
+        if (s && s.status === 'Active') {
             return { id: s.id, username: s.name, role: 'student', divisionId: s.subdivision_id, status: 'Active' };
         }
     }
@@ -138,18 +138,32 @@ class DatabaseService {
   }
 
   async addStudent(data: { name: string, mobile: string, parentName: string, gradeId: string, subdivisionId: string }) {
-      const customId = data.name.substring(0,3).toUpperCase() + data.mobile.substring(0,3);
+      const cleanName = (data.name || '').trim().replace(/\s+/g, '');
+      const cleanMobile = (data.mobile || '').trim().replace(/\s+/g, '');
       
-      await supabase.from('students').insert({
+      const namePart = cleanName.length >= 3 ? cleanName.substring(0, 3) : cleanName.padEnd(3, 'X');
+      const mobilePart = cleanMobile.length >= 3 ? cleanMobile.substring(0, 3) : cleanMobile.padEnd(3, '0');
+      
+      const customId = (namePart + mobilePart).toUpperCase();
+      const password = cleanMobile;
+
+      const { error } = await supabase.from('students').insert({
           student_custom_id: customId,
           name: data.name,
           mobile: data.mobile,
           parent_name: data.parentName,
           grade_id: data.gradeId,
           subdivision_id: data.subdivisionId,
-          password: data.mobile,
+          password: password,
           email: `${customId.toLowerCase()}@sc.com`
       });
+
+      if (error) {
+          if (error.code === '23505') {
+             throw new Error(`Student ID ${customId} already exists. Please check if student is already registered.`);
+          }
+          throw error;
+      }
   }
 
   async updateStudent(id: string, data: Partial<Student>) {
@@ -174,16 +188,31 @@ class DatabaseService {
   }
 
   async addTeacher(data: { name: string, mobile: string, gradeId: string, subdivisionId: string, specialization: string }) {
-      const customId = data.name.substring(0,3).toUpperCase() + data.mobile.substring(0,3);
-      await supabase.from('teachers').insert({
+      const cleanName = (data.name || '').trim().replace(/\s+/g, '');
+      const cleanMobile = (data.mobile || '').trim().replace(/\s+/g, '');
+
+      const namePart = cleanName.length >= 3 ? cleanName.substring(0, 3) : cleanName.padEnd(3, 'X');
+      const mobilePart = cleanMobile.length >= 3 ? cleanMobile.substring(0, 3) : cleanMobile.padEnd(3, '0');
+
+      const customId = (namePart + mobilePart).toUpperCase();
+      const password = cleanMobile;
+
+      const { error } = await supabase.from('teachers').insert({
           teacher_custom_id: customId,
           name: data.name,
           mobile: data.mobile,
           grade_id: data.gradeId,
           subdivision_id: data.subdivisionId,
           specialization: data.specialization,
-          password: data.mobile
+          password: password
       });
+      
+      if (error) {
+          if (error.code === '23505') {
+             throw new Error(`Teacher ID ${customId} already exists.`);
+          }
+          throw error;
+      }
   }
 
   async updateTeacher(id: string, data: Partial<Teacher>) {
@@ -239,7 +268,7 @@ class DatabaseService {
           studentName: f.student_name,
           amount: f.amount,
           transactionRef: f.transaction_ref,
-          paymentMethod: f.payment_method as any,
+          paymentMethod: f.payment_method,
           status: f.status as any,
           date: f.date
       }));
@@ -255,7 +284,6 @@ class DatabaseService {
           status: 'Pending',
           date: new Date().toISOString().split('T')[0]
       });
-      // Update student status
       await supabase.from('students').update({ fees_status: 'Pending' }).eq('id', submission.studentId);
   }
 
@@ -287,23 +315,43 @@ class DatabaseService {
 
   async getSettings(): Promise<SystemSettings> { 
       const { data } = await supabase.from('system_settings').select('*').single();
-      if (!data) return { paymentMode: 'manual', adminUpiId: '', googleSiteKey: '', phonePeSaltKey: '', phonePeMerchantId: '' };
+      
+      // Default / Fallback Structure
+      const defaultGateways: any = {
+          manual: { name: 'Manual UPI', enabled: true, credentials: { upiId: '' } },
+          phonepe: { name: 'PhonePe', enabled: false, credentials: { merchantId: '', saltKey: '', saltIndex: '1' } },
+          paytm: { name: 'Paytm', enabled: false, credentials: { mid: '', merchantKey: '' } },
+          billdesk: { name: 'BillDesk', enabled: false, credentials: { merchantId: '', secret: '' } }
+      };
+
+      if (!data) return { googleSiteKey: '', gateways: defaultGateways };
+
+      // Check if DB has modern config, if not, map old columns to new structure
+      let gateways = defaultGateways;
+      if (data.payment_config) {
+          // Merge with defaults to ensure all keys exist
+          gateways = { ...defaultGateways, ...data.payment_config };
+      } else {
+          // Backward Compatibility: Map legacy columns to new structure
+          gateways.manual.credentials.upiId = data.admin_upi_id || '';
+          gateways.manual.enabled = data.payment_mode === 'manual';
+          gateways.phonepe.credentials.merchantId = data.phone_pe_merchant_id || '';
+          gateways.phonepe.credentials.saltKey = data.phone_pe_salt_key || '';
+          gateways.phonepe.enabled = data.payment_mode === 'phonepe';
+      }
+
       return {
-          paymentMode: data.payment_mode,
-          adminUpiId: data.admin_upi_id,
-          googleSiteKey: data.google_site_key,
-          phonePeSaltKey: data.phone_pe_salt_key,
-          phonePeMerchantId: data.phone_pe_merchant_id
+          googleSiteKey: data.google_site_key || '',
+          gateways
       };
   }
 
   async updateSettings(s: SystemSettings) { 
+      // Save all as JSON in payment_config
+      // For legacy support, also update old columns if possible, but mainly rely on JSON now
       await supabase.from('system_settings').update({
-          payment_mode: s.paymentMode,
-          admin_upi_id: s.adminUpiId,
           google_site_key: s.googleSiteKey,
-          phone_pe_salt_key: s.phonePeSaltKey,
-          phone_pe_merchant_id: s.phonePeMerchantId
+          payment_config: s.gateways
       }).eq('id', 1);
   }
 

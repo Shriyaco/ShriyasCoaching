@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { db } from '../services/db';
 import { Student, TabView, Grade, Subdivision, Teacher, FeeSubmission, SystemSettings } from '../types';
-import { Users, Settings, LogOut, Plus, Edit2, Search, Briefcase, CreditCard, Save, Layers, UserPlus, Lock, ShieldAlert, Key, Power, X, Trash2, GraduationCap, TrendingUp, DollarSign, RefreshCw, Menu } from 'lucide-react';
+import { Users, Settings, LogOut, Plus, Edit2, Search, Briefcase, CreditCard, Save, Layers, UserPlus, Lock, ShieldAlert, Key, Power, X, Trash2, GraduationCap, TrendingUp, DollarSign, RefreshCw, Menu, Check } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -168,7 +168,7 @@ export default function AdminDashboard() {
           setIsGradeModalOpen(false);
           setFormData({});
           setSubdivisionInput('');
-          await refreshData(); // Manual refresh
+          await refreshData();
       } catch (err) {
           console.error(err);
           showNotification("Error saving grade.");
@@ -179,7 +179,7 @@ export default function AdminDashboard() {
       if (!window.confirm("Are you sure? This will delete the grade and all its subdivisions!")) return;
       await db.deleteGrade(id);
       showNotification("Grade deleted.");
-      await refreshData(); // Manual refresh
+      await refreshData();
   };
 
   const handleStudentSubmit = async (e: React.FormEvent) => {
@@ -205,7 +205,7 @@ export default function AdminDashboard() {
               showNotification('Student registered.');
           }
           setIsStudentModalOpen(false);
-          await refreshData(); // Manual refresh
+          await refreshData();
       } catch (err: any) {
           console.error(err);
           showNotification(err.message || 'Error saving student');
@@ -235,7 +235,7 @@ export default function AdminDashboard() {
                showNotification('Teacher registered.');
           }
           setIsTeacherModalOpen(false);
-          await refreshData(); // Manual refresh
+          await refreshData();
       } catch (e) {
           console.error(e);
           showNotification("Error saving teacher");
@@ -248,7 +248,7 @@ export default function AdminDashboard() {
       if (type === 'student') await db.updateStudentStatus(id, newStatus);
       if (type === 'teacher') await db.updateTeacherStatus(id, newStatus);
       showNotification(`User ${newStatus}`);
-      await refreshData(); // Manual refresh
+      await refreshData();
   };
 
   const resetPassword = async (type: 'student' | 'teacher', id: string) => {
@@ -257,13 +257,30 @@ export default function AdminDashboard() {
       showNotification('Password reset to Mobile Number.');
   };
 
+  // --- Settings Handlers ---
   const handleSaveSettings = async (e: React.FormEvent) => {
       e.preventDefault();
       if(settings) {
           await db.updateSettings(settings);
           showNotification('System settings updated');
-          await refreshData(); // Manual refresh
+          await refreshData();
       }
+  };
+
+  const updateGateway = (key: string, field: string, value: any) => {
+      if (!settings) return;
+      const newGateways = { ...settings.gateways };
+      
+      if (field === 'enabled') {
+          newGateways[key] = { ...newGateways[key], enabled: value };
+      } else {
+          // Credential Field
+          newGateways[key] = { 
+              ...newGateways[key], 
+              credentials: { ...newGateways[key].credentials, [field]: value } 
+          };
+      }
+      setSettings({ ...settings, gateways: newGateways });
   };
 
   const SidebarItem = ({ tab, icon: Icon, label }: { tab: TabView; icon: any; label: string }) => (
@@ -344,12 +361,12 @@ export default function AdminDashboard() {
 
       <aside className={`fixed inset-y-0 left-0 z-40 w-72 bg-[#0B1120] flex flex-col shadow-2xl transform transition-transform duration-300 lg:translate-x-0 lg:static ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="h-20 flex items-center px-8 border-b border-white/5">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold mr-3 shadow-lg shadow-indigo-500/30">
-              S
-          </div>
-          <div>
-            <span className="text-white font-bold text-lg tracking-wide block">SMS ENGINE</span>
-            <span className="text-[10px] text-indigo-400 font-bold tracking-widest uppercase">Admin Panel</span>
+          <div className="flex items-center gap-3">
+              <img src="https://advedasolutions.in/sc.png" alt="Logo" className="h-10 w-auto" />
+              <div className="flex flex-col">
+                  <span className="text-white font-bold tracking-wide">Admin Panel</span>
+                  <span className="text-[10px] text-indigo-400 tracking-widest uppercase">Shriya's</span>
+              </div>
           </div>
           <button className="ml-auto lg:hidden text-gray-400" onClick={() => setIsSidebarOpen(false)}>
               <X size={20} />
@@ -436,7 +453,8 @@ export default function AdminDashboard() {
                 </div>
             </motion.div>
           )}
-
+          
+          {/* ... Grades, Students, Teachers, Fees Tabs (Hidden for brevity as they are unchanged) ... */}
           {activeTab === 'grades' && (
              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
                  <div className="flex justify-end">
@@ -476,7 +494,7 @@ export default function AdminDashboard() {
                  </div>
              </motion.div>
           )}
-
+          
           {activeTab === 'students' && (
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-full">
                <div className="p-4 md:p-6 border-b border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4 bg-slate-50/50">
@@ -628,7 +646,7 @@ export default function AdminDashboard() {
                 </div>
              </motion.div>
           )}
-          
+
           {activeTab === 'fees' && (
              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
                  <div className="p-6 border-b border-slate-100 bg-slate-50/50">
@@ -663,14 +681,14 @@ export default function AdminDashboard() {
           )}
 
           {activeTab === 'settings' && settings && (
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="max-w-3xl mx-auto">
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="max-w-4xl mx-auto">
                 <div className="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
                     <div className="bg-slate-900 p-6 md:p-8 text-white relative overflow-hidden">
                          <div className="relative z-10">
                             <h3 className="text-2xl font-bold font-[Poppins] flex items-center gap-3">
-                                <ShieldAlert className="text-emerald-400"/> Security & API
+                                <ShieldAlert className="text-emerald-400"/> System Configuration
                             </h3>
-                            <p className="text-slate-400 mt-2 text-sm md:text-base">Manage your gateway keys and admin access credentials.</p>
+                            <p className="text-slate-400 mt-2 text-sm md:text-base">Configure security keys and active payment gateways.</p>
                          </div>
                          <div className="absolute right-0 top-0 opacity-10 transform translate-x-10 -translate-y-10">
                              <Lock size={200} />
@@ -678,42 +696,70 @@ export default function AdminDashboard() {
                     </div>
                     
                     <div className="p-6 md:p-8">
-                        <form onSubmit={handleSaveSettings} className="space-y-6 md:space-y-8">
-                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div>
-                                    <label className="block text-sm font-bold text-slate-700 mb-2">Google Site Key</label>
-                                    <input 
-                                        type="text" 
-                                        value={settings.googleSiteKey}
-                                        onChange={(e) => setSettings({...settings, googleSiteKey: e.target.value})}
-                                        className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                                        placeholder="reCAPTCHA Key"
-                                    />
+                        <form onSubmit={handleSaveSettings} className="space-y-8">
+                             {/* Global Keys */}
+                             <div>
+                                 <h4 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2"><Lock size={18}/> API Security</h4>
+                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label className="block text-sm font-bold text-slate-700 mb-2">Google reCAPTCHA Site Key</label>
+                                        <input 
+                                            type="text" 
+                                            value={settings.googleSiteKey}
+                                            onChange={(e) => setSettings({...settings, googleSiteKey: e.target.value})}
+                                            className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                            placeholder="Enter Site Key"
+                                        />
+                                    </div>
+                                 </div>
+                             </div>
+
+                             <div className="border-t border-slate-100 pt-8">
+                                <h4 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2"><CreditCard size={18}/> Payment Gateways</h4>
+                                
+                                <div className="space-y-6">
+                                    {Object.entries(settings.gateways).map(([key, config]) => (
+                                        <div key={key} className={`border rounded-xl p-5 transition-all ${config.enabled ? 'border-indigo-500 bg-indigo-50/20' : 'border-slate-200 bg-slate-50'}`}>
+                                            <div className="flex justify-between items-center mb-4">
+                                                <div className="flex items-center gap-3">
+                                                    <h5 className="font-bold text-slate-800 text-lg">{config.name}</h5>
+                                                    <span className={`px-2 py-0.5 rounded text-xs font-bold ${config.enabled ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-500'}`}>
+                                                        {config.enabled ? 'Enabled' : 'Disabled'}
+                                                    </span>
+                                                </div>
+                                                <label className="relative inline-flex items-center cursor-pointer">
+                                                    <input 
+                                                        type="checkbox" 
+                                                        className="sr-only peer"
+                                                        checked={config.enabled}
+                                                        onChange={(e) => updateGateway(key, 'enabled', e.target.checked)}
+                                                    />
+                                                    <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                                                </label>
+                                            </div>
+                                            
+                                            {config.enabled && (
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-fade-in">
+                                                    {Object.keys(config.credentials).map(credField => (
+                                                        <div key={credField}>
+                                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">{credField.replace(/([A-Z])/g, ' $1').trim()}</label>
+                                                            <input 
+                                                                type="text"
+                                                                value={config.credentials[credField]}
+                                                                onChange={(e) => updateGateway(key, credField, e.target.value)}
+                                                                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm font-mono text-slate-700 bg-white"
+                                                            />
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
                                 </div>
-                                <div>
-                                    <label className="block text-sm font-bold text-slate-700 mb-2">PhonePe Salt Key</label>
-                                    <input 
-                                        type="password" 
-                                        value={settings.phonePeSaltKey}
-                                        onChange={(e) => setSettings({...settings, phonePeSaltKey: e.target.value})}
-                                        className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                                        placeholder="Gateway Secret"
-                                    />
-                                </div>
-                            </div>
-                            
-                            <div>
-                                <label className="block text-sm font-bold text-slate-700 mb-2">Manual Payment UPI ID</label>
-                                <input 
-                                    type="text" 
-                                    value={settings.adminUpiId}
-                                    onChange={(e) => setSettings({...settings, adminUpiId: e.target.value})}
-                                    className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-mono text-indigo-900"
-                                />
-                            </div>
+                             </div>
 
                             <button type="submit" className="w-full bg-slate-900 text-white py-4 rounded-xl font-bold hover:bg-slate-800 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-0.5">
-                                <Save size={18} /> Save Configuration
+                                <Save size={18} /> Save Complete Configuration
                             </button>
                         </form>
                     </div>
@@ -725,8 +771,7 @@ export default function AdminDashboard() {
         </div>
       </main>
       
-      {/* Existing Modals logic is used here via isStudentModalOpen etc. */}
-      {/* Keep standard modal rendering logic, just ensure mobile sizing */}
+      {/* Modals remain the same */}
       <AnimatePresence>
       {isGradeModalOpen && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
