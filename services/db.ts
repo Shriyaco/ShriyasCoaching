@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { RealtimeChannel } from '@supabase/supabase-js';
 import { Student, Grade, Subdivision, Notice, User, Teacher, TimetableEntry, LiveClass, FeeSubmission, SystemSettings, AttendanceRecord, Homework, Exam, ExamResult, HomeworkSubmission, ExamSubmission, StudentQuery } from '../types';
 
 // Helper to map snake_case (DB) to camelCase (Frontend)
@@ -69,6 +70,20 @@ class DatabaseService {
     return null;
   }
 
+  // --- Realtime Subscriptions ---
+  subscribe(table: string, callback: () => void): RealtimeChannel {
+      return supabase
+          .channel(`public:${table}:${Math.random()}`)
+          .on('postgres_changes', { event: '*', schema: 'public', table: table }, () => {
+              callback();
+          })
+          .subscribe();
+  }
+
+  unsubscribe(channel: RealtimeChannel) {
+      supabase.removeChannel(channel);
+  }
+
   // --- Grades & Subdivisions ---
   async getGrades(): Promise<Grade[]> {
       const { data } = await supabase.from('grades').select('*');
@@ -91,9 +106,6 @@ class DatabaseService {
   async updateGrade(id: string, gradeName: string, subdivisionNames: string[]) {
       await supabase.from('grades').update({ grade_name: gradeName, has_subdivision: subdivisionNames.length > 0 }).eq('id', id);
       
-      // Basic sync: delete old subs and add new ones (Simplified for MVP)
-      // In production, you'd want to update existing ones to preserve IDs
-      // For now, let's just add new ones if they don't exist
       if (subdivisionNames.length > 0) {
          for (const name of subdivisionNames) {
              const { data } = await supabase.from('subdivisions').select('*').eq('grade_id', id).eq('division_name', name);
@@ -191,10 +203,7 @@ class DatabaseService {
 
   async resetUserPassword(type: 'student' | 'teacher', id: string, newPassword?: string) {
       const table = type === 'student' ? 'students' : 'teachers';
-      // In a real app we would fetch the mobile first if newPassword is null, but for now assuming mobile is known or set explicitly
-      // Just setting to "123456" if reset for simplicity in this async wrapper unless we fetch
       if (!newPassword) {
-         // fetch user to get mobile
          const { data } = await supabase.from(table).select('mobile').eq('id', id).single();
          if(data) newPassword = data.mobile;
       }
@@ -271,10 +280,10 @@ class DatabaseService {
           date: r.date,
           status: r.status
       }));
-      await supabase.from('attendance').upsert(payload, { onConflict: 'student_id, date' as any }); // requires unique constraint in DB or just insert
+      await supabase.from('attendance').upsert(payload, { onConflict: 'student_id, date' as any });
   }
 
-  async getLiveClasses(divId: string): Promise<LiveClass[]> { return []; } // Placeholder
+  async getLiveClasses(divId: string): Promise<LiveClass[]> { return []; } 
 
   async getSettings(): Promise<SystemSettings> { 
       const { data } = await supabase.from('system_settings').select('*').single();

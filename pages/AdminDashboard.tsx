@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { db } from '../services/db';
 import { Student, TabView, Grade, Subdivision, Teacher, FeeSubmission, SystemSettings } from '../types';
 import { Users, Settings, LogOut, Plus, Edit2, Search, Briefcase, CreditCard, Save, Layers, UserPlus, Lock, ShieldAlert, Key, Power, X, Trash2, ChevronRight, GraduationCap, TrendingUp, DollarSign, RefreshCw } from 'lucide-react';
@@ -35,26 +35,8 @@ export default function AdminDashboard() {
   const [selectedGradeId, setSelectedGradeId] = useState('');
   const [availableSubdivisions, setAvailableSubdivisions] = useState<Subdivision[]>([]);
 
-  useEffect(() => {
-    const user = sessionStorage.getItem('sc_user');
-    if (!user) { navigate('/login'); return; }
-    refreshData();
-  }, [navigate]);
-
-  useEffect(() => {
-      const loadSubs = async () => {
-          if (selectedGradeId) {
-              const subs = await db.getSubdivisions(selectedGradeId);
-              setAvailableSubdivisions(subs);
-          } else {
-              setAvailableSubdivisions([]);
-          }
-      };
-      loadSubs();
-  }, [selectedGradeId]);
-
-  const refreshData = async () => {
-    setLoading(true);
+  const refreshData = useCallback(async () => {
+    // Note: Intentionally not setting loading to true here to avoid flickering on realtime updates
     try {
         const [s, g, sd, t, f, set] = await Promise.all([
             db.getStudents(),
@@ -71,12 +53,43 @@ export default function AdminDashboard() {
         setFees(f);
         setSettings(set);
     } catch(e) {
-        showNotification("Failed to load data.");
         console.error(e);
-    } finally {
-        setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    const user = sessionStorage.getItem('sc_user');
+    if (!user) { navigate('/login'); return; }
+    
+    // Initial Load
+    setLoading(true);
+    refreshData().then(() => setLoading(false));
+
+    // Realtime Subscriptions
+    const channels = [
+        db.subscribe('students', refreshData),
+        db.subscribe('teachers', refreshData),
+        db.subscribe('grades', refreshData),
+        db.subscribe('subdivisions', refreshData),
+        db.subscribe('fee_submissions', refreshData)
+    ];
+
+    return () => {
+        channels.forEach(c => db.unsubscribe(c));
+    };
+  }, [navigate, refreshData]);
+
+  useEffect(() => {
+      const loadSubs = async () => {
+          if (selectedGradeId) {
+              const subs = await db.getSubdivisions(selectedGradeId);
+              setAvailableSubdivisions(subs);
+          } else {
+              setAvailableSubdivisions([]);
+          }
+      };
+      loadSubs();
+  }, [selectedGradeId]);
 
   const handleLogout = () => {
     sessionStorage.removeItem('sc_user');
@@ -159,7 +172,7 @@ export default function AdminDashboard() {
           setIsGradeModalOpen(false);
           setFormData({});
           setSubdivisionInput('');
-          refreshData();
+          // Refresh handled by subscription
       } catch (err) {
           console.error(err);
           showNotification("Error saving grade.");
@@ -169,7 +182,6 @@ export default function AdminDashboard() {
   const deleteGrade = async (id: string) => {
       if (!window.confirm("Are you sure? This will delete the grade and all its subdivisions! Students in this grade will lose their class link.")) return;
       await db.deleteGrade(id);
-      refreshData();
       showNotification("Grade deleted.");
   };
 
@@ -198,7 +210,6 @@ export default function AdminDashboard() {
               showNotification('Student registered.');
           }
           setIsStudentModalOpen(false);
-          refreshData();
       } catch (err: any) {
           console.error(err);
           showNotification(err.message || 'Error saving student');
@@ -228,7 +239,6 @@ export default function AdminDashboard() {
                showNotification('Teacher registered.');
           }
           setIsTeacherModalOpen(false);
-          refreshData();
       } catch (e) {
           console.error(e);
           showNotification("Error saving teacher");
@@ -237,11 +247,9 @@ export default function AdminDashboard() {
 
   const toggleStatus = async (type: 'student' | 'teacher', id: string, currentStatus: string) => {
       if(!window.confirm(`Are you sure you want to ${currentStatus === 'Active' ? 'suspend' : 'activate'} this user?`)) return;
-      
       const newStatus = currentStatus === 'Active' ? 'Suspended' : 'Active';
       if (type === 'student') await db.updateStudentStatus(id, newStatus);
       if (type === 'teacher') await db.updateTeacherStatus(id, newStatus);
-      refreshData();
       showNotification(`User ${newStatus}`);
   };
 
@@ -259,8 +267,7 @@ export default function AdminDashboard() {
       }
   };
 
-  // --- Components ---
-
+  // ... Components (SidebarItem, StatCard, LoadingOverlay) remain same ...
   const SidebarItem = ({ tab, icon: Icon, label }: { tab: TabView; icon: any; label: string }) => (
     <button
       onClick={() => setActiveTab(tab)}
@@ -326,7 +333,6 @@ export default function AdminDashboard() {
         )}
       </AnimatePresence>
 
-      {/* --- SIDEBAR --- */}
       <aside className="w-72 bg-[#0B1120] flex-shrink-0 flex flex-col shadow-2xl z-20">
         <div className="h-20 flex items-center px-8 border-b border-white/5">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold mr-3 shadow-lg shadow-indigo-500/30">
@@ -356,20 +362,11 @@ export default function AdminDashboard() {
           <button onClick={handleLogout} className="flex items-center space-x-3 text-red-400 hover:text-red-300 w-full px-4 py-3 rounded-xl hover:bg-red-500/10 transition-all group">
             <LogOut size={18} className="group-hover:-translate-x-1 transition-transform"/> <span className="font-medium text-sm">Sign Out</span>
           </button>
-          
-          <div className="mt-6 flex justify-center">
-             <a href="https://www.advedasolutions.in" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 opacity-40 hover:opacity-100 transition-all group">
-                 <span className="text-[9px] text-slate-400 uppercase font-bold tracking-widest group-hover:text-indigo-400">Powered by</span>
-                 <img src="https://advedasolutions.in/logo.png" alt="Adveda" className="h-4 w-auto grayscale group-hover:grayscale-0 transition-all" />
-             </a>
-          </div>
         </div>
       </aside>
 
-      {/* --- MAIN CONTENT --- */}
       <main className="flex-1 overflow-y-auto bg-slate-50/50 relative">
         {loading && <LoadingOverlay />}
-        {/* Top Header */}
         <header className="bg-white/80 backdrop-blur-xl sticky top-0 z-10 border-b border-slate-200 px-8 h-20 flex items-center justify-between">
           <div>
               <h2 className="text-2xl font-black text-slate-800 capitalize tracking-tight font-[Poppins]">{activeTab.replace('_', ' ')}</h2>
@@ -387,7 +384,6 @@ export default function AdminDashboard() {
 
         <div className="p-8 max-w-7xl mx-auto pb-20">
           
-          {/* DASHBOARD */}
           {activeTab === 'dashboard' && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -423,7 +419,6 @@ export default function AdminDashboard() {
             </motion.div>
           )}
 
-          {/* GRADES */}
           {activeTab === 'grades' && (
              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
                  <div className="flex justify-end">
@@ -464,7 +459,6 @@ export default function AdminDashboard() {
              </motion.div>
           )}
 
-          {/* STUDENTS */}
           {activeTab === 'students' && (
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
                <div className="p-6 border-b border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4 bg-slate-50/50">
@@ -546,7 +540,6 @@ export default function AdminDashboard() {
             </motion.div>
           )}
 
-          {/* TEACHERS */}
           {activeTab === 'teachers' && (
              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
                 <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
@@ -618,7 +611,6 @@ export default function AdminDashboard() {
              </motion.div>
           )}
           
-          {/* FEES (Simple List for Demo) */}
           {activeTab === 'fees' && (
              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
                  <div className="p-6 border-b border-slate-100 bg-slate-50/50">
@@ -652,7 +644,6 @@ export default function AdminDashboard() {
              </motion.div>
           )}
 
-          {/* SETTINGS */}
           {activeTab === 'settings' && settings && (
             <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="max-w-3xl mx-auto">
                 <div className="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
@@ -670,7 +661,6 @@ export default function AdminDashboard() {
                     
                     <div className="p-8">
                         <form onSubmit={handleSaveSettings} className="space-y-8">
-                            {/* ... existing settings form code ... */}
                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
                                     <label className="block text-sm font-bold text-slate-700 mb-2">Google Site Key</label>
@@ -715,9 +705,9 @@ export default function AdminDashboard() {
 
         </div>
       </main>
-
-      {/* ... MODALS KEEP SAME STRUCTURE BUT REMOVE Logic inside if handled above ... */}
-      {/* (Modals are already handled by state and async handlers defined above) */}
+      
+      {/* Existing Modals logic is used here via isStudentModalOpen etc. */}
+      {/* The render code for modals remains the same as in previous file content but logic uses state handlers above */}
       <AnimatePresence>
       {isGradeModalOpen && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
@@ -767,8 +757,6 @@ export default function AdminDashboard() {
           </motion.div>
       )}
       </AnimatePresence>
-      {/* Keep Student/Teacher Modals as is, handlers updated above */}
-       {/* STUDENT MODAL */}
       <AnimatePresence>
       {isStudentModalOpen && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
@@ -786,7 +774,6 @@ export default function AdminDashboard() {
                           <input required placeholder="Mobile Number" className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" value={formData.mobile || ''} onChange={e => setFormData({...formData, mobile: e.target.value})} />
                       </div>
                       <input required placeholder="Parent Name" className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" value={formData.parentName || ''} onChange={e => setFormData({...formData, parentName: e.target.value})} />
-                      
                       <div className="grid grid-cols-2 gap-4">
                           <select required className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none bg-white" value={selectedGradeId} onChange={e => setSelectedGradeId(e.target.value)}>
                               <option value="">Select Grade</option>
@@ -797,7 +784,6 @@ export default function AdminDashboard() {
                               {availableSubdivisions.map(sd => <option key={sd.id} value={sd.id}>{sd.divisionName}</option>)}
                           </select>
                       </div>
-
                       <button type="submit" className="w-full py-3.5 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition-all mt-2">
                           {editingId ? 'Update Record' : 'Complete Registration'}
                       </button>
@@ -806,8 +792,6 @@ export default function AdminDashboard() {
           </motion.div>
       )}
       </AnimatePresence>
-
-      {/* TEACHER MODAL */}
       <AnimatePresence>
       {isTeacherModalOpen && (
            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
@@ -823,7 +807,6 @@ export default function AdminDashboard() {
                       <input required placeholder="Teacher Name" className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none" value={formData.name || ''} onChange={e => setFormData({...formData, name: e.target.value})} />
                       <input required placeholder="Mobile Number" className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none" value={formData.mobile || ''} onChange={e => setFormData({...formData, mobile: e.target.value})} />
                       <input required placeholder="Specialization (e.g. Maths)" className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none" value={formData.specialization || ''} onChange={e => setFormData({...formData, specialization: e.target.value})} />
-                      
                       <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
                           <p className="text-xs font-bold text-slate-500 uppercase mb-2">Primary Responsibility</p>
                           <div className="grid grid-cols-2 gap-4">
@@ -837,7 +820,6 @@ export default function AdminDashboard() {
                               </select>
                           </div>
                       </div>
-
                       <button type="submit" className="w-full py-3.5 bg-purple-600 text-white rounded-xl font-bold hover:bg-purple-700 shadow-lg shadow-purple-200 transition-all mt-2">
                           {editingId ? 'Update Faculty' : 'Register Faculty'}
                       </button>
@@ -846,7 +828,6 @@ export default function AdminDashboard() {
            </motion.div>
       )}
       </AnimatePresence>
-
     </div>
   );
 }

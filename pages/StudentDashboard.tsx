@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../services/db';
 import { User, TimetableEntry, LiveClass, AttendanceRecord, Student, Homework, Exam, StudentQuery } from '../types';
@@ -94,15 +94,18 @@ const DashboardOverview = ({ student }: { student: Student }) => {
     const [liveClass, setLiveClass] = useState<LiveClass | null>(null);
     const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
 
-    useEffect(() => {
-        const load = async () => {
-            setTimetable(await db.getTimetable(student.subdivisionId));
-            const live = await db.getLiveClasses(student.subdivisionId);
-            if(live.length > 0) setLiveClass(live[0]);
-            setAttendance(await db.getAttendance(student.id));
-        }
-        load();
+    const refresh = useCallback(async () => {
+        setTimetable(await db.getTimetable(student.subdivisionId));
+        const live = await db.getLiveClasses(student.subdivisionId);
+        if(live.length > 0) setLiveClass(live[0]);
+        setAttendance(await db.getAttendance(student.id));
     }, [student]);
+
+    useEffect(() => {
+        refresh();
+        const sub = db.subscribe('attendance', refresh);
+        return () => db.unsubscribe(sub);
+    }, [refresh]);
 
     const presentCount = attendance.filter(a => a.status === 'Present').length;
     const totalDays = attendance.length;
@@ -112,7 +115,6 @@ const DashboardOverview = ({ student }: { student: Student }) => {
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-fade-in">
-             {/* Live Class Alert */}
              {liveClass && (
                 <div className="lg:col-span-3 bg-gradient-to-r from-rose-500 to-pink-600 rounded-2xl p-6 text-white shadow-lg flex flex-col sm:flex-row items-center justify-between animate-pulse-slow">
                     <div className="flex items-center space-x-4">
@@ -126,7 +128,6 @@ const DashboardOverview = ({ student }: { student: Student }) => {
                 </div>
             )}
 
-            {/* Attendance Stats */}
             <div className="lg:col-span-1 space-y-6">
                  <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
                     <div className="flex items-center justify-between mb-4">
@@ -162,7 +163,6 @@ const DashboardOverview = ({ student }: { student: Student }) => {
                  </div>
             </div>
 
-            {/* Timetable */}
             <div className="lg:col-span-2">
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 overflow-x-auto h-full">
                     <h2 className="text-xl font-bold mb-6 flex items-center gap-2 text-indigo-700"><Calendar size={20}/> Weekly Timetable</h2>
@@ -202,20 +202,24 @@ const HomeworkSection = ({ student }: { student: Student }) => {
     const [submissionText, setSubmissionText] = useState('');
     const [submissionStatus, setSubmissionStatus] = useState<Record<string, boolean>>({});
 
-    useEffect(() => {
-        const load = async () => {
-             const hw = await db.getHomeworkForStudent(student.gradeId, student.subdivisionId);
-             setHomework(hw);
-             
-             const statusMap: Record<string, boolean> = {};
-             for(const h of hw) {
-                 const sub = await db.getHomeworkSubmission(h.id, student.id);
-                 statusMap[h.id] = !!sub;
-             }
-             setSubmissionStatus(statusMap);
-        }
-        load();
+    const refresh = useCallback(async () => {
+         const hw = await db.getHomeworkForStudent(student.gradeId, student.subdivisionId);
+         setHomework(hw);
+         
+         const statusMap: Record<string, boolean> = {};
+         for(const h of hw) {
+             const sub = await db.getHomeworkSubmission(h.id, student.id);
+             statusMap[h.id] = !!sub;
+         }
+         setSubmissionStatus(statusMap);
     }, [student]);
+
+    useEffect(() => {
+        refresh();
+        const sub1 = db.subscribe('homework', refresh);
+        const sub2 = db.subscribe('homework_submissions', refresh);
+        return () => { db.unsubscribe(sub1); db.unsubscribe(sub2); };
+    }, [refresh]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -223,10 +227,9 @@ const HomeworkSection = ({ student }: { student: Student }) => {
         await db.submitHomework(selectedHw.id, student.id, submissionText);
         alert("Homework Submitted Successfully!");
         
-        // Refresh status
-        setSubmissionStatus(prev => ({...prev, [selectedHw.id]: true}));
         setSelectedHw(null);
         setSubmissionText('');
+        // Refresh triggered by subscription
     };
 
     return (
@@ -250,7 +253,6 @@ const HomeworkSection = ({ student }: { student: Student }) => {
                 {homework.length === 0 && <p className="text-gray-400">No pending homework.</p>}
             </div>
 
-            {/* Submission Form */}
             {selectedHw && (
                 <div className="bg-white p-6 rounded-xl shadow-lg border border-purple-100 h-fit sticky top-24">
                     <div className="flex justify-between items-center mb-4">
@@ -281,19 +283,21 @@ const ExamSection = ({ student }: { student: Student }) => {
     const [answers, setAnswers] = useState<Record<string, string>>({});
     const [takenStatus, setTakenStatus] = useState<Record<string, boolean>>({});
 
-    useEffect(() => {
-        const load = async () => {
-            const ex = await db.getExamsForStudent(student.gradeId, student.subdivisionId);
-            setExams(ex);
-            
-            const statusMap: Record<string, boolean> = {};
-            for(const e of ex) {
-                statusMap[e.id] = await db.isExamSubmitted(e.id, student.id);
-            }
-            setTakenStatus(statusMap);
-        };
-        load();
+    const refresh = useCallback(async () => {
+        const ex = await db.getExamsForStudent(student.gradeId, student.subdivisionId);
+        setExams(ex);
+        const statusMap: Record<string, boolean> = {};
+        for(const e of ex) {
+            statusMap[e.id] = await db.isExamSubmitted(e.id, student.id);
+        }
+        setTakenStatus(statusMap);
     }, [student]);
+
+    useEffect(() => {
+        refresh();
+        const sub = db.subscribe('exams', refresh);
+        return () => db.unsubscribe(sub);
+    }, [refresh]);
 
     const startExam = (exam: Exam) => {
         setActiveExam(exam);
@@ -386,17 +390,22 @@ const QuerySection = ({ student }: { student: Student }) => {
     const [subject, setSubject] = useState('Maths');
     const [queryText, setQueryText] = useState('');
 
-    useEffect(() => {
-        const load = async () => setQueries(await db.getQueries(student.id));
-        load();
+    const refresh = useCallback(async () => {
+        setQueries(await db.getQueries(student.id));
     }, [student]);
+
+    useEffect(() => {
+        refresh();
+        const sub = db.subscribe('queries', refresh);
+        return () => db.unsubscribe(sub);
+    }, [refresh]);
 
     const handleRaiseQuery = async (e: React.FormEvent) => {
         e.preventDefault();
         await db.addQuery({ studentId: student.id, studentName: student.name, subject, queryText });
-        setQueries(await db.getQueries(student.id));
         setQueryText('');
         alert("Query Sent to Teachers");
+        // refresh triggered by sub
     };
 
     return (

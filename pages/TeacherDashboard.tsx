@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../services/db';
 import { Subdivision, Student, User, Grade, Homework, Exam, Question, StudentQuery } from '../types';
@@ -18,6 +18,12 @@ const TeacherDashboard: React.FC = () => {
     const [selectedGradeId, setSelectedGradeId] = useState('');
     const [selectedDivisionId, setSelectedDivisionId] = useState('');
 
+    const refreshGrades = useCallback(async () => {
+        const g = await db.getGrades();
+        setGrades(g);
+        if(g.length > 0 && !selectedGradeId) setSelectedGradeId(g[0].id);
+    }, [selectedGradeId]);
+
     useEffect(() => {
         const storedUser = sessionStorage.getItem('sc_user');
         if (!storedUser) { navigate('/login'); return; }
@@ -25,27 +31,26 @@ const TeacherDashboard: React.FC = () => {
         if (parsedUser.role !== 'teacher') { navigate('/'); return; }
         setUser(parsedUser);
         
-        const init = async () => {
-            const g = await db.getGrades();
-            setGrades(g);
-            if(g.length > 0) setSelectedGradeId(g[0].id);
-        }
-        init();
-    }, [navigate]);
+        refreshGrades();
+
+        // Realtime
+        const sub = db.subscribe('grades', refreshGrades);
+        return () => db.unsubscribe(sub);
+    }, [navigate, refreshGrades]);
 
     useEffect(() => {
         const loadSubs = async () => {
             if (selectedGradeId) {
                 const subs = await db.getSubdivisions(selectedGradeId);
                 setAvailableSubdivisions(subs);
-                if (subs.length > 0) setSelectedDivisionId(subs[0].id);
+                if (subs.length > 0 && !selectedDivisionId) setSelectedDivisionId(subs[0].id);
             } else {
                 setAvailableSubdivisions([]);
                 setSelectedDivisionId('');
             }
         }
         loadSubs();
-    }, [selectedGradeId]);
+    }, [selectedGradeId, selectedDivisionId]);
 
     const handleLogout = () => { sessionStorage.removeItem('sc_user'); navigate('/'); };
 
@@ -118,21 +123,21 @@ const AttendanceModule = ({ gradeId, divisionId }: { gradeId: string, divisionId
     const [currentDate, setCurrentDate] = useState(new Date());
     const [selectedDate, setSelectedDate] = useState<string | null>(null);
     const [students, setStudents] = useState<Student[]>([]);
-    const [attendanceData, setAttendanceData] = useState<Record<string, boolean>>({}); // studentId -> present
+    const [attendanceData, setAttendanceData] = useState<Record<string, boolean>>({}); 
     const [existingDates, setExistingDates] = useState<Set<string>>(new Set());
 
+    const refresh = useCallback(async () => {
+        if(!divisionId) return;
+        const all = await db.getAttendance(undefined, undefined); 
+        const dates = new Set(all.filter(a => a.divisionId === divisionId).map(a => a.date));
+        setExistingDates(dates);
+    }, [divisionId]);
+
     useEffect(() => {
-        const load = async () => {
-            // Load existing attendance dates for this grade/div to show dots on calendar
-            // For MVP, simplistic check
-            const all = await db.getAttendance(undefined, undefined); 
-            // In a real app we would query 'DISTINCT date' filtered by divisionId
-            // Here we just fetch all for simplicity due to complexity of generic db.ts
-            const dates = new Set(all.filter(a => a.divisionId === divisionId).map(a => a.date));
-            setExistingDates(dates);
-        }
-        if(divisionId) load();
-    }, [divisionId, currentDate]);
+        refresh();
+        const sub = db.subscribe('attendance', refresh);
+        return () => db.unsubscribe(sub);
+    }, [refresh]);
 
     useEffect(() => {
         const loadStudents = async () => {
@@ -268,12 +273,15 @@ const HomeworkModule = ({ gradeId, divisionId, teacherId }: { gradeId: string, d
     const [students, setStudents] = useState<Student[]>([]);
     const [hwStatus, setHwStatus] = useState<Record<string, string>>({});
 
+    const refreshList = useCallback(async () => {
+         setHomeworkList(await db.getHomework(teacherId));
+    }, [teacherId]);
+
     useEffect(() => {
-        const load = async () => {
-             setHomeworkList(await db.getHomework(teacherId));
-        }
-        load();
-    }, [teacherId, view]);
+        refreshList();
+        const sub = db.subscribe('homework', refreshList);
+        return () => db.unsubscribe(sub);
+    }, [refreshList]);
 
     const assignHomework = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -283,7 +291,7 @@ const HomeworkModule = ({ gradeId, divisionId, teacherId }: { gradeId: string, d
         });
         alert('Homework Assigned!');
         setTask(''); setSubject('');
-        setHomeworkList(await db.getHomework(teacherId));
+        // List update handled by realtime
     };
 
     const openCheckPage = async (hw: Homework) => {
@@ -291,14 +299,15 @@ const HomeworkModule = ({ gradeId, divisionId, teacherId }: { gradeId: string, d
         const st = await db.getStudents(hw.gradeId, hw.subdivisionId);
         setStudents(st);
         
-        // Fetch submission statuses in parallel
-        const statusMap: Record<string, string> = {};
-        await Promise.all(st.map(async (s) => {
-            const sub = await db.getHomeworkSubmission(hw.id, s.id);
-            statusMap[s.id] = sub ? 'Submitted' : 'Pending';
-        }));
-        
-        setHwStatus(statusMap);
+        const refreshStatus = async () => {
+            const statusMap: Record<string, string> = {};
+            await Promise.all(st.map(async (s) => {
+                const sub = await db.getHomeworkSubmission(hw.id, s.id);
+                statusMap[s.id] = sub ? 'Submitted' : 'Pending';
+            }));
+            setHwStatus(statusMap);
+        };
+        refreshStatus();
         setView('check');
     };
 
@@ -314,7 +323,6 @@ const HomeworkModule = ({ gradeId, divisionId, teacherId }: { gradeId: string, d
                     <div className="p-4 bg-gray-50 font-bold border-b text-gray-700">Student Submission Status</div>
                     {students.map(s => {
                         const status = hwStatus[s.id] || 'Pending';
-                        // Note: For real app, we'd fetch the text. Here we rely on previous fetch or simplified view
                         return (
                             <div key={s.id} className="p-4 border-b last:border-0 hover:bg-gray-50">
                                 <div className="flex justify-between items-center mb-2">
@@ -604,14 +612,18 @@ const QueriesModule = () => {
     const [replyText, setReplyText] = useState('');
     const [selectedQueryId, setSelectedQueryId] = useState<string | null>(null);
 
-    useEffect(() => {
-        const load = async () => setQueries(await db.getQueries()); // Get all for teacher
-        load();
+    const refresh = useCallback(async () => {
+        setQueries(await db.getQueries()); // Get all for teacher
     }, []);
+
+    useEffect(() => {
+        refresh();
+        const sub = db.subscribe('queries', refresh);
+        return () => db.unsubscribe(sub);
+    }, [refresh]);
 
     const submitReply = async (queryId: string) => {
         await db.answerQuery(queryId, replyText);
-        setQueries(await db.getQueries());
         setReplyText('');
         setSelectedQueryId(null);
         alert('Reply Sent');
