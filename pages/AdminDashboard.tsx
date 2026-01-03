@@ -168,6 +168,7 @@ export default function AdminDashboard() {
           setIsGradeModalOpen(false);
           setFormData({});
           setSubdivisionInput('');
+          await refreshData(); // Manual refresh
       } catch (err) {
           console.error(err);
           showNotification("Error saving grade.");
@@ -178,6 +179,7 @@ export default function AdminDashboard() {
       if (!window.confirm("Are you sure? This will delete the grade and all its subdivisions!")) return;
       await db.deleteGrade(id);
       showNotification("Grade deleted.");
+      await refreshData(); // Manual refresh
   };
 
   const handleStudentSubmit = async (e: React.FormEvent) => {
@@ -203,6 +205,7 @@ export default function AdminDashboard() {
               showNotification('Student registered.');
           }
           setIsStudentModalOpen(false);
+          await refreshData(); // Manual refresh
       } catch (err: any) {
           console.error(err);
           showNotification(err.message || 'Error saving student');
@@ -232,6 +235,7 @@ export default function AdminDashboard() {
                showNotification('Teacher registered.');
           }
           setIsTeacherModalOpen(false);
+          await refreshData(); // Manual refresh
       } catch (e) {
           console.error(e);
           showNotification("Error saving teacher");
@@ -244,6 +248,7 @@ export default function AdminDashboard() {
       if (type === 'student') await db.updateStudentStatus(id, newStatus);
       if (type === 'teacher') await db.updateTeacherStatus(id, newStatus);
       showNotification(`User ${newStatus}`);
+      await refreshData(); // Manual refresh
   };
 
   const resetPassword = async (type: 'student' | 'teacher', id: string) => {
@@ -257,6 +262,7 @@ export default function AdminDashboard() {
       if(settings) {
           await db.updateSettings(settings);
           showNotification('System settings updated');
+          await refreshData(); // Manual refresh
       }
   };
 
