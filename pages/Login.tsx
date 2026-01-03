@@ -11,13 +11,13 @@ const Login: React.FC = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
     
-    setTimeout(() => {
-        const user = db.login(username, password);
+    try {
+        const user = await db.login(username, password);
         if (user) {
           sessionStorage.setItem('sc_user', JSON.stringify(user));
           if (user.role === 'admin') navigate('/admin');
@@ -26,9 +26,13 @@ const Login: React.FC = () => {
           else navigate('/');
         } else {
           setError('Invalid credentials.');
-          setLoading(false);
         }
-    }, 800);
+    } catch (err) {
+        setError('Login failed. Check connection.');
+        console.error(err);
+    } finally {
+        setLoading(false);
+    }
   };
 
   return (

@@ -1,7 +1,7 @@
 {
-  "name": "shriya's-coaching-platform",
+  "name": "shriyas-coaching-platform",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -9,19 +9,24 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "react": "^19.2.3",
-    "@react-three/drei": "^10.7.7",
-    "@react-three/fiber": "^9.5.0",
-    "react-dom": "^19.2.3",
-    "react-router-dom": "^7.11.0",
-    "three": "^0.182.0",
-    "framer-motion": "^12.23.26",
-    "lucide-react": "^0.562.0"
+    "@supabase/supabase-js": "^2.39.0",
+    "framer-motion": "^10.16.4",
+    "lucide-react": "^0.292.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.20.0",
+    "@react-three/fiber": "^8.15.12",
+    "@react-three/drei": "^9.90.0",
+    "three": "^0.160.0"
   },
   "devDependencies": {
-    "@types/node": "^22.14.0",
-    "@vitejs/plugin-react": "^5.0.0",
-    "typescript": "~5.8.2",
-    "vite": "^6.2.0"
+    "@types/react": "^18.2.37",
+    "@types/react-dom": "^18.2.15",
+    "@vitejs/plugin-react": "^4.2.0",
+    "autoprefixer": "^10.4.16",
+    "postcss": "^8.4.31",
+    "tailwindcss": "^3.3.5",
+    "typescript": "^5.2.2",
+    "vite": "^5.0.0"
   }
 }

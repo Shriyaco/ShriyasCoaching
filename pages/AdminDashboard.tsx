@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../services/db';
 import { Student, TabView, Grade, Subdivision, Teacher, FeeSubmission, SystemSettings } from '../types';
-import { Users, Settings, LogOut, Plus, Edit2, Search, Briefcase, CreditCard, Save, Layers, UserPlus, Lock, ShieldAlert, Key, Power, X, Trash2, ChevronRight, GraduationCap, TrendingUp, DollarSign } from 'lucide-react';
+import { Users, Settings, LogOut, Plus, Edit2, Search, Briefcase, CreditCard, Save, Layers, UserPlus, Lock, ShieldAlert, Key, Power, X, Trash2, ChevronRight, GraduationCap, TrendingUp, DollarSign, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -15,7 +15,8 @@ export default function AdminDashboard() {
   const [subdivisions, setSubdivisions] = useState<Subdivision[]>([]);
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [fees, setFees] = useState<FeeSubmission[]>([]);
-  const [settings, setSettings] = useState<SystemSettings>(db.getSettings());
+  const [settings, setSettings] = useState<SystemSettings | null>(null);
+  const [loading, setLoading] = useState(true);
   
   // UI State
   const [isStudentModalOpen, setIsStudentModalOpen] = useState(false);
@@ -41,20 +42,40 @@ export default function AdminDashboard() {
   }, [navigate]);
 
   useEffect(() => {
-      if (selectedGradeId) {
-          setAvailableSubdivisions(db.getSubdivisions(selectedGradeId));
-      } else {
-          setAvailableSubdivisions([]);
-      }
+      const loadSubs = async () => {
+          if (selectedGradeId) {
+              const subs = await db.getSubdivisions(selectedGradeId);
+              setAvailableSubdivisions(subs);
+          } else {
+              setAvailableSubdivisions([]);
+          }
+      };
+      loadSubs();
   }, [selectedGradeId]);
 
-  const refreshData = () => {
-    setStudents(db.getStudents());
-    setGrades(db.getGrades());
-    setSubdivisions(db.getSubdivisions());
-    setTeachers(db.getTeachers());
-    setFees(db.getFeeSubmissions());
-    setSettings(db.getSettings());
+  const refreshData = async () => {
+    setLoading(true);
+    try {
+        const [s, g, sd, t, f, set] = await Promise.all([
+            db.getStudents(),
+            db.getGrades(),
+            db.getSubdivisions(),
+            db.getTeachers(),
+            db.getFeeSubmissions(),
+            db.getSettings()
+        ]);
+        setStudents(s);
+        setGrades(g);
+        setSubdivisions(sd);
+        setTeachers(t);
+        setFees(f);
+        setSettings(set);
+    } catch(e) {
+        showNotification("Failed to load data.");
+        console.error(e);
+    } finally {
+        setLoading(false);
+    }
   };
 
   const handleLogout = () => {
@@ -105,15 +126,16 @@ export default function AdminDashboard() {
       setIsTeacherModalOpen(true);
   };
 
-  const openGradeModal = (grade?: Grade) => {
+  const openGradeModal = async (grade?: Grade) => {
       if (grade) {
           setEditingId(grade.id);
-          const subs = db.getSubdivisions(grade.id).map(s => s.divisionName).join(', ');
+          const subs = await db.getSubdivisions(grade.id);
+          const subNames = subs.map(s => s.divisionName).join(', ');
           setFormData({
               gradeName: grade.gradeName,
               hasSubdivision: grade.hasSubdivision
           });
-          setSubdivisionInput(subs);
+          setSubdivisionInput(subNames);
       } else {
           setEditingId(null);
           setFormData({ hasSubdivision: false });
@@ -122,37 +144,41 @@ export default function AdminDashboard() {
       setIsGradeModalOpen(true);
   };
 
-  const handleGradeSubmit = (e: React.FormEvent) => {
+  const handleGradeSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
       const subNames = formData.hasSubdivision ? subdivisionInput.split(',').map(s => s.trim()).filter(s => s) : [];
       
-      if (editingId) {
-          db.updateGrade(editingId, formData.gradeName, subNames);
-          showNotification('Grade updated successfully');
-      } else {
-          db.addGrade(formData.gradeName, subNames);
-          showNotification('Grade added successfully');
+      try {
+          if (editingId) {
+              await db.updateGrade(editingId, formData.gradeName, subNames);
+              showNotification('Grade updated successfully');
+          } else {
+              await db.addGrade(formData.gradeName, subNames);
+              showNotification('Grade added successfully');
+          }
+          setIsGradeModalOpen(false);
+          setFormData({});
+          setSubdivisionInput('');
+          refreshData();
+      } catch (err) {
+          console.error(err);
+          showNotification("Error saving grade.");
       }
-      
-      setIsGradeModalOpen(false);
-      setFormData({});
-      setSubdivisionInput('');
-      refreshData();
   };
 
-  const deleteGrade = (id: string) => {
+  const deleteGrade = async (id: string) => {
       if (!window.confirm("Are you sure? This will delete the grade and all its subdivisions! Students in this grade will lose their class link.")) return;
-      db.deleteGrade(id);
+      await db.deleteGrade(id);
       refreshData();
       showNotification("Grade deleted.");
   };
 
-  const handleStudentSubmit = (e: React.FormEvent) => {
+  const handleStudentSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
       try {
           if (editingId) {
               // Update Existing
-              db.updateStudent(editingId, {
+              await db.updateStudent(editingId, {
                   name: formData.name,
                   mobile: formData.mobile,
                   parentName: formData.parentName,
@@ -162,67 +188,75 @@ export default function AdminDashboard() {
               showNotification('Student record updated.');
           } else {
               // Create New
-              db.addStudent({
+              await db.addStudent({
                   name: formData.name,
                   mobile: formData.mobile,
                   parentName: formData.parentName,
                   gradeId: selectedGradeId,
                   subdivisionId: formData.subdivisionId
               });
-              showNotification('Student registered. ID generated.');
+              showNotification('Student registered.');
           }
           setIsStudentModalOpen(false);
           refreshData();
       } catch (err: any) {
-          showNotification(err.message);
+          console.error(err);
+          showNotification(err.message || 'Error saving student');
       }
   };
 
-  const handleTeacherSubmit = (e: React.FormEvent) => {
+  const handleTeacherSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
-      if (editingId) {
-           db.updateTeacher(editingId, {
-              name: formData.name,
-              mobile: formData.mobile,
-              gradeId: selectedGradeId,
-              subdivisionId: formData.subdivisionId,
-              specialization: formData.specialization
-           });
-           showNotification('Teacher record updated.');
-      } else {
-          db.addTeacher({
-              name: formData.name,
-              mobile: formData.mobile,
-              gradeId: selectedGradeId,
-              subdivisionId: formData.subdivisionId,
-              specialization: formData.specialization
-           });
-           showNotification('Teacher registered. ID generated.');
+      try {
+          if (editingId) {
+               await db.updateTeacher(editingId, {
+                  name: formData.name,
+                  mobile: formData.mobile,
+                  gradeId: selectedGradeId,
+                  subdivisionId: formData.subdivisionId,
+                  specialization: formData.specialization
+               });
+               showNotification('Teacher record updated.');
+          } else {
+              await db.addTeacher({
+                  name: formData.name,
+                  mobile: formData.mobile,
+                  gradeId: selectedGradeId,
+                  subdivisionId: formData.subdivisionId,
+                  specialization: formData.specialization
+               });
+               showNotification('Teacher registered.');
+          }
+          setIsTeacherModalOpen(false);
+          refreshData();
+      } catch (e) {
+          console.error(e);
+          showNotification("Error saving teacher");
       }
-      setIsTeacherModalOpen(false);
-      refreshData();
   };
 
-  const toggleStatus = (type: 'student' | 'teacher', id: string, currentStatus: string) => {
+  const toggleStatus = async (type: 'student' | 'teacher', id: string, currentStatus: string) => {
       if(!window.confirm(`Are you sure you want to ${currentStatus === 'Active' ? 'suspend' : 'activate'} this user?`)) return;
       
       const newStatus = currentStatus === 'Active' ? 'Suspended' : 'Active';
-      if (type === 'student') db.updateStudentStatus(id, newStatus);
-      if (type === 'teacher') db.updateTeacherStatus(id, newStatus);
+      if (type === 'student') await db.updateStudentStatus(id, newStatus);
+      if (type === 'teacher') await db.updateTeacherStatus(id, newStatus);
       refreshData();
       showNotification(`User ${newStatus}`);
   };
 
-  const resetPassword = (type: 'student' | 'teacher', id: string) => {
+  const resetPassword = async (type: 'student' | 'teacher', id: string) => {
       if(!window.confirm("Reset password to user's mobile number?")) return;
-      db.resetUserPassword(type, id);
+      await db.resetUserPassword(type, id);
       showNotification('Password reset to Mobile Number.');
   };
 
-  const handleSaveSettings = (e: React.FormEvent) => {
+  const handleSaveSettings = async (e: React.FormEvent) => {
       e.preventDefault();
-      db.updateSettings(settings);
-      showNotification('System settings updated');
+      if(settings) {
+          await db.updateSettings(settings);
+          showNotification('System settings updated');
+      }
   };
 
   // --- Components ---
@@ -263,6 +297,12 @@ export default function AdminDashboard() {
               </div>
           </div>
       </motion.div>
+  );
+  
+  const LoadingOverlay = () => (
+      <div className="absolute inset-0 bg-white/50 backdrop-blur-sm z-50 flex items-center justify-center">
+          <RefreshCw className="animate-spin text-indigo-600" size={32} />
+      </div>
   );
 
   return (
@@ -327,7 +367,8 @@ export default function AdminDashboard() {
       </aside>
 
       {/* --- MAIN CONTENT --- */}
-      <main className="flex-1 overflow-y-auto bg-slate-50/50">
+      <main className="flex-1 overflow-y-auto bg-slate-50/50 relative">
+        {loading && <LoadingOverlay />}
         {/* Top Header */}
         <header className="bg-white/80 backdrop-blur-xl sticky top-0 z-10 border-b border-slate-200 px-8 h-20 flex items-center justify-between">
           <div>
@@ -379,37 +420,6 @@ export default function AdminDashboard() {
                         subtext="Pending Approvals: 2"
                     />
                 </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                        <h3 className="font-bold text-slate-800 mb-4 font-[Poppins]">Quick Actions</h3>
-                        <div className="grid grid-cols-2 gap-4">
-                            <button onClick={() => { setActiveTab('students'); openStudentModal(); }} className="p-4 rounded-xl bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors flex flex-col items-center gap-2 border border-indigo-100">
-                                <UserPlus size={24} /> <span className="font-bold text-sm">Register Student</span>
-                            </button>
-                            <button onClick={() => { setActiveTab('teachers'); openTeacherModal(); }} className="p-4 rounded-xl bg-purple-50 text-purple-700 hover:bg-purple-100 transition-colors flex flex-col items-center gap-2 border border-purple-100">
-                                <Briefcase size={24} /> <span className="font-bold text-sm">Add Faculty</span>
-                            </button>
-                            <button onClick={() => { setActiveTab('fees'); }} className="p-4 rounded-xl bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors flex flex-col items-center gap-2 border border-emerald-100">
-                                <CreditCard size={24} /> <span className="font-bold text-sm">Check Fees</span>
-                            </button>
-                            <button onClick={() => { setActiveTab('settings'); }} className="p-4 rounded-xl bg-slate-50 text-slate-700 hover:bg-slate-100 transition-colors flex flex-col items-center gap-2 border border-slate-100">
-                                <ShieldAlert size={24} /> <span className="font-bold text-sm">Security</span>
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <div className="bg-gradient-to-br from-indigo-900 to-slate-900 p-8 rounded-2xl shadow-xl text-white relative overflow-hidden">
-                        <div className="relative z-10">
-                            <h3 className="font-bold text-2xl font-[Poppins] mb-2">Welcome Back, Admin</h3>
-                            <p className="text-indigo-200 mb-6 max-w-md">You have full control over the system. Ensure all pending fees are verified before the end of the week.</p>
-                            <button onClick={() => setActiveTab('fees')} className="px-6 py-3 bg-white text-indigo-900 rounded-lg font-bold hover:bg-indigo-50 transition-colors">View Transactions</button>
-                        </div>
-                        <div className="absolute right-0 bottom-0 opacity-10 transform translate-x-10 translate-y-10">
-                            <Layers size={200} />
-                        </div>
-                    </div>
-                </div>
             </motion.div>
           )}
 
@@ -441,7 +451,7 @@ export default function AdminDashboard() {
                              <div className="bg-slate-50 rounded-xl p-4">
                                  <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Divisions / Sections</p>
                                  <div className="flex flex-wrap gap-2">
-                                     {db.getSubdivisions(g.id).length > 0 ? db.getSubdivisions(g.id).map(sd => (
+                                     {subdivisions.filter(s => s.gradeId === g.id).length > 0 ? subdivisions.filter(s => s.gradeId === g.id).map(sd => (
                                          <span key={sd.id} className="px-3 py-1 bg-white border border-slate-200 text-slate-600 rounded-lg text-xs font-bold shadow-sm">
                                              {sd.divisionName}
                                          </span>
@@ -643,7 +653,7 @@ export default function AdminDashboard() {
           )}
 
           {/* SETTINGS */}
-          {activeTab === 'settings' && (
+          {activeTab === 'settings' && settings && (
             <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="max-w-3xl mx-auto">
                 <div className="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
                     <div className="bg-slate-900 p-8 text-white relative overflow-hidden">
@@ -660,18 +670,8 @@ export default function AdminDashboard() {
                     
                     <div className="p-8">
                         <form onSubmit={handleSaveSettings} className="space-y-8">
-                            <div className="bg-slate-50 p-6 rounded-xl border border-slate-200">
-                                <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-4">
-                                    <Lock size={16} className="text-indigo-500"/> Admin Access
-                                </label>
-                                <div className="flex gap-4">
-                                    <input type="password" value="Reset@852" className="flex-1 px-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-500" disabled />
-                                    <button disabled className="bg-slate-200 text-slate-400 px-6 py-3 rounded-xl font-bold cursor-not-allowed">Locked</button>
-                                </div>
-                                <p className="text-xs text-slate-400 mt-2 flex items-center gap-1"><ShieldAlert size={12}/> Hardcoded for security demo.</p>
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* ... existing settings form code ... */}
+                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
                                     <label className="block text-sm font-bold text-slate-700 mb-2">Google Site Key</label>
                                     <input 
@@ -716,9 +716,8 @@ export default function AdminDashboard() {
         </div>
       </main>
 
-      {/* --- MODALS (Styled) --- */}
-
-      {/* GRADE MODAL */}
+      {/* ... MODALS KEEP SAME STRUCTURE BUT REMOVE Logic inside if handled above ... */}
+      {/* (Modals are already handled by state and async handlers defined above) */}
       <AnimatePresence>
       {isGradeModalOpen && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
@@ -768,8 +767,8 @@ export default function AdminDashboard() {
           </motion.div>
       )}
       </AnimatePresence>
-
-      {/* STUDENT MODAL */}
+      {/* Keep Student/Teacher Modals as is, handlers updated above */}
+       {/* STUDENT MODAL */}
       <AnimatePresence>
       {isStudentModalOpen && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
@@ -798,16 +797,6 @@ export default function AdminDashboard() {
                               {availableSubdivisions.map(sd => <option key={sd.id} value={sd.id}>{sd.divisionName}</option>)}
                           </select>
                       </div>
-                      
-                      {!editingId && (
-                          <div className="bg-indigo-50 p-4 rounded-xl text-xs text-indigo-800 border border-indigo-100">
-                              <p className="font-bold mb-1">Auto-Generation Rules:</p>
-                              <ul className="list-disc list-inside space-y-1">
-                                  <li>ID: First 3 Letters of Name + First 3 Digits of Mobile</li>
-                                  <li>Password: Same as Mobile Number</li>
-                              </ul>
-                          </div>
-                      )}
 
                       <button type="submit" className="w-full py-3.5 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition-all mt-2">
                           {editingId ? 'Update Record' : 'Complete Registration'}

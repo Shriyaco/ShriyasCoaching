@@ -1,462 +1,478 @@
+import { supabase } from './supabase';
 import { Student, Grade, Subdivision, Notice, User, Teacher, TimetableEntry, LiveClass, FeeSubmission, SystemSettings, AttendanceRecord, Homework, Exam, ExamResult, HomeworkSubmission, ExamSubmission, StudentQuery } from '../types';
 
-// --- Helper for Custom ID Logic ---
-const generateCustomId = (name: string, mobile: string): string => {
-    // Logic: First 3 letters of Name + First 3 digits of Mobile
-    const p1 = name.replace(/\s/g, '').substring(0, 3).toUpperCase();
-    const p2 = mobile.substring(0, 3);
-    return `${p1}${p2}`;
-};
+// Helper to map snake_case (DB) to camelCase (Frontend)
+const mapStudent = (s: any): Student => ({
+    id: s.id,
+    studentCustomId: s.student_custom_id,
+    name: s.name,
+    mobile: s.mobile,
+    parentName: s.parent_name,
+    gradeId: s.grade_id,
+    subdivisionId: s.subdivision_id,
+    joiningDate: s.joining_date,
+    totalFees: s.total_fees,
+    feesStatus: s.fees_status as any,
+    status: s.status as any,
+    password: s.password,
+    email: s.email
+});
 
-// --- Initial Mock Data ---
-
-const INITIAL_GRADES: Grade[] = [
-    { id: 'g1', gradeName: 'Grade 1', hasSubdivision: true },
-    { id: 'g2', gradeName: 'Grade 8', hasSubdivision: true },
-];
-
-const INITIAL_SUBDIVISIONS: Subdivision[] = [
-    { id: 'sd1', gradeId: 'g1', divisionName: 'A' },
-    { id: 'sd2', gradeId: 'g1', divisionName: 'B' },
-    { id: 'sd3', gradeId: 'g2', divisionName: 'Science' },
-];
-
-const INITIAL_TEACHERS: Teacher[] = [
-    { 
-        id: 't1', 
-        teacherCustomId: 'JEN987', 
-        name: 'Jennifer Honey', 
-        mobile: '9876543210', 
-        gradeId: 'g1', 
-        subdivisionId: 'sd1', 
-        joiningDate: '2023-01-01', 
-        status: 'Active', 
-        specialization: 'Maths' 
-    },
-    // Demo Teacher
-    {
-        id: 't_demo',
-        teacherCustomId: 'Demot',
-        name: 'Demo Teacher',
-        mobile: '0000000000',
-        gradeId: 'g1',
-        subdivisionId: 'sd1',
-        joiningDate: '2023-01-01',
-        status: 'Active',
-        specialization: 'General Science',
-        password: 'Demot'
-    }
-];
-
-const INITIAL_STUDENTS: Student[] = [
-    { 
-        id: 's1', 
-        studentCustomId: 'ROH998', 
-        name: 'Rohan Gupta', 
-        mobile: '9988776655', 
-        parentName: 'Mr. Gupta', 
-        gradeId: 'g1', 
-        subdivisionId: 'sd1', 
-        joiningDate: '2023-06-01', 
-        totalFees: '15000', 
-        feesStatus: 'Paid', 
-        status: 'Active', 
-        email: 'rohan@student.com' // Legacy support
-    },
-    // Demo Student
-    {
-        id: 's_demo',
-        studentCustomId: 'Demos',
-        name: 'Demo Student',
-        mobile: '0000000000',
-        parentName: 'Demo Parent',
-        gradeId: 'g1',
-        subdivisionId: 'sd1',
-        joiningDate: '2023-01-01',
-        totalFees: '0',
-        feesStatus: 'Paid',
-        status: 'Active',
-        email: 'demo@student.com',
-        password: 'Demos'
-    }
-];
-
-const INITIAL_SETTINGS: SystemSettings = {
-    paymentMode: 'manual',
-    adminUpiId: 'tejanishriya64-3@okaxis',
-    googleSiteKey: '',
-    phonePeSaltKey: '',
-    phonePeMerchantId: ''
-};
+const mapTeacher = (t: any): Teacher => ({
+    id: t.id,
+    teacherCustomId: t.teacher_custom_id,
+    name: t.name,
+    mobile: t.mobile,
+    gradeId: t.grade_id,
+    subdivisionId: t.subdivision_id,
+    joiningDate: t.joining_date,
+    status: t.status as any,
+    specialization: t.specialization,
+    password: t.password
+});
 
 class DatabaseService {
-  constructor() {
-    this.init();
-  }
-
-  private init() {
-    if (!localStorage.getItem('sc_grades')) localStorage.setItem('sc_grades', JSON.stringify(INITIAL_GRADES));
-    if (!localStorage.getItem('sc_subdivisions')) localStorage.setItem('sc_subdivisions', JSON.stringify(INITIAL_SUBDIVISIONS));
-    if (!localStorage.getItem('sc_students')) localStorage.setItem('sc_students', JSON.stringify(INITIAL_STUDENTS));
-    if (!localStorage.getItem('sc_teachers')) localStorage.setItem('sc_teachers', JSON.stringify(INITIAL_TEACHERS));
-    if (!localStorage.getItem('sc_settings')) localStorage.setItem('sc_settings', JSON.stringify(INITIAL_SETTINGS));
-    
-    // Legacy/Other initialization
-    if (!localStorage.getItem('sc_notices')) localStorage.setItem('sc_notices', JSON.stringify([]));
-    if (!localStorage.getItem('sc_timetable')) localStorage.setItem('sc_timetable', JSON.stringify([]));
-    if (!localStorage.getItem('sc_attendance')) localStorage.setItem('sc_attendance', JSON.stringify([]));
-    if (!localStorage.getItem('sc_live_classes')) localStorage.setItem('sc_live_classes', JSON.stringify([]));
-    if (!localStorage.getItem('sc_fee_submissions')) localStorage.setItem('sc_fee_submissions', JSON.stringify([]));
-    
-    // New Modules
-    if (!localStorage.getItem('sc_homework')) localStorage.setItem('sc_homework', JSON.stringify([]));
-    if (!localStorage.getItem('sc_homework_submissions')) localStorage.setItem('sc_homework_submissions', JSON.stringify([]));
-    if (!localStorage.getItem('sc_exams')) localStorage.setItem('sc_exams', JSON.stringify([]));
-    if (!localStorage.getItem('sc_exam_submissions')) localStorage.setItem('sc_exam_submissions', JSON.stringify([]));
-    if (!localStorage.getItem('sc_exam_results')) localStorage.setItem('sc_exam_results', JSON.stringify([]));
-    if (!localStorage.getItem('sc_queries')) localStorage.setItem('sc_queries', JSON.stringify([]));
-  }
-
-  private get<T>(key: string): T[] {
-    return JSON.parse(localStorage.getItem(key) || '[]');
-  }
-  private set(key: string, data: any[]) {
-    localStorage.setItem(key, JSON.stringify(data));
-  }
-
+  
   // --- Auth Logic ---
-  login(username: string, password: string): User | null {
-    // Admin (Case Sensitive as requested)
+  async login(username: string, password: string): Promise<User | null> {
+    // 1. Check Hardcoded Admin
     if (username === 'Admin' && password === 'Reset@852') {
       return { id: 'admin1', username: 'Shriya Admin', role: 'admin', status: 'Active' };
     }
     
-    // Teacher Check (Custom ID or Name)
-    const teachers = this.getTeachers();
-    const teacher = teachers.find(t => t.teacherCustomId === username || t.name === username);
-    if (teacher && teacher.status === 'Active') {
-        // Password check (In real PHP: password_verify)
-        const correctPass = teacher.password || teacher.mobile; 
-        if (password === correctPass) {
-             return { id: teacher.id, username: teacher.name, role: 'teacher', status: 'Active' };
+    // 2. Check Teachers Table
+    const { data: teachers, error: tError } = await supabase
+        .from('teachers')
+        .select('*')
+        .or(`teacher_custom_id.eq.${username},name.eq.${username}`);
+    
+    if (teachers && teachers.length > 0) {
+        const t = teachers[0];
+        if (t.status === 'Active' && (t.password === password || t.mobile === password)) {
+            return { id: t.id, username: t.name, role: 'teacher', status: 'Active' };
         }
     }
 
-    // Student Check
-    const students = this.getStudents();
-    const student = students.find(s => s.studentCustomId === username || s.name === username);
-    if (student && student.status === 'Active') {
-         // Default password is mobile number
-         const correctPass = student.password || student.mobile;
-         if (password === correctPass) {
-             return { id: student.id, username: student.name, role: 'student', divisionId: student.subdivisionId, status: 'Active' };
-         }
+    // 3. Check Students Table
+    const { data: students, error: sError } = await supabase
+        .from('students')
+        .select('*')
+        .or(`student_custom_id.eq.${username},name.eq.${username}`);
+
+    if (students && students.length > 0) {
+        const s = students[0];
+        if (s.status === 'Active' && (s.password === password || s.mobile === password)) {
+            return { id: s.id, username: s.name, role: 'student', divisionId: s.subdivision_id, status: 'Active' };
+        }
     }
     
     return null;
   }
 
   // --- Grades & Subdivisions ---
-  getGrades() { return this.get<Grade>('sc_grades'); }
+  async getGrades(): Promise<Grade[]> {
+      const { data } = await supabase.from('grades').select('*');
+      return (data || []).map(g => ({ id: g.id, gradeName: g.grade_name, hasSubdivision: g.has_subdivision }));
+  }
   
-  addGrade(gradeName: string, subdivisionNames: string[]) {
-      const grades = this.getGrades();
-      const newGradeId = `g${Date.now()}`;
-      const newGrade: Grade = { id: newGradeId, gradeName, hasSubdivision: subdivisionNames.length > 0 };
-      this.set('sc_grades', [...grades, newGrade]);
+  async addGrade(gradeName: string, subdivisionNames: string[]) {
+      const { data: grade, error } = await supabase.from('grades').insert({ grade_name: gradeName, has_subdivision: subdivisionNames.length > 0 }).select().single();
+      if (error || !grade) throw error;
 
       if (subdivisionNames.length > 0) {
-          const subs = this.getSubdivisions();
-          const newSubs = subdivisionNames.map(name => ({
-              id: `sd${Math.random().toString(36).substr(2, 9)}`,
-              gradeId: newGradeId,
-              divisionName: name
+          const subs = subdivisionNames.map(name => ({
+              grade_id: grade.id,
+              division_name: name
           }));
-          this.set('sc_subdivisions', [...subs, ...newSubs]);
+          await supabase.from('subdivisions').insert(subs);
       }
   }
 
-  updateGrade(id: string, gradeName: string, subdivisionNames: string[]) {
-      const grades = this.getGrades();
-      const updatedGrades = grades.map(g => g.id === id ? { ...g, gradeName, hasSubdivision: subdivisionNames.length > 0 } : g);
-      this.set('sc_grades', updatedGrades);
-
-      const currentSubs = this.getSubdivisions(id);
-      let allOtherSubs = this.get<Subdivision>('sc_subdivisions').filter(s => s.gradeId !== id);
-      const newGradeSubs: Subdivision[] = [];
-
-      subdivisionNames.forEach(name => {
-          const existing = currentSubs.find(s => s.divisionName.toLowerCase() === name.toLowerCase().trim());
-          if (existing) {
-              newGradeSubs.push(existing); 
-          } else {
-              newGradeSubs.push({
-                  id: `sd${Math.random().toString(36).substr(2, 9)}`,
-                  gradeId: id,
-                  divisionName: name.trim()
-              });
-          }
-      });
-      this.set('sc_subdivisions', [...allOtherSubs, ...newGradeSubs]);
+  async updateGrade(id: string, gradeName: string, subdivisionNames: string[]) {
+      await supabase.from('grades').update({ grade_name: gradeName, has_subdivision: subdivisionNames.length > 0 }).eq('id', id);
+      
+      // Basic sync: delete old subs and add new ones (Simplified for MVP)
+      // In production, you'd want to update existing ones to preserve IDs
+      // For now, let's just add new ones if they don't exist
+      if (subdivisionNames.length > 0) {
+         for (const name of subdivisionNames) {
+             const { data } = await supabase.from('subdivisions').select('*').eq('grade_id', id).eq('division_name', name);
+             if (!data || data.length === 0) {
+                 await supabase.from('subdivisions').insert({ grade_id: id, division_name: name });
+             }
+         }
+      }
   }
 
-  deleteGrade(id: string) {
-      const grades = this.getGrades().filter(g => g.id !== id);
-      this.set('sc_grades', grades);
-      const subs = this.get<Subdivision>('sc_subdivisions').filter(s => s.gradeId !== id);
-      this.set('sc_subdivisions', subs);
+  async deleteGrade(id: string) {
+      await supabase.from('grades').delete().eq('id', id);
   }
 
-  getSubdivisions(gradeId?: string) { 
-      const all = this.get<Subdivision>('sc_subdivisions'); 
-      if (gradeId) return all.filter(s => s.gradeId === gradeId);
-      return all;
+  async getSubdivisions(gradeId?: string): Promise<Subdivision[]> { 
+      let query = supabase.from('subdivisions').select('*');
+      if (gradeId) query = query.eq('grade_id', gradeId);
+      const { data } = await query;
+      return (data || []).map(s => ({ id: s.id, gradeId: s.grade_id, divisionName: s.division_name }));
   }
 
   // --- Student Management ---
-  getStudents(gradeId?: string, subdivisionId?: string) { 
-      let all = this.get<Student>('sc_students');
-      if (gradeId) all = all.filter(s => s.gradeId === gradeId);
-      if (subdivisionId) all = all.filter(s => s.subdivisionId === subdivisionId);
-      return all;
+  async getStudents(gradeId?: string, subdivisionId?: string): Promise<Student[]> { 
+      let query = supabase.from('students').select('*');
+      if (gradeId) query = query.eq('grade_id', gradeId);
+      if (subdivisionId) query = query.eq('subdivision_id', subdivisionId);
+      
+      const { data } = await query;
+      return (data || []).map(mapStudent);
   }
 
-  addStudent(data: { name: string, mobile: string, parentName: string, gradeId: string, subdivisionId: string }) {
-      const list = this.getStudents();
-      const customId = generateCustomId(data.name, data.mobile);
+  async addStudent(data: { name: string, mobile: string, parentName: string, gradeId: string, subdivisionId: string }) {
+      const customId = data.name.substring(0,3).toUpperCase() + data.mobile.substring(0,3);
       
-      if (list.find(s => s.studentCustomId === customId)) {
-          throw new Error('Duplicate ID Generated. Student might already exist.');
-      }
-
-      const newStudent: Student = {
-          id: `s${Date.now()}`,
-          studentCustomId: customId,
+      await supabase.from('students').insert({
+          student_custom_id: customId,
           name: data.name,
           mobile: data.mobile,
-          parentName: data.parentName,
-          gradeId: data.gradeId,
-          subdivisionId: data.subdivisionId,
-          joiningDate: new Date().toISOString().split('T')[0],
-          totalFees: '0',
-          feesStatus: 'Pending',
-          status: 'Active',
-          password: data.mobile, 
+          parent_name: data.parentName,
+          grade_id: data.gradeId,
+          subdivision_id: data.subdivisionId,
+          password: data.mobile,
           email: `${customId.toLowerCase()}@sc.com`
-      };
+      });
+  }
+
+  async updateStudent(id: string, data: Partial<Student>) {
+      const payload: any = {};
+      if(data.name) payload.name = data.name;
+      if(data.mobile) payload.mobile = data.mobile;
+      if(data.parentName) payload.parent_name = data.parentName;
+      if(data.gradeId) payload.grade_id = data.gradeId;
+      if(data.subdivisionId) payload.subdivision_id = data.subdivisionId;
       
-      this.set('sc_students', [newStudent, ...list]);
-      return newStudent;
+      await supabase.from('students').update(payload).eq('id', id);
   }
 
-  updateStudent(id: string, data: Partial<Student>) {
-      const list = this.getStudents();
-      const updatedList = list.map(s => s.id === id ? { ...s, ...data } : s);
-      this.set('sc_students', updatedList);
-  }
-
-  updateStudentStatus(id: string, status: 'Active' | 'Suspended') {
-      const list = this.getStudents().map(s => s.id === id ? { ...s, status } : s);
-      this.set('sc_students', list);
+  async updateStudentStatus(id: string, status: 'Active' | 'Suspended') {
+      await supabase.from('students').update({ status }).eq('id', id);
   }
 
   // --- Teacher Management ---
-  getTeachers() { return this.get<Teacher>('sc_teachers'); }
+  async getTeachers(): Promise<Teacher[]> { 
+      const { data } = await supabase.from('teachers').select('*');
+      return (data || []).map(mapTeacher);
+  }
 
-  addTeacher(data: { name: string, mobile: string, gradeId: string, subdivisionId: string, specialization: string }) {
-      const list = this.getTeachers();
-      const customId = generateCustomId(data.name, data.mobile);
-
-      const newTeacher: Teacher = {
-          id: `t${Date.now()}`,
-          teacherCustomId: customId,
+  async addTeacher(data: { name: string, mobile: string, gradeId: string, subdivisionId: string, specialization: string }) {
+      const customId = data.name.substring(0,3).toUpperCase() + data.mobile.substring(0,3);
+      await supabase.from('teachers').insert({
+          teacher_custom_id: customId,
           name: data.name,
           mobile: data.mobile,
-          gradeId: data.gradeId,
-          subdivisionId: data.subdivisionId,
-          joiningDate: new Date().toISOString().split('T')[0],
-          status: 'Active',
-          password: data.mobile, 
-          specialization: data.specialization
-      };
-
-      this.set('sc_teachers', [newTeacher, ...list]);
+          grade_id: data.gradeId,
+          subdivision_id: data.subdivisionId,
+          specialization: data.specialization,
+          password: data.mobile
+      });
   }
 
-  updateTeacher(id: string, data: Partial<Teacher>) {
-      const list = this.getTeachers();
-      const updatedList = list.map(t => t.id === id ? { ...t, ...data } : t);
-      this.set('sc_teachers', updatedList);
+  async updateTeacher(id: string, data: Partial<Teacher>) {
+      const payload: any = {};
+      if(data.name) payload.name = data.name;
+      if(data.mobile) payload.mobile = data.mobile;
+      if(data.gradeId) payload.grade_id = data.gradeId;
+      if(data.subdivisionId) payload.subdivision_id = data.subdivisionId;
+      if(data.specialization) payload.specialization = data.specialization;
+
+      await supabase.from('teachers').update(payload).eq('id', id);
   }
 
-  updateTeacherStatus(id: string, status: 'Active' | 'Suspended') {
-      const list = this.getTeachers().map(t => t.id === id ? { ...t, status } : t);
-      this.set('sc_teachers', list);
+  async updateTeacherStatus(id: string, status: 'Active' | 'Suspended') {
+      await supabase.from('teachers').update({ status }).eq('id', id);
   }
 
-  resetUserPassword(type: 'student' | 'teacher', id: string, newPassword?: string) {
-      if (type === 'student') {
-          const list = this.getStudents().map(s => s.id === id ? { ...s, password: newPassword || s.mobile } : s);
-          this.set('sc_students', list);
-      } else {
-          const list = this.getTeachers().map(t => t.id === id ? { ...t, password: newPassword || t.mobile } : t);
-          this.set('sc_teachers', list);
+  async resetUserPassword(type: 'student' | 'teacher', id: string, newPassword?: string) {
+      const table = type === 'student' ? 'students' : 'teachers';
+      // In a real app we would fetch the mobile first if newPassword is null, but for now assuming mobile is known or set explicitly
+      // Just setting to "123456" if reset for simplicity in this async wrapper unless we fetch
+      if (!newPassword) {
+         // fetch user to get mobile
+         const { data } = await supabase.from(table).select('mobile').eq('id', id).single();
+         if(data) newPassword = data.mobile;
       }
+      await supabase.from(table).update({ password: newPassword }).eq('id', id);
   }
 
   // --- General Getters/Setters ---
-  getNotices() { return this.get<Notice>('sc_notices'); }
-  getTimetable(divisionId?: string) { return this.get<TimetableEntry>('sc_timetable'); }
-  addTimetableEntry(entry: any) {
-       const list = this.getTimetable();
-       this.set('sc_timetable', [...list, { ...entry, id: Math.random().toString(36).substr(2, 9) }]);
+  async getNotices(): Promise<Notice[]> { 
+      const { data } = await supabase.from('notices').select('*');
+      return data || [];
   }
   
-  getFeeSubmissions() { return this.get<FeeSubmission>('sc_fee_submissions'); }
-  addFeeSubmission(submission: any) {
-       const list = this.getFeeSubmissions();
-       this.set('sc_fee_submissions', [...list, { ...submission, id: Math.random().toString(), status: 'Pending', date: new Date().toISOString().split('T')[0] }]);
-       const students = this.getStudents();
-       const updatedStudents = students.map(s => s.id === submission.studentId ? { ...s, feesStatus: 'Pending' } : s);
-       this.set('sc_students', updatedStudents);
-  }
-  updateFeeStatus(id: string, status: any) {
-       const list = this.getFeeSubmissions().map(s => s.id === id ? { ...s, status } : s);
-       this.set('sc_fee_submissions', list);
-       if (status === 'Approved') {
-           const sub = list.find(s => s.id === id);
-           if (sub) {
-               const students = this.getStudents().map(s => s.id === sub.studentId ? { ...s, feesStatus: 'Paid', totalFees: (parseInt(s.totalFees || '0') + parseInt(sub.amount)).toString() } : s);
-               this.set('sc_students', students);
-           }
-       }
-  }
-
-  getAttendance(studentId?: string, date?: string) { 
-      let all = this.get<AttendanceRecord>('sc_attendance'); 
-      if (studentId) all = all.filter(a => a.studentId === studentId);
-      if (date) all = all.filter(a => a.date === date);
-      return all;
-  }
-  markAttendance(records: any[]) { 
-      const newKeys = new Set(records.map(r => `${r.studentId}_${r.date}`));
-      const current = this.getAttendance().filter(r => !newKeys.has(`${r.studentId}_${r.date}`));
-      this.set('sc_attendance', [...current, ...records.map(r => ({...r, id: Math.random().toString()}))]);
-  }
-  getLiveClasses(divId: string) { return this.get<LiveClass>('sc_live_classes'); }
-
-  getSettings(): SystemSettings { 
-      return JSON.parse(localStorage.getItem('sc_settings') || JSON.stringify(INITIAL_SETTINGS)); 
-  }
-  updateSettings(s: SystemSettings) { localStorage.setItem('sc_settings', JSON.stringify(s)); }
-
-  // --- HOMEWORK ---
-  getHomework(teacherId?: string) {
-      let hw = this.get<Homework>('sc_homework');
-      if (teacherId) hw = hw.filter(h => h.assignedBy === teacherId);
-      return hw;
-  }
-  
-  // Student Portal Logic: Get Homework by Grade/Div
-  getHomeworkForStudent(gradeId: string, subdivisionId: string) {
-      const hw = this.get<Homework>('sc_homework');
-      return hw.filter(h => h.gradeId === gradeId && h.subdivisionId === subdivisionId);
-  }
-
-  addHomework(data: Omit<Homework, 'id'>) {
-      const list = this.getHomework();
-      this.set('sc_homework', [{ ...data, id: `hw${Date.now()}` }, ...list]);
-  }
-
-  // Student Homework Submission
-  getHomeworkSubmission(homeworkId: string, studentId: string) {
-      return this.get<HomeworkSubmission>('sc_homework_submissions').find(s => s.homeworkId === homeworkId && s.studentId === studentId);
-  }
-
-  submitHomework(homeworkId: string, studentId: string, text: string) {
-      const list = this.get<HomeworkSubmission>('sc_homework_submissions').filter(s => !(s.homeworkId === homeworkId && s.studentId === studentId));
-      this.set('sc_homework_submissions', [...list, {
-          id: `hsub${Date.now()}`,
-          homeworkId,
-          studentId,
-          submissionText: text,
-          submittedAt: new Date().toISOString().split('T')[0],
-          status: 'Submitted'
-      }]);
-  }
-
-  getHomeworkStatus(homeworkId: string) {
-     // Legacy method support if needed, or use submissions table now
-      return this.get<HomeworkSubmission>('sc_homework_submissions').filter(s => s.homeworkId === homeworkId).map(s => ({
-          id: s.id, homeworkId: s.homeworkId, studentId: s.studentId, status: s.status === 'Submitted' ? 'Pending' : 'Completed' // Map for old types if necessary
+  async getTimetable(divisionId?: string): Promise<TimetableEntry[]> { 
+      let query = supabase.from('timetable').select('*');
+      if(divisionId) query = query.eq('division_id', divisionId);
+      const { data } = await query;
+      return (data || []).map(t => ({
+          id: t.id,
+          divisionId: t.division_id,
+          day: t.day,
+          startTime: t.start_time,
+          endTime: t.end_time,
+          subject: t.subject,
+          teacherName: t.teacher_name
       }));
   }
-  updateHomeworkStatus(homeworkId: string, studentId: string, status: 'Pending' | 'Completed') {
-      // Mock logic: In real app, teacher would update the 'status' field in homework_submissions
+  
+  async getFeeSubmissions(): Promise<FeeSubmission[]> { 
+      const { data } = await supabase.from('fee_submissions').select('*');
+      return (data || []).map(f => ({
+          id: f.id,
+          studentId: f.student_id,
+          studentName: f.student_name,
+          amount: f.amount,
+          transactionRef: f.transaction_ref,
+          paymentMethod: f.payment_method as any,
+          status: f.status as any,
+          date: f.date
+      }));
+  }
+
+  async addFeeSubmission(submission: any) {
+      await supabase.from('fee_submissions').insert({
+          student_id: submission.studentId,
+          student_name: submission.studentName,
+          amount: submission.amount,
+          transaction_ref: submission.transactionRef,
+          payment_method: submission.paymentMethod,
+          status: 'Pending',
+          date: new Date().toISOString().split('T')[0]
+      });
+      // Update student status
+      await supabase.from('students').update({ fees_status: 'Pending' }).eq('id', submission.studentId);
+  }
+
+  async getAttendance(studentId?: string, date?: string): Promise<AttendanceRecord[]> { 
+      let query = supabase.from('attendance').select('*');
+      if (studentId) query = query.eq('student_id', studentId);
+      if (date) query = query.eq('date', date);
+      const { data } = await query;
+      return (data || []).map(a => ({
+          id: a.id,
+          studentId: a.student_id,
+          divisionId: a.division_id,
+          date: a.date,
+          status: a.status as any
+      }));
+  }
+
+  async markAttendance(records: any[]) { 
+      const payload = records.map(r => ({
+          student_id: r.studentId,
+          division_id: r.divisionId,
+          date: r.date,
+          status: r.status
+      }));
+      await supabase.from('attendance').upsert(payload, { onConflict: 'student_id, date' as any }); // requires unique constraint in DB or just insert
+  }
+
+  async getLiveClasses(divId: string): Promise<LiveClass[]> { return []; } // Placeholder
+
+  async getSettings(): Promise<SystemSettings> { 
+      const { data } = await supabase.from('system_settings').select('*').single();
+      if (!data) return { paymentMode: 'manual', adminUpiId: '', googleSiteKey: '', phonePeSaltKey: '', phonePeMerchantId: '' };
+      return {
+          paymentMode: data.payment_mode,
+          adminUpiId: data.admin_upi_id,
+          googleSiteKey: data.google_site_key,
+          phonePeSaltKey: data.phone_pe_salt_key,
+          phonePeMerchantId: data.phone_pe_merchant_id
+      };
+  }
+
+  async updateSettings(s: SystemSettings) { 
+      await supabase.from('system_settings').update({
+          payment_mode: s.paymentMode,
+          admin_upi_id: s.adminUpiId,
+          google_site_key: s.googleSiteKey,
+          phone_pe_salt_key: s.phonePeSaltKey,
+          phone_pe_merchant_id: s.phonePeMerchantId
+      }).eq('id', 1);
+  }
+
+  // --- HOMEWORK ---
+  async getHomework(teacherId?: string): Promise<Homework[]> {
+      let query = supabase.from('homework').select('*');
+      if (teacherId) query = query.eq('assigned_by', teacherId);
+      const { data } = await query;
+      return (data || []).map(h => ({
+          id: h.id,
+          gradeId: h.grade_id,
+          subdivisionId: h.subdivision_id,
+          subject: h.subject,
+          task: h.task,
+          dueDate: h.due_date,
+          assignedBy: h.assigned_by
+      }));
+  }
+  
+  async getHomeworkForStudent(gradeId: string, subdivisionId: string): Promise<Homework[]> {
+      const { data } = await supabase.from('homework').select('*').eq('grade_id', gradeId).eq('subdivision_id', subdivisionId);
+       return (data || []).map(h => ({
+          id: h.id,
+          gradeId: h.grade_id,
+          subdivisionId: h.subdivision_id,
+          subject: h.subject,
+          task: h.task,
+          dueDate: h.due_date,
+          assignedBy: h.assigned_by
+      }));
+  }
+
+  async addHomework(data: Omit<Homework, 'id'>) {
+      await supabase.from('homework').insert({
+          grade_id: data.gradeId,
+          subdivision_id: data.subdivisionId,
+          subject: data.subject,
+          task: data.task,
+          due_date: data.dueDate,
+          assigned_by: data.assignedBy
+      });
+  }
+
+  async getHomeworkSubmission(homeworkId: string, studentId: string): Promise<HomeworkSubmission | undefined> {
+      const { data } = await supabase.from('homework_submissions').select('*').eq('homework_id', homeworkId).eq('student_id', studentId).single();
+      if (!data) return undefined;
+      return {
+          id: data.id,
+          homeworkId: data.homework_id,
+          studentId: data.student_id,
+          submissionText: data.submission_text,
+          submittedAt: data.submitted_at,
+          status: data.status as any
+      };
+  }
+
+  async submitHomework(homeworkId: string, studentId: string, text: string) {
+      await supabase.from('homework_submissions').insert({
+          homework_id: homeworkId,
+          student_id: studentId,
+          submission_text: text,
+          submitted_at: new Date().toISOString().split('T')[0],
+          status: 'Submitted'
+      });
+  }
+
+  async getHomeworkStatus(homeworkId: string): Promise<any[]> {
+      const { data } = await supabase.from('homework_submissions').select('*').eq('homework_id', homeworkId);
+      return data || [];
   }
 
   // --- EXAMS ---
-  getExams(createdBy?: string) {
-      let exams = this.get<Exam>('sc_exams');
-      if (createdBy) exams = exams.filter(e => e.createdBy === createdBy);
-      return exams;
+  async getExams(createdBy?: string): Promise<Exam[]> {
+      let query = supabase.from('exams').select('*');
+      if (createdBy) query = query.eq('created_by', createdBy);
+      const { data } = await query;
+      return (data || []).map(e => ({
+          id: e.id,
+          gradeId: e.grade_id,
+          subdivisionId: e.subdivision_id,
+          subject: e.subject,
+          examDate: e.exam_date,
+          totalMarks: e.total_marks,
+          questions: e.questions,
+          createdBy: e.created_by
+      }));
   }
   
-  // Student Portal Logic: Get Exams by Grade/Div
-  getExamsForStudent(gradeId: string, subdivisionId: string) {
-      const exams = this.get<Exam>('sc_exams');
-      return exams.filter(e => e.gradeId === gradeId && e.subdivisionId === subdivisionId);
+  async getExamsForStudent(gradeId: string, subdivisionId: string): Promise<Exam[]> {
+      const { data } = await supabase.from('exams').select('*').eq('grade_id', gradeId).eq('subdivision_id', subdivisionId);
+      return (data || []).map(e => ({
+          id: e.id,
+          gradeId: e.grade_id,
+          subdivisionId: e.subdivision_id,
+          subject: e.subject,
+          examDate: e.exam_date,
+          totalMarks: e.total_marks,
+          questions: e.questions,
+          createdBy: e.created_by
+      }));
   }
 
-  addExam(data: Omit<Exam, 'id'>) {
-      const list = this.getExams();
-      this.set('sc_exams', [{ ...data, id: `ex${Date.now()}` }, ...list]);
+  async addExam(data: Omit<Exam, 'id'>) {
+      await supabase.from('exams').insert({
+          grade_id: data.gradeId,
+          subdivision_id: data.subdivisionId,
+          subject: data.subject,
+          exam_date: data.examDate,
+          total_marks: data.totalMarks,
+          questions: data.questions,
+          created_by: data.createdBy
+      });
   }
 
-  // Exam Submission
-  isExamSubmitted(examId: string, studentId: string) {
-      return this.get<ExamSubmission>('sc_exam_submissions').some(s => s.examId === examId && s.studentId === studentId);
+  async isExamSubmitted(examId: string, studentId: string): Promise<boolean> {
+      const { data } = await supabase.from('exam_submissions').select('id').eq('exam_id', examId).eq('student_id', studentId);
+      return (data && data.length > 0) || false;
   }
 
-  submitExamAnswers(examId: string, studentId: string, answers: Record<string, string>) {
-      const list = this.get<ExamSubmission>('sc_exam_submissions');
-      if(list.find(s => s.examId === examId && s.studentId === studentId)) throw new Error("Exam already submitted");
-
-      this.set('sc_exam_submissions', [...list, {
-          id: `esub${Date.now()}`,
-          examId, studentId, answers, submittedAt: new Date().toISOString()
-      }]);
+  async submitExamAnswers(examId: string, studentId: string, answers: Record<string, string>) {
+      await supabase.from('exam_submissions').insert({
+          exam_id: examId,
+          student_id: studentId,
+          answers: answers
+      });
   }
   
-  getExamResults(examId: string) {
-      return this.get<ExamResult>('sc_exam_results').filter(r => r.examId === examId);
+  async getExamResults(examId: string): Promise<ExamResult[]> {
+      const { data } = await supabase.from('exam_results').select('*').eq('exam_id', examId);
+      return (data || []).map(r => ({
+          id: r.id,
+          examId: r.exam_id,
+          studentId: r.student_id,
+          marksObtained: r.marks_obtained,
+          percentage: r.percentage,
+          status: r.status as any
+      }));
   }
-  addExamResult(data: Omit<ExamResult, 'id'>) {
-      let all = this.get<ExamResult>('sc_exam_results');
-      all = all.filter(r => !(r.examId === data.examId && r.studentId === data.studentId)); 
-      this.set('sc_exam_results', [...all, { ...data, id: `er${Date.now()}` }]);
+
+  async addExamResult(data: Omit<ExamResult, 'id'>) {
+      await supabase.from('exam_results').insert({
+          exam_id: data.examId,
+          student_id: data.studentId,
+          marks_obtained: data.marksObtained,
+          percentage: data.percentage,
+          status: data.status
+      });
   }
 
   // --- QUERY SYSTEM ---
-  addQuery(data: {studentId: string, studentName: string, subject: string, queryText: string}) {
-      const list = this.get<StudentQuery>('sc_queries');
-      this.set('sc_queries', [{
-          id: `q${Date.now()}`,
-          ...data,
-          status: 'Unanswered',
-          createdAt: new Date().toISOString().split('T')[0]
-      }, ...list]);
+  async addQuery(data: {studentId: string, studentName: string, subject: string, queryText: string}) {
+      await supabase.from('queries').insert({
+          student_id: data.studentId,
+          student_name: data.studentName,
+          subject: data.subject,
+          query_text: data.queryText,
+          status: 'Unanswered'
+      });
   }
 
-  getQueries(studentId?: string) {
-      const all = this.get<StudentQuery>('sc_queries');
-      if (studentId) return all.filter(q => q.studentId === studentId);
-      return all;
+  async getQueries(studentId?: string): Promise<StudentQuery[]> {
+      let query = supabase.from('queries').select('*');
+      if (studentId) query = query.eq('student_id', studentId);
+      const { data } = await query;
+      return (data || []).map(q => ({
+          id: q.id,
+          studentId: q.student_id,
+          studentName: q.student_name,
+          subject: q.subject,
+          queryText: q.query_text,
+          status: q.status as any,
+          replyText: q.reply_text,
+          createdAt: q.created_at
+      }));
   }
 
-  answerQuery(queryId: string, replyText: string) {
-      const list = this.getQueries().map(q => q.id === queryId ? { ...q, status: 'Answered' as const, replyText } : q);
-      this.set('sc_queries', list);
+  async answerQuery(queryId: string, replyText: string) {
+      await supabase.from('queries').update({ status: 'Answered', reply_text: replyText }).eq('id', queryId);
   }
 }
 

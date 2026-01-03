@@ -11,8 +11,7 @@ export default function PayFees() {
     // State
     const [user, setUser] = useState<User | null>(null);
     const [identifiedStudent, setIdentifiedStudent] = useState<Student | null>(null);
-    // Initialize settings directly to prevent layout shift/loading state
-    const [settings, setSettings] = useState<SystemSettings>(db.getSettings());
+    const [settings, setSettings] = useState<SystemSettings | null>(null);
     
     // Payment State
     const [amount, setAmount] = useState('5000'); // Default mock amount
@@ -33,18 +32,22 @@ export default function PayFees() {
                 setUser(parsed);
             }
         }
-        // Refresh settings in case they changed
-        setSettings(db.getSettings());
+        
+        const load = async () => {
+             const s = await db.getSettings();
+             setSettings(s);
+        }
+        load();
     }, []);
 
     // Determine who is paying
     const activeStudentId = user?.id || identifiedStudent?.id;
     const activeStudentName = user?.username || identifiedStudent?.name;
 
-    const handleLookup = (e: React.FormEvent) => {
+    const handleLookup = async (e: React.FormEvent) => {
         e.preventDefault();
-        const students = db.getStudents();
-        const found = students.find(s => s.email.toLowerCase() === lookupEmail.toLowerCase().trim());
+        const students = await db.getStudents();
+        const found = students.find(s => s.email && s.email.toLowerCase() === lookupEmail.toLowerCase().trim());
         
         if (found) {
             setIdentifiedStudent(found);
@@ -62,11 +65,11 @@ export default function PayFees() {
         }
     };
 
-    const handleManualSubmit = (e: React.FormEvent) => {
+    const handleManualSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!activeStudentId || !activeStudentName || !transactionRef) return;
 
-        db.addFeeSubmission({
+        await db.addFeeSubmission({
             studentId: activeStudentId,
             studentName: activeStudentName,
             amount: amount,

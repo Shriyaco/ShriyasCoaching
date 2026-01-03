@@ -18,9 +18,14 @@ const StudentDashboard: React.FC = () => {
     if(parsedUser.role !== 'student') { navigate('/'); return; }
     
     setUser(parsedUser);
-    const students = db.getStudents();
-    const me = students.find(s => s.id === parsedUser.id);
-    if (me) setStudentDetails(me);
+    
+    // Fetch details
+    const init = async () => {
+        const students = await db.getStudents();
+        const me = students.find(s => s.id === parsedUser.id);
+        if (me) setStudentDetails(me);
+    };
+    init();
   }, [navigate]);
 
   const handleLogout = () => { sessionStorage.removeItem('sc_user'); navigate('/'); };
@@ -90,10 +95,13 @@ const DashboardOverview = ({ student }: { student: Student }) => {
     const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
 
     useEffect(() => {
-        setTimetable(db.getTimetable(student.subdivisionId));
-        const live = db.getLiveClasses(student.subdivisionId);
-        if(live.length > 0) setLiveClass(live[0]);
-        setAttendance(db.getAttendance(student.id));
+        const load = async () => {
+            setTimetable(await db.getTimetable(student.subdivisionId));
+            const live = await db.getLiveClasses(student.subdivisionId);
+            if(live.length > 0) setLiveClass(live[0]);
+            setAttendance(await db.getAttendance(student.id));
+        }
+        load();
     }, [student]);
 
     const presentCount = attendance.filter(a => a.status === 'Present').length;
@@ -192,21 +200,34 @@ const HomeworkSection = ({ student }: { student: Student }) => {
     const [homework, setHomework] = useState<Homework[]>([]);
     const [selectedHw, setSelectedHw] = useState<Homework | null>(null);
     const [submissionText, setSubmissionText] = useState('');
+    const [submissionStatus, setSubmissionStatus] = useState<Record<string, boolean>>({});
 
     useEffect(() => {
-        setHomework(db.getHomeworkForStudent(student.gradeId, student.subdivisionId));
+        const load = async () => {
+             const hw = await db.getHomeworkForStudent(student.gradeId, student.subdivisionId);
+             setHomework(hw);
+             
+             const statusMap: Record<string, boolean> = {};
+             for(const h of hw) {
+                 const sub = await db.getHomeworkSubmission(h.id, student.id);
+                 statusMap[h.id] = !!sub;
+             }
+             setSubmissionStatus(statusMap);
+        }
+        load();
     }, [student]);
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if(!selectedHw) return;
-        db.submitHomework(selectedHw.id, student.id, submissionText);
+        await db.submitHomework(selectedHw.id, student.id, submissionText);
         alert("Homework Submitted Successfully!");
+        
+        // Refresh status
+        setSubmissionStatus(prev => ({...prev, [selectedHw.id]: true}));
         setSelectedHw(null);
         setSubmissionText('');
     };
-
-    const isSubmitted = (hwId: string) => !!db.getHomeworkSubmission(hwId, student.id);
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -219,7 +240,7 @@ const HomeworkSection = ({ student }: { student: Student }) => {
                             <span className="text-xs bg-gray-100 px-2 py-1 rounded text-gray-500">Due: {hw.dueDate}</span>
                         </div>
                         <p className="text-sm text-gray-600 mb-4">{hw.task}</p>
-                        {isSubmitted(hw.id) ? (
+                        {submissionStatus[hw.id] ? (
                             <button disabled className="w-full py-2 bg-green-100 text-green-700 font-bold rounded-lg flex items-center justify-center gap-2"><CheckCircle size={16}/> Submitted</button>
                         ) : (
                             <button onClick={() => setSelectedHw(hw)} className="w-full py-2 bg-purple-600 text-white font-bold rounded-lg hover:bg-purple-700">Submit Homework</button>
@@ -258,9 +279,20 @@ const ExamSection = ({ student }: { student: Student }) => {
     const [exams, setExams] = useState<Exam[]>([]);
     const [activeExam, setActiveExam] = useState<Exam | null>(null);
     const [answers, setAnswers] = useState<Record<string, string>>({});
+    const [takenStatus, setTakenStatus] = useState<Record<string, boolean>>({});
 
     useEffect(() => {
-        setExams(db.getExamsForStudent(student.gradeId, student.subdivisionId));
+        const load = async () => {
+            const ex = await db.getExamsForStudent(student.gradeId, student.subdivisionId);
+            setExams(ex);
+            
+            const statusMap: Record<string, boolean> = {};
+            for(const e of ex) {
+                statusMap[e.id] = await db.isExamSubmitted(e.id, student.id);
+            }
+            setTakenStatus(statusMap);
+        };
+        load();
     }, [student]);
 
     const startExam = (exam: Exam) => {
@@ -268,17 +300,16 @@ const ExamSection = ({ student }: { student: Student }) => {
         setAnswers({});
     };
 
-    const submitExam = () => {
+    const submitExam = async () => {
         if(!activeExam) return;
         if(Object.keys(answers).length < activeExam.questions.length) {
             if(!window.confirm("You haven't answered all questions. Submit anyway?")) return;
         }
-        db.submitExamAnswers(activeExam.id, student.id, answers);
+        await db.submitExamAnswers(activeExam.id, student.id, answers);
         alert("Exam Submitted!");
+        setTakenStatus(prev => ({...prev, [activeExam.id]: true}));
         setActiveExam(null);
     };
-
-    const isTaken = (examId: string) => db.isExamSubmitted(examId, student.id);
 
     if (activeExam) {
         return (
@@ -328,7 +359,7 @@ const ExamSection = ({ student }: { student: Student }) => {
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {exams.map(ex => {
-                const taken = isTaken(ex.id);
+                const taken = takenStatus[ex.id];
                 return (
                     <div key={ex.id} className={`p-6 rounded-xl border transition-all ${taken ? 'bg-gray-50 border-gray-200 opacity-75' : 'bg-white border-purple-100 shadow-sm hover:shadow-md'}`}>
                         <div className="flex justify-between mb-4">
@@ -356,13 +387,14 @@ const QuerySection = ({ student }: { student: Student }) => {
     const [queryText, setQueryText] = useState('');
 
     useEffect(() => {
-        setQueries(db.getQueries(student.id));
+        const load = async () => setQueries(await db.getQueries(student.id));
+        load();
     }, [student]);
 
-    const handleRaiseQuery = (e: React.FormEvent) => {
+    const handleRaiseQuery = async (e: React.FormEvent) => {
         e.preventDefault();
-        db.addQuery({ studentId: student.id, studentName: student.name, subject, queryText });
-        setQueries(db.getQueries(student.id));
+        await db.addQuery({ studentId: student.id, studentName: student.name, subject, queryText });
+        setQueries(await db.getQueries(student.id));
         setQueryText('');
         alert("Query Sent to Teachers");
     };
