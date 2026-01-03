@@ -10,6 +10,7 @@ const Navbar: React.FC = () => {
   
   const location = useLocation();
   const isDashboard = location.pathname.startsWith('/admin') || location.pathname.startsWith('/student') || location.pathname.startsWith('/teacher');
+  const isLoginPage = location.pathname === '/login';
 
   useEffect(() => {
     const handleScroll = () => {
@@ -41,7 +42,7 @@ const Navbar: React.FC = () => {
         scrolled || isOpen
           ? 'bg-[#020617]/80 backdrop-blur-xl border-b border-[#00E5FF]/10 shadow-[0_4px_30px_rgba(0,0,0,0.1)] py-3'
           : 'bg-transparent py-6'
-      }`}
+      } ${isLoginPage ? 'lg:hidden' : ''}`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between">
