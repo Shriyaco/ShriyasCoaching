@@ -1,79 +1,129 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../services/db';
-import { Lock, User as UserIcon, ArrowRight, ShieldCheck, Hexagon, Fingerprint, ScanEye } from 'lucide-react';
+import { ArrowRight, User as UserIcon, Lock, BookOpen, GraduationCap, Sparkles, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { Float, MeshDistortMaterial, Icosahedron, Torus, Html } from '@react-three/drei';
+import { Float, Environment, ContactShadows, Sphere, Box, Cylinder, Torus, Cone, Icosahedron } from '@react-three/drei';
 import * as THREE from 'three';
 
-// --- 3D Security Scene Component ---
-const LoginSecurityScene = () => {
-  const outerRef = useRef<THREE.Mesh>(null!);
-  const innerRef = useRef<THREE.Mesh>(null!);
-  const ringRef = useRef<THREE.Mesh>(null!);
+// --- 3D Educational Asset Components ---
 
-  useFrame((state) => {
-    const t = state.clock.getElapsedTime();
-    
-    if (outerRef.current) {
-        outerRef.current.rotation.x = t * 0.2;
-        outerRef.current.rotation.y = t * 0.3;
-    }
-    if (innerRef.current) {
-        innerRef.current.rotation.x = -t * 0.5;
-        innerRef.current.rotation.z = Math.sin(t) * 0.5;
-    }
-    if (ringRef.current) {
-        ringRef.current.rotation.x = Math.PI / 2 + Math.sin(t * 0.5) * 0.2;
-        ringRef.current.rotation.y = t * 0.1;
-    }
-  });
-
+const StylizedBook = ({ position, color, rotation }: { position: [number, number, number], color: string, rotation: [number, number, number] }) => {
   return (
-    <Float speed={2} rotationIntensity={0.5} floatIntensity={0.5}>
-        {/* Outer Tech Shell */}
-        <Icosahedron ref={outerRef} args={[2.2, 0]}>
-            <meshStandardMaterial 
-                color="#00E5FF" 
-                wireframe 
-                transparent 
-                opacity={0.15} 
-                roughness={0} 
-                metalness={1} 
-            />
-        </Icosahedron>
-
-        {/* Orbiting Security Ring */}
-        <Torus ref={ringRef} args={[3, 0.02, 16, 100]}>
-             <meshStandardMaterial color="#6366f1" emissive="#6366f1" emissiveIntensity={2} toneMapped={false} />
-        </Torus>
-
-        {/* Inner Security Core */}
-        <Icosahedron ref={innerRef} args={[1, 0]}>
-             <MeshDistortMaterial
-                color="#0f172a"
-                emissive="#00E5FF"
-                emissiveIntensity={0.8}
-                distort={0.4}
-                speed={2}
-                roughness={0.2}
-                metalness={1}
-                wireframe={false}
-             />
-        </Icosahedron>
-        
-        {/* Holographic Label */}
-        <Html position={[0, -2.5, 0]} center transform sprite>
-            <div className="bg-black/50 backdrop-blur-md border border-cyan-500/30 px-3 py-1 rounded-full">
-                <p className="text-[10px] font-mono text-cyan-400 tracking-widest uppercase flex items-center gap-2">
-                    <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"/> System Secure
-                </p>
-            </div>
-        </Html>
-    </Float>
+    <group position={position} rotation={rotation}>
+      {/* Cover */}
+      <Box args={[1.5, 2, 0.3]} position={[0, 0, 0]}>
+        <meshStandardMaterial color={color} roughness={0.4} />
+      </Box>
+      {/* Pages */}
+      <Box args={[1.4, 1.9, 0.25]} position={[0.05, 0, 0]}>
+        <meshStandardMaterial color="#f8fafc" roughness={0.8} />
+      </Box>
+      {/* Spine Detail */}
+      <Box args={[0.2, 1.9, 0.32]} position={[-0.7, 0, 0]}>
+        <meshStandardMaterial color={new THREE.Color(color).multiplyScalar(0.8)} roughness={0.4} />
+      </Box>
+    </group>
   );
 };
+
+const StylizedPencil = ({ position, rotation }: { position: [number, number, number], rotation: [number, number, number] }) => {
+  return (
+    <group position={position} rotation={rotation}>
+      {/* Body */}
+      <Cylinder args={[0.15, 0.15, 2.5, 6]} position={[0, 0, 0]}>
+        <meshStandardMaterial color="#fbbf24" />
+      </Cylinder>
+      {/* Tip Wood */}
+      <Cone args={[0.15, 0.4, 32]} position={[0, 1.45, 0]}>
+        <meshStandardMaterial color="#fde68a" />
+      </Cone>
+      {/* Lead */}
+      <Cone args={[0.05, 0.1, 32]} position={[0, 1.6, 0]}>
+        <meshStandardMaterial color="#1e293b" />
+      </Cone>
+      {/* Eraser Metal */}
+      <Cylinder args={[0.16, 0.16, 0.3, 32]} position={[0, -1.3, 0]}>
+        <meshStandardMaterial color="#94a3b8" metalness={0.8} roughness={0.2} />
+      </Cylinder>
+      {/* Eraser */}
+      <Cylinder args={[0.15, 0.15, 0.3, 32]} position={[0, -1.55, 0]}>
+        <meshStandardMaterial color="#f472b6" />
+      </Cylinder>
+    </group>
+  );
+};
+
+const Atom = ({ position }: { position: [number, number, number] }) => {
+    const ref = useRef<THREE.Group>(null!);
+    useFrame((state) => {
+        const t = state.clock.getElapsedTime();
+        if(ref.current) {
+            ref.current.rotation.y = t * 0.2;
+            ref.current.rotation.z = t * 0.1;
+        }
+    });
+
+    return (
+        <group position={position} ref={ref}>
+            <Sphere args={[0.3, 32, 32]}>
+                <meshStandardMaterial color="#6366f1" emissive="#4f46e5" emissiveIntensity={0.5} />
+            </Sphere>
+            <group rotation={[Math.PI / 3, 0, 0]}>
+                <Torus args={[1.2, 0.04, 16, 100]}>
+                    <meshStandardMaterial color="#a5b4fc" />
+                </Torus>
+            </group>
+             <group rotation={[-Math.PI / 3, 0, 0]}>
+                <Torus args={[1.2, 0.04, 16, 100]}>
+                    <meshStandardMaterial color="#a5b4fc" />
+                </Torus>
+            </group>
+            <group rotation={[0, 0, Math.PI / 2]}>
+                <Torus args={[1.2, 0.04, 16, 100]}>
+                    <meshStandardMaterial color="#a5b4fc" />
+                </Torus>
+            </group>
+        </group>
+    )
+}
+
+const EducationScene = () => {
+  return (
+    <>
+      <Environment preset="city" />
+      {/* Soft warm lights */}
+      <ambientLight intensity={0.7} />
+      <pointLight position={[10, 10, 10]} intensity={1.5} color="#fff" />
+      <pointLight position={[-10, -10, -5]} intensity={0.5} color="#6366f1" />
+
+      {/* Floating Objects */}
+      <Float speed={2} rotationIntensity={0.5} floatIntensity={0.5}>
+        <StylizedBook position={[-1.5, 0, 0]} color="#3b82f6" rotation={[0.2, 0.5, -0.1]} />
+        <StylizedBook position={[1.2, -0.5, -1]} color="#ec4899" rotation={[-0.1, -0.4, 0.2]} />
+        <StylizedBook position={[0, 1.5, -2]} color="#10b981" rotation={[0.5, 0, 0.2]} />
+        
+        <StylizedPencil position={[1.8, 1, 0]} rotation={[0, 0, -0.5]} />
+        
+        <Atom position={[-1.5, 1.8, -1]} />
+        
+        {/* Math Shapes */}
+        <Icosahedron args={[0.4]} position={[2, -1.5, 0]}>
+            <meshStandardMaterial color="#f59e0b" wireframe />
+        </Icosahedron>
+        
+        <Torus args={[0.3, 0.1, 16, 32]} position={[-0.5, -2, 0]} rotation={[1, 1, 0]}>
+            <meshStandardMaterial color="#8b5cf6" />
+        </Torus>
+      </Float>
+
+      <ContactShadows position={[0, -3.5, 0]} opacity={0.4} scale={20} blur={2} far={4.5} />
+    </>
+  );
+};
+
+// --- Main Login Component ---
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
@@ -81,7 +131,7 @@ const Login: React.FC = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [focusedField, setFocusedField] = useState<'user' | 'pass' | null>(null);
+  const [focused, setFocused] = useState<'user' | 'pass' | null>(null);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -97,10 +147,10 @@ const Login: React.FC = () => {
           else if (user.role === 'teacher') navigate('/teacher');
           else navigate('/');
         } else {
-          setError('Access Denied. Invalid Credentials.');
+          setError('Invalid ID or Password. Please try again.');
         }
     } catch (err) {
-        setError('Connection Failure. Please retry.');
+        setError('Network error. Check connection.');
         console.error(err);
     } finally {
         setLoading(false);
@@ -108,155 +158,122 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#020617] text-white font-sans overflow-hidden flex relative selection:bg-cyan-500 selection:text-black">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex overflow-hidden font-sans">
       
-      {/* --- LEFT SIDE: 3D Visualization (Hidden on Mobile) --- */}
-      <div className="hidden lg:block w-1/2 relative bg-gradient-to-br from-slate-900 to-[#0B1120] border-r border-white/5">
-         {/* Background Grid */}
-         <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20" />
-         <div className="absolute inset-0" style={{ backgroundImage: 'linear-gradient(rgba(0, 229, 255, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 229, 255, 0.03) 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
-         
-         <Canvas camera={{ position: [0, 0, 6] }} className="z-10 relative">
-             {/* @ts-ignore */}
-            <ambientLight intensity={0.5} />
-             {/* @ts-ignore */}
-            <pointLight position={[10, 10, 10]} intensity={1.5} color="#00E5FF" />
-             {/* @ts-ignore */}
-            <pointLight position={[-10, -5, -5]} intensity={1} color="#6366f1" />
-            <LoginSecurityScene />
-         </Canvas>
-         
-         {/* Industrial Overlay UI */}
-         <div className="absolute top-10 left-10 z-20">
-             <div className="flex items-center gap-3">
-                 <Hexagon className="text-cyan-500 animate-spin-slow" size={32} strokeWidth={1.5} />
-                 <div>
-                     <h2 className="text-xl font-bold font-[Poppins] tracking-tight">Shriya's Coaching</h2>
-                     <p className="text-xs text-gray-400 font-mono tracking-widest uppercase">Secure Portal v2.0</p>
-                 </div>
-             </div>
-         </div>
-         
-         <div className="absolute bottom-10 left-10 z-20 max-w-sm">
-             <h3 className="text-2xl font-bold mb-2 text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-500">Authorized Personnel Only</h3>
-             <p className="text-gray-500 text-sm leading-relaxed">
-                 Access to Student Management System, Learning Resources, and Administrative Controls is restricted and monitored.
-             </p>
-         </div>
+      {/* LEFT SIDE: 3D Animation */}
+      <div className="hidden lg:flex w-1/2 relative flex-col items-center justify-center bg-[#f0f9ff]/50">
+        <div className="absolute inset-0 z-0">
+             <Canvas camera={{ position: [0, 0, 6], fov: 45 }}>
+                <EducationScene />
+             </Canvas>
+        </div>
+        
+        {/* Overlay Text */}
+        <div className="absolute bottom-12 left-12 right-12 bg-white/80 backdrop-blur-md p-6 rounded-2xl border border-white/50 shadow-sm z-10">
+            <h2 className="text-2xl font-bold text-slate-800 mb-2 font-[Poppins]">Empowering Young Minds</h2>
+            <p className="text-slate-600 leading-relaxed">
+                "Education is not the learning of facts, but the training of the mind to think." 
+                <span className="block mt-2 text-sm font-bold text-indigo-600">- Albert Einstein</span>
+            </p>
+        </div>
       </div>
 
-      {/* --- RIGHT SIDE: Form --- */}
+      {/* RIGHT SIDE: Login Form */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-6 relative">
-          {/* Mobile Background Elements */}
-          <div className="lg:hidden absolute inset-0 bg-[#020617]">
-             <div className="absolute top-0 right-0 w-64 h-64 bg-cyan-500/10 rounded-full blur-[80px]" />
-             <div className="absolute bottom-0 left-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-[80px]" />
+          
+          {/* Mobile Background Blob */}
+          <div className="lg:hidden absolute inset-0 overflow-hidden z-0">
+              <div className="absolute -top-20 -right-20 w-80 h-80 bg-purple-200 rounded-full blur-[80px] opacity-60" />
+              <div className="absolute top-40 -left-20 w-60 h-60 bg-blue-200 rounded-full blur-[60px] opacity-60" />
           </div>
 
           <motion.div 
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6 }}
             className="w-full max-w-md relative z-10"
           >
-              <div className="mb-10 lg:hidden text-center">
-                   <div className="inline-block p-3 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-indigo-500/20 border border-white/10 mb-4 shadow-lg shadow-cyan-500/10">
-                       <Hexagon className="text-cyan-400" size={32} />
-                   </div>
-                   <h2 className="text-3xl font-bold font-[Poppins]">Welcome Back</h2>
-                   <p className="text-gray-400 text-sm mt-2">Enter your credentials to continue</p>
+              <div className="text-center mb-10">
+                  <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-tr from-indigo-500 to-purple-600 rounded-2xl shadow-lg shadow-indigo-200 mb-6 transform rotate-3">
+                      <GraduationCap size={32} className="text-white" />
+                  </div>
+                  <h1 className="text-3xl font-extrabold text-slate-900 font-[Poppins]">Student Portal</h1>
+                  <p className="text-slate-500 mt-2">Welcome back! Let's continue learning.</p>
               </div>
 
-              {/* Card Container */}
-              <div className="bg-[#0f172a]/60 backdrop-blur-xl border border-white/5 rounded-3xl p-8 shadow-2xl relative overflow-hidden group">
-                  {/* Neon Glow Line Top */}
-                  <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-cyan-500 to-transparent opacity-50" />
-                  
-                  {/* Corner Accent */}
-                  <div className="absolute top-0 right-0 w-20 h-20 border-t-2 border-r-2 border-cyan-500/10 rounded-tr-3xl pointer-events-none" />
-                  <div className="absolute bottom-0 left-0 w-20 h-20 border-b-2 border-l-2 border-indigo-500/10 rounded-bl-3xl pointer-events-none" />
-
-                  <form onSubmit={handleLogin} className="space-y-6 relative z-10">
+              <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.05)] border border-white p-8">
+                  <form onSubmit={handleLogin} className="space-y-6">
                       
-                      {/* Username Field */}
+                      {/* Username */}
                       <div className="space-y-2">
-                          <label className={`text-xs font-bold tracking-widest uppercase transition-colors ${focusedField === 'user' ? 'text-cyan-400' : 'text-gray-500'}`}>
-                              User Identification
-                          </label>
-                          <div className={`relative flex items-center bg-[#020617] border rounded-xl transition-all duration-300 ${focusedField === 'user' ? 'border-cyan-500 shadow-[0_0_15px_rgba(6,182,212,0.15)]' : 'border-white/10'}`}>
-                              <div className="pl-4 text-gray-400">
-                                  <ScanEye size={20} className={`${focusedField === 'user' ? 'text-cyan-400' : ''} transition-colors`} />
-                              </div>
+                          <label className="text-sm font-bold text-slate-600 ml-1">Student ID / Username</label>
+                          <div className={`flex items-center bg-white border-2 rounded-xl px-4 py-3 transition-all duration-300 ${focused === 'user' ? 'border-indigo-500 shadow-[0_0_0_4px_rgba(99,102,241,0.1)]' : 'border-slate-100 hover:border-slate-300'}`}>
+                              <UserIcon size={20} className={`mr-3 ${focused === 'user' ? 'text-indigo-500' : 'text-slate-400'}`} />
                               <input 
-                                  type="text"
-                                  value={username}
-                                  onChange={(e) => setUsername(e.target.value)}
-                                  onFocus={() => setFocusedField('user')}
-                                  onBlur={() => setFocusedField(null)}
-                                  className="w-full bg-transparent text-white p-4 outline-none placeholder-gray-600 font-mono text-sm"
-                                  placeholder="ENTER ID / USERNAME"
-                                  autoComplete="off"
-                              />
-                              {username && <div className="pr-4 text-emerald-500"><ShieldCheck size={16} /></div>}
-                          </div>
-                      </div>
-
-                      {/* Password Field */}
-                      <div className="space-y-2">
-                          <label className={`text-xs font-bold tracking-widest uppercase transition-colors ${focusedField === 'pass' ? 'text-indigo-400' : 'text-gray-500'}`}>
-                              Security Key
-                          </label>
-                          <div className={`relative flex items-center bg-[#020617] border rounded-xl transition-all duration-300 ${focusedField === 'pass' ? 'border-indigo-500 shadow-[0_0_15px_rgba(99,102,241,0.15)]' : 'border-white/10'}`}>
-                              <div className="pl-4 text-gray-400">
-                                  <Fingerprint size={20} className={`${focusedField === 'pass' ? 'text-indigo-400' : ''} transition-colors`} />
-                              </div>
-                              <input 
-                                  type="password"
-                                  value={password}
-                                  onChange={(e) => setPassword(e.target.value)}
-                                  onFocus={() => setFocusedField('pass')}
-                                  onBlur={() => setFocusedField(null)}
-                                  className="w-full bg-transparent text-white p-4 outline-none placeholder-gray-600 font-mono text-sm"
-                                  placeholder="••••••••••••"
+                                type="text" 
+                                placeholder="Enter your ID"
+                                className="w-full bg-transparent outline-none text-slate-800 font-medium placeholder-slate-400"
+                                value={username}
+                                onChange={(e) => setUsername(e.target.value)}
+                                onFocus={() => setFocused('user')}
+                                onBlur={() => setFocused(null)}
                               />
                           </div>
                       </div>
 
-                      {/* Error Message */}
+                      {/* Password */}
+                      <div className="space-y-2">
+                          <div className="flex justify-between ml-1">
+                             <label className="text-sm font-bold text-slate-600">Password</label>
+                          </div>
+                          <div className={`flex items-center bg-white border-2 rounded-xl px-4 py-3 transition-all duration-300 ${focused === 'pass' ? 'border-indigo-500 shadow-[0_0_0_4px_rgba(99,102,241,0.1)]' : 'border-slate-100 hover:border-slate-300'}`}>
+                              <Lock size={20} className={`mr-3 ${focused === 'pass' ? 'text-indigo-500' : 'text-slate-400'}`} />
+                              <input 
+                                type="password" 
+                                placeholder="••••••••"
+                                className="w-full bg-transparent outline-none text-slate-800 font-medium placeholder-slate-400"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                onFocus={() => setFocused('pass')}
+                                onBlur={() => setFocused(null)}
+                              />
+                          </div>
+                      </div>
+
                       <AnimatePresence>
                           {error && (
                               <motion.div 
-                                initial={{ opacity: 0, height: 0 }}
-                                animate={{ opacity: 1, height: 'auto' }}
-                                exit={{ opacity: 0, height: 0 }}
-                                className="bg-red-500/10 border border-red-500/20 text-red-400 p-3 rounded-lg text-xs font-mono flex items-center gap-2"
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: 'auto', opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                className="bg-red-50 text-red-600 text-sm p-3 rounded-lg flex items-center gap-2 border border-red-100"
                               >
-                                  <div className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" />
-                                  {error}
+                                  <AlertCircle size={16} /> {error}
                               </motion.div>
                           )}
                       </AnimatePresence>
 
-                      {/* Submit Button */}
                       <button 
-                          type="submit"
-                          disabled={loading}
-                          className="w-full relative group overflow-hidden bg-white text-black font-bold py-4 rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:shadow-[0_0_30px_rgba(0,229,255,0.4)]"
+                        type="submit" 
+                        disabled={loading}
+                        className="w-full bg-indigo-600 text-white font-bold py-4 rounded-xl shadow-lg shadow-indigo-200 hover:bg-indigo-700 hover:scale-[1.01] active:scale-[0.98] transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                       >
-                          <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 via-indigo-400 to-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                          <span className="relative z-10 flex items-center justify-center gap-2 uppercase tracking-wider text-sm">
-                              {loading ? 'Authenticating...' : <>Initialize Session <ArrowRight size={18} /></>}
-                          </span>
+                          {loading ? (
+                              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                          ) : (
+                              <>Unlock Knowledge <ArrowRight size={20} /></>
+                          )}
                       </button>
 
-                      <div className="text-center pt-2">
-                          <a href="#" className="text-xs text-gray-500 hover:text-cyan-400 transition-colors border-b border-transparent hover:border-cyan-400 pb-0.5">Forgot Credentials?</a>
+                      <div className="text-center">
+                          <a href="#" className="text-sm font-medium text-slate-400 hover:text-indigo-600 transition-colors">Forgot Password?</a>
                       </div>
                   </form>
               </div>
-
-              <div className="mt-8 text-center text-gray-600 text-[10px] font-mono uppercase tracking-wider">
-                  System Status: <span className="text-emerald-500">Operational</span> | Encrypted Connection
+              
+              <div className="mt-8 text-center flex items-center justify-center gap-2 text-slate-400 text-xs font-bold uppercase tracking-wider">
+                  <Sparkles size={14} className="text-yellow-400" /> 
+                  Shriya's Coaching System v2.0
               </div>
           </motion.div>
       </div>

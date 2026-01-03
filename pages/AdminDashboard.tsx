@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { db } from '../services/db';
 import { Student, TabView, Grade, Subdivision, Teacher, FeeSubmission, SystemSettings } from '../types';
-import { Users, Settings, LogOut, Plus, Edit2, Search, Briefcase, CreditCard, Save, Layers, UserPlus, Lock, ShieldAlert, Key, Power, X, Trash2, ChevronRight, GraduationCap, TrendingUp, DollarSign, RefreshCw } from 'lucide-react';
+import { Users, Settings, LogOut, Plus, Edit2, Search, Briefcase, CreditCard, Save, Layers, UserPlus, Lock, ShieldAlert, Key, Power, X, Trash2, GraduationCap, TrendingUp, DollarSign, RefreshCw, Menu } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -22,6 +22,7 @@ export default function AdminDashboard() {
   const [isStudentModalOpen, setIsStudentModalOpen] = useState(false);
   const [isTeacherModalOpen, setIsTeacherModalOpen] = useState(false);
   const [isGradeModalOpen, setIsGradeModalOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Mobile Sidebar State
   
   // Editing State
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -36,7 +37,6 @@ export default function AdminDashboard() {
   const [availableSubdivisions, setAvailableSubdivisions] = useState<Subdivision[]>([]);
 
   const refreshData = useCallback(async () => {
-    // Note: Intentionally not setting loading to true here to avoid flickering on realtime updates
     try {
         const [s, g, sd, t, f, set] = await Promise.all([
             db.getStudents(),
@@ -61,11 +61,9 @@ export default function AdminDashboard() {
     const user = sessionStorage.getItem('sc_user');
     if (!user) { navigate('/login'); return; }
     
-    // Initial Load
     setLoading(true);
     refreshData().then(() => setLoading(false));
 
-    // Realtime Subscriptions
     const channels = [
         db.subscribe('students', refreshData),
         db.subscribe('teachers', refreshData),
@@ -101,8 +99,7 @@ export default function AdminDashboard() {
       setTimeout(() => setNotification(''), 3000);
   };
 
-  // --- Handlers ---
-
+  // --- Handlers (Keep existing handlers same) ---
   const openStudentModal = (student?: Student) => {
       if (student) {
           setEditingId(student.id);
@@ -160,7 +157,6 @@ export default function AdminDashboard() {
   const handleGradeSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
       const subNames = formData.hasSubdivision ? subdivisionInput.split(',').map(s => s.trim()).filter(s => s) : [];
-      
       try {
           if (editingId) {
               await db.updateGrade(editingId, formData.gradeName, subNames);
@@ -172,7 +168,6 @@ export default function AdminDashboard() {
           setIsGradeModalOpen(false);
           setFormData({});
           setSubdivisionInput('');
-          // Refresh handled by subscription
       } catch (err) {
           console.error(err);
           showNotification("Error saving grade.");
@@ -180,7 +175,7 @@ export default function AdminDashboard() {
   };
 
   const deleteGrade = async (id: string) => {
-      if (!window.confirm("Are you sure? This will delete the grade and all its subdivisions! Students in this grade will lose their class link.")) return;
+      if (!window.confirm("Are you sure? This will delete the grade and all its subdivisions!")) return;
       await db.deleteGrade(id);
       showNotification("Grade deleted.");
   };
@@ -189,7 +184,6 @@ export default function AdminDashboard() {
       e.preventDefault();
       try {
           if (editingId) {
-              // Update Existing
               await db.updateStudent(editingId, {
                   name: formData.name,
                   mobile: formData.mobile,
@@ -199,7 +193,6 @@ export default function AdminDashboard() {
               });
               showNotification('Student record updated.');
           } else {
-              // Create New
               await db.addStudent({
                   name: formData.name,
                   mobile: formData.mobile,
@@ -267,10 +260,9 @@ export default function AdminDashboard() {
       }
   };
 
-  // ... Components (SidebarItem, StatCard, LoadingOverlay) remain same ...
   const SidebarItem = ({ tab, icon: Icon, label }: { tab: TabView; icon: any; label: string }) => (
     <button
-      onClick={() => setActiveTab(tab)}
+      onClick={() => { setActiveTab(tab); setIsSidebarOpen(false); }}
       className={`w-full flex items-center space-x-3 px-6 py-4 transition-all duration-200 group relative overflow-hidden ${
         activeTab === tab
           ? 'text-white bg-gradient-to-r from-indigo-600/20 to-transparent border-r-4 border-indigo-500'
@@ -290,7 +282,7 @@ export default function AdminDashboard() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         whileHover={{ y: -5 }}
-        className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 relative overflow-hidden group"
+        className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 relative overflow-hidden group min-w-[200px]"
       >
           <div className={`absolute -right-6 -top-6 w-32 h-32 rounded-full opacity-10 transition-transform group-hover:scale-110 ${color}`}></div>
           <div className="flex justify-between items-start relative z-10">
@@ -313,14 +305,14 @@ export default function AdminDashboard() {
   );
 
   return (
-    <div className="flex h-screen bg-slate-50 overflow-hidden font-sans">
+    <div className="flex h-screen bg-slate-50 overflow-hidden font-sans relative">
       <AnimatePresence>
         {notification && (
             <motion.div 
                 initial={{ opacity: 0, y: -50 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -50 }}
-                className="fixed top-6 right-6 bg-slate-800 text-white px-6 py-4 rounded-xl shadow-2xl z-[60] flex items-center gap-3 border border-slate-700"
+                className="fixed top-20 right-4 md:top-6 md:right-6 bg-slate-800 text-white px-6 py-4 rounded-xl shadow-2xl z-[70] flex items-center gap-3 border border-slate-700"
             >
                 <div className="bg-emerald-500/20 p-2 rounded-full text-emerald-400">
                     <ShieldAlert size={18} />
@@ -333,7 +325,18 @@ export default function AdminDashboard() {
         )}
       </AnimatePresence>
 
-      <aside className="w-72 bg-[#0B1120] flex-shrink-0 flex flex-col shadow-2xl z-20">
+      {/* Mobile Sidebar Overlay */}
+      <AnimatePresence>
+          {isSidebarOpen && (
+            <motion.div 
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                className="fixed inset-0 bg-black/60 z-30 lg:hidden backdrop-blur-sm"
+                onClick={() => setIsSidebarOpen(false)}
+            />
+          )}
+      </AnimatePresence>
+
+      <aside className={`fixed inset-y-0 left-0 z-40 w-72 bg-[#0B1120] flex flex-col shadow-2xl transform transition-transform duration-300 lg:translate-x-0 lg:static ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="h-20 flex items-center px-8 border-b border-white/5">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold mr-3 shadow-lg shadow-indigo-500/30">
               S
@@ -342,6 +345,9 @@ export default function AdminDashboard() {
             <span className="text-white font-bold text-lg tracking-wide block">SMS ENGINE</span>
             <span className="text-[10px] text-indigo-400 font-bold tracking-widest uppercase">Admin Panel</span>
           </div>
+          <button className="ml-auto lg:hidden text-gray-400" onClick={() => setIsSidebarOpen(false)}>
+              <X size={20} />
+          </button>
         </div>
 
         <div className="flex-1 py-6 space-y-2 overflow-y-auto custom-scrollbar">
@@ -365,28 +371,34 @@ export default function AdminDashboard() {
         </div>
       </aside>
 
-      <main className="flex-1 overflow-y-auto bg-slate-50/50 relative">
+      <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {loading && <LoadingOverlay />}
-        <header className="bg-white/80 backdrop-blur-xl sticky top-0 z-10 border-b border-slate-200 px-8 h-20 flex items-center justify-between">
-          <div>
-              <h2 className="text-2xl font-black text-slate-800 capitalize tracking-tight font-[Poppins]">{activeTab.replace('_', ' ')}</h2>
-              <p className="text-xs text-slate-500">Manage your institute efficiently</p>
+        <header className="bg-white/80 backdrop-blur-xl sticky top-0 z-20 border-b border-slate-200 px-4 md:px-8 h-16 md:h-20 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+              <button onClick={() => setIsSidebarOpen(true)} className="lg:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">
+                  <Menu size={24} />
+              </button>
+              <div>
+                  <h2 className="text-xl md:text-2xl font-black text-slate-800 capitalize tracking-tight font-[Poppins] truncate max-w-[200px] md:max-w-none">{activeTab.replace('_', ' ')}</h2>
+                  <p className="text-xs text-slate-500 hidden md:block">Manage your institute efficiently</p>
+              </div>
           </div>
           <div className="flex items-center gap-4">
               <div className="hidden md:flex items-center px-4 py-2 bg-slate-100 rounded-full text-slate-500 text-sm font-medium">
                   <ShieldAlert size={14} className="mr-2 text-emerald-500"/> System Status: Operational
               </div>
-              <div className="h-10 w-10 bg-gradient-to-tr from-indigo-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold shadow-lg shadow-indigo-500/20">
+              <div className="h-9 w-9 md:h-10 md:w-10 bg-gradient-to-tr from-indigo-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold shadow-lg shadow-indigo-500/20">
                   A
               </div>
           </div>
         </header>
 
-        <div className="p-8 max-w-7xl mx-auto pb-20">
+        <div className="flex-1 overflow-y-auto p-4 md:p-8 pb-20 scroll-smooth">
+          <div className="max-w-7xl mx-auto space-y-8">
           
           {activeTab === 'dashboard' && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                     <StatCard 
                         title="Total Students" 
                         value={students.length} 
@@ -422,14 +434,14 @@ export default function AdminDashboard() {
           {activeTab === 'grades' && (
              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
                  <div className="flex justify-end">
-                     <button onClick={() => openGradeModal()} className="bg-indigo-600 text-white px-6 py-3 rounded-xl shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-all flex items-center gap-2 font-bold transform hover:-translate-y-0.5">
+                     <button onClick={() => openGradeModal()} className="bg-indigo-600 text-white px-6 py-3 rounded-xl shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-all flex items-center gap-2 font-bold transform hover:-translate-y-0.5 w-full sm:w-auto justify-center">
                          <Plus size={18} /> Add New Class
                      </button>
                  </div>
                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                      {grades.map(g => (
                          <div key={g.id} className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow relative group">
-                             <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                             <div className="absolute top-4 right-4 flex gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                                  <button onClick={() => openGradeModal(g)} className="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"><Edit2 size={16}/></button>
                                  <button onClick={() => deleteGrade(g.id)} className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"><Trash2 size={16}/></button>
                              </div>
@@ -460,8 +472,8 @@ export default function AdminDashboard() {
           )}
 
           {activeTab === 'students' && (
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-               <div className="p-6 border-b border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4 bg-slate-50/50">
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-full">
+               <div className="p-4 md:p-6 border-b border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4 bg-slate-50/50">
                   <div className="relative w-full md:w-96">
                     <Search className="absolute left-4 top-3.5 text-slate-400" size={18} />
                     <input 
@@ -469,15 +481,15 @@ export default function AdminDashboard() {
                         placeholder="Search students..." 
                         value={searchTerm} 
                         onChange={e=>setSearchTerm(e.target.value)} 
-                        className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all shadow-sm" 
+                        className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all shadow-sm text-sm" 
                     />
                   </div>
                   <button onClick={() => openStudentModal()} className="w-full md:w-auto bg-indigo-600 text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-all flex items-center justify-center gap-2">
                       <UserPlus size={18} /><span>Register Student</span>
                   </button>
                </div>
-               <div className="overflow-x-auto">
-                   <table className="w-full text-left border-collapse">
+               <div className="overflow-x-auto flex-1">
+                   <table className="w-full text-left border-collapse min-w-[800px]">
                       <thead className="bg-slate-50 text-slate-500 font-bold text-xs uppercase tracking-wider border-b border-slate-200">
                           <tr>
                               <th className="px-6 py-5">Student Info</th>
@@ -495,7 +507,7 @@ export default function AdminDashboard() {
                                 <tr key={s.id} className="hover:bg-slate-50/80 transition-colors group">
                                     <td className="px-6 py-4">
                                         <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-sm">
+                                            <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-sm shrink-0">
                                                 {s.name.charAt(0)}
                                             </div>
                                             <div>
@@ -509,7 +521,7 @@ export default function AdminDashboard() {
                                         <div className="flex items-center gap-1 mt-1"><span className="font-bold text-slate-700">M:</span> {s.mobile}</div>
                                     </td>
                                     <td className="px-6 py-4 text-sm">
-                                        <span className="bg-white border border-slate-200 px-3 py-1 rounded-full text-slate-600 font-medium text-xs shadow-sm">
+                                        <span className="bg-white border border-slate-200 px-3 py-1 rounded-full text-slate-600 font-medium text-xs shadow-sm whitespace-nowrap">
                                             {grade?.gradeName} {sub?.divisionName ? `• ${sub.divisionName}` : ''}
                                         </span>
                                     </td>
@@ -519,7 +531,7 @@ export default function AdminDashboard() {
                                         </span>
                                     </td>
                                     <td className="px-6 py-4">
-                                        <div className="flex justify-center gap-2 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <div className="flex justify-center gap-2">
                                             <button onClick={() => openStudentModal(s)} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Modify Record">
                                                 <Edit2 size={18} />
                                             </button>
@@ -542,14 +554,14 @@ export default function AdminDashboard() {
 
           {activeTab === 'teachers' && (
              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                <div className="p-4 md:p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
                     <h3 className="font-bold text-slate-700 text-lg">Faculty Directory</h3>
-                    <button onClick={() => openTeacherModal()} className="bg-purple-600 text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-purple-200 hover:bg-purple-700 transition-all flex items-center gap-2">
+                    <button onClick={() => openTeacherModal()} className="bg-purple-600 text-white px-4 md:px-6 py-2 md:py-3 rounded-xl font-bold shadow-lg shadow-purple-200 hover:bg-purple-700 transition-all flex items-center gap-2 text-sm md:text-base">
                         <UserPlus size={18} /><span>Add Faculty</span>
                     </button>
                 </div>
                 <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
+                    <table className="w-full text-left border-collapse min-w-[800px]">
                       <thead className="bg-slate-50 text-slate-500 font-bold text-xs uppercase tracking-wider border-b border-slate-200">
                           <tr>
                               <th className="px-6 py-5">Teacher</th>
@@ -568,7 +580,7 @@ export default function AdminDashboard() {
                                 <tr key={t.id} className="hover:bg-slate-50/80 transition-colors group">
                                     <td className="px-6 py-4">
                                         <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center font-bold text-sm">
+                                            <div className="w-10 h-10 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center font-bold text-sm shrink-0">
                                                 {t.name.charAt(0)}
                                             </div>
                                             <div>
@@ -579,7 +591,7 @@ export default function AdminDashboard() {
                                     </td>
                                     <td className="px-6 py-4 text-sm text-slate-600 font-medium">{t.mobile}</td>
                                     <td className="px-6 py-4 text-sm">
-                                         <span className="bg-white border border-slate-200 px-3 py-1 rounded-full text-slate-600 font-medium text-xs shadow-sm">
+                                         <span className="bg-white border border-slate-200 px-3 py-1 rounded-full text-slate-600 font-medium text-xs shadow-sm whitespace-nowrap">
                                             {grade?.gradeName} {sub?.divisionName}
                                          </span>
                                     </td>
@@ -590,7 +602,7 @@ export default function AdminDashboard() {
                                         </span>
                                     </td>
                                     <td className="px-6 py-4">
-                                        <div className="flex justify-center gap-2 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <div className="flex justify-center gap-2">
                                             <button onClick={() => openTeacherModal(t)} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
                                                 <Edit2 size={18} />
                                             </button>
@@ -616,7 +628,7 @@ export default function AdminDashboard() {
                  <div className="p-6 border-b border-slate-100 bg-slate-50/50">
                     <h3 className="font-bold text-slate-800 text-lg">Transaction History</h3>
                  </div>
-                 <div className="p-8 text-center text-slate-400">
+                 <div className="p-4 md:p-8 text-center text-slate-400">
                      {fees.length === 0 ? (
                          <div className="py-12">
                              <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300">
@@ -627,12 +639,12 @@ export default function AdminDashboard() {
                      ) : (
                          <div className="space-y-4">
                              {fees.map(f => (
-                                 <div key={f.id} className="bg-white border border-slate-200 p-4 rounded-xl flex justify-between items-center shadow-sm">
+                                 <div key={f.id} className="bg-white border border-slate-200 p-4 rounded-xl flex flex-col md:flex-row justify-between items-start md:items-center shadow-sm gap-2">
                                      <div className="text-left">
                                          <p className="font-bold text-slate-800">{f.studentName}</p>
                                          <p className="text-xs text-slate-500 font-mono">Ref: {f.transactionRef}</p>
                                      </div>
-                                     <div className="text-right">
+                                     <div className="text-left md:text-right w-full md:w-auto flex justify-between md:block items-center">
                                          <p className="font-bold text-emerald-600">₹{f.amount}</p>
                                          <p className="text-xs text-slate-400">{f.date}</p>
                                      </div>
@@ -647,20 +659,20 @@ export default function AdminDashboard() {
           {activeTab === 'settings' && settings && (
             <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="max-w-3xl mx-auto">
                 <div className="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
-                    <div className="bg-slate-900 p-8 text-white relative overflow-hidden">
+                    <div className="bg-slate-900 p-6 md:p-8 text-white relative overflow-hidden">
                          <div className="relative z-10">
                             <h3 className="text-2xl font-bold font-[Poppins] flex items-center gap-3">
                                 <ShieldAlert className="text-emerald-400"/> Security & API
                             </h3>
-                            <p className="text-slate-400 mt-2">Manage your gateway keys and admin access credentials.</p>
+                            <p className="text-slate-400 mt-2 text-sm md:text-base">Manage your gateway keys and admin access credentials.</p>
                          </div>
                          <div className="absolute right-0 top-0 opacity-10 transform translate-x-10 -translate-y-10">
                              <Lock size={200} />
                          </div>
                     </div>
                     
-                    <div className="p-8">
-                        <form onSubmit={handleSaveSettings} className="space-y-8">
+                    <div className="p-6 md:p-8">
+                        <form onSubmit={handleSaveSettings} className="space-y-6 md:space-y-8">
                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
                                     <label className="block text-sm font-bold text-slate-700 mb-2">Google Site Key</label>
@@ -703,15 +715,16 @@ export default function AdminDashboard() {
             </motion.div>
           )}
 
+          </div>
         </div>
       </main>
       
       {/* Existing Modals logic is used here via isStudentModalOpen etc. */}
-      {/* The render code for modals remains the same as in previous file content but logic uses state handlers above */}
+      {/* Keep standard modal rendering logic, just ensure mobile sizing */}
       <AnimatePresence>
       {isGradeModalOpen && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
-              <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-md relative overflow-hidden">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+              <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className="bg-white rounded-3xl shadow-2xl p-6 md:p-8 w-full max-w-md relative overflow-hidden">
                   <div className="absolute top-0 left-0 w-full h-2 bg-indigo-500" />
                   <div className="flex justify-between items-center mb-6">
                       <h3 className="text-2xl font-bold text-slate-800">{editingId ? 'Edit Class' : 'New Class'}</h3>
@@ -759,22 +772,22 @@ export default function AdminDashboard() {
       </AnimatePresence>
       <AnimatePresence>
       {isStudentModalOpen && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
-              <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-lg relative overflow-hidden">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+              <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className="bg-white rounded-3xl shadow-2xl p-6 md:p-8 w-full max-w-lg relative overflow-hidden">
                   <div className="absolute top-0 left-0 w-full h-2 bg-indigo-500" />
                   <div className="flex justify-between items-center mb-6">
-                      <h3 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
+                      <h3 className="text-xl md:text-2xl font-bold text-slate-800 flex items-center gap-2">
                           <UserPlus className="text-indigo-500" size={24}/> {editingId ? 'Edit Student' : 'Register Student'}
                       </h3>
                       <button onClick={() => setIsStudentModalOpen(false)} className="p-2 hover:bg-slate-100 rounded-full transition-colors"><X size={20} className="text-slate-400" /></button>
                   </div>
                   <form onSubmit={handleStudentSubmit} className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <input required placeholder="Student Name" className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" value={formData.name || ''} onChange={e => setFormData({...formData, name: e.target.value})} />
                           <input required placeholder="Mobile Number" className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" value={formData.mobile || ''} onChange={e => setFormData({...formData, mobile: e.target.value})} />
                       </div>
                       <input required placeholder="Parent Name" className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" value={formData.parentName || ''} onChange={e => setFormData({...formData, parentName: e.target.value})} />
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <select required className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none bg-white" value={selectedGradeId} onChange={e => setSelectedGradeId(e.target.value)}>
                               <option value="">Select Grade</option>
                               {grades.map(g => <option key={g.id} value={g.id}>{g.gradeName}</option>)}
@@ -794,11 +807,11 @@ export default function AdminDashboard() {
       </AnimatePresence>
       <AnimatePresence>
       {isTeacherModalOpen && (
-           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
-              <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-lg relative overflow-hidden">
+           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+              <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className="bg-white rounded-3xl shadow-2xl p-6 md:p-8 w-full max-w-lg relative overflow-hidden">
                   <div className="absolute top-0 left-0 w-full h-2 bg-purple-500" />
                   <div className="flex justify-between items-center mb-6">
-                      <h3 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
+                      <h3 className="text-xl md:text-2xl font-bold text-slate-800 flex items-center gap-2">
                           <Briefcase className="text-purple-500" size={24} /> {editingId ? 'Edit Faculty' : 'Add Faculty'}
                       </h3>
                       <button onClick={() => setIsTeacherModalOpen(false)} className="p-2 hover:bg-slate-100 rounded-full transition-colors"><X size={20} className="text-slate-400" /></button>
@@ -809,7 +822,7 @@ export default function AdminDashboard() {
                       <input required placeholder="Specialization (e.g. Maths)" className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none" value={formData.specialization || ''} onChange={e => setFormData({...formData, specialization: e.target.value})} />
                       <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
                           <p className="text-xs font-bold text-slate-500 uppercase mb-2">Primary Responsibility</p>
-                          <div className="grid grid-cols-2 gap-4">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                               <select required className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none bg-white" value={selectedGradeId} onChange={e => setSelectedGradeId(e.target.value)}>
                                   <option value="">Select Grade</option>
                                   {grades.map(g => <option key={g.id} value={g.id}>{g.gradeName}</option>)}

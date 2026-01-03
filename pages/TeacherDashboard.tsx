@@ -59,28 +59,29 @@ const TeacherDashboard: React.FC = () => {
             <ThreeOrb className="absolute top-0 right-0 w-[400px] h-[400px] opacity-10 pointer-events-none" color="#f472b6" />
 
             {/* Navbar */}
-            <header className="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center relative z-20 shadow-sm">
-                <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 bg-purple-600 rounded-lg flex items-center justify-center text-white font-bold text-xl">{user?.username.charAt(0)}</div>
+            <header className="bg-white border-b border-gray-200 px-4 md:px-6 py-4 flex flex-col md:flex-row justify-between items-center gap-4 relative z-20 shadow-sm">
+                <div className="flex items-center gap-3 w-full md:w-auto">
+                    <div className="h-10 w-10 bg-purple-600 rounded-lg flex items-center justify-center text-white font-bold text-xl shrink-0">{user?.username.charAt(0)}</div>
                     <div>
                         <h1 className="text-lg font-bold text-gray-800">Faculty Portal</h1>
                         <p className="text-xs text-gray-500">Logged in as {user?.username}</p>
                     </div>
+                    <button onClick={handleLogout} className="text-gray-400 hover:text-red-500 ml-auto md:hidden"><LogOut size={20} /></button>
                 </div>
-                <div className="flex items-center gap-4">
+                <div className="flex flex-wrap md:flex-nowrap items-center gap-2 md:gap-4 w-full md:w-auto">
                      {/* Global Filters */}
-                     <select className="bg-gray-100 border-none rounded-lg px-3 py-2 text-sm" value={selectedGradeId} onChange={e => setSelectedGradeId(e.target.value)}>
+                     <select className="flex-1 md:flex-none bg-gray-100 border-none rounded-lg px-3 py-2 text-sm w-full md:w-40" value={selectedGradeId} onChange={e => setSelectedGradeId(e.target.value)}>
                          {grades.map(g => <option key={g.id} value={g.id}>{g.gradeName}</option>)}
                      </select>
-                     <select className="bg-gray-100 border-none rounded-lg px-3 py-2 text-sm" value={selectedDivisionId} onChange={e => setSelectedDivisionId(e.target.value)}>
+                     <select className="flex-1 md:flex-none bg-gray-100 border-none rounded-lg px-3 py-2 text-sm w-full md:w-40" value={selectedDivisionId} onChange={e => setSelectedDivisionId(e.target.value)}>
                          {availableSubdivisions.map(s => <option key={s.id} value={s.id}>{s.divisionName}</option>)}
                      </select>
-                     <button onClick={handleLogout} className="text-gray-400 hover:text-red-500"><LogOut size={20} /></button>
+                     <button onClick={handleLogout} className="text-gray-400 hover:text-red-500 hidden md:block"><LogOut size={20} /></button>
                 </div>
             </header>
 
             {/* Navigation Tabs */}
-            <div className="bg-white border-b border-gray-200 px-6 flex space-x-6 overflow-x-auto relative z-10">
+            <div className="bg-white border-b border-gray-200 px-4 md:px-6 flex space-x-6 overflow-x-auto relative z-10 scrollbar-hide">
                 {[
                     { id: 'attendance', label: 'Attendance', icon: Calendar },
                     { id: 'homework', label: 'Homework', icon: BookOpen },
@@ -91,7 +92,7 @@ const TeacherDashboard: React.FC = () => {
                     <button 
                         key={tab.id}
                         onClick={() => setActiveTab(tab.id as any)}
-                        className={`flex items-center gap-2 py-4 px-2 border-b-2 transition-colors whitespace-nowrap ${activeTab === tab.id ? 'border-purple-600 text-purple-600 font-bold' : 'border-transparent text-gray-500 hover:text-purple-600'}`}
+                        className={`flex items-center gap-2 py-4 px-2 border-b-2 transition-colors whitespace-nowrap text-sm md:text-base ${activeTab === tab.id ? 'border-purple-600 text-purple-600 font-bold' : 'border-transparent text-gray-500 hover:text-purple-600'}`}
                     >
                         <tab.icon size={18} /> {tab.label}
                     </button>
@@ -99,7 +100,7 @@ const TeacherDashboard: React.FC = () => {
             </div>
 
             {/* Content Area */}
-            <main className="flex-1 p-6 relative z-10 overflow-y-auto">
+            <main className="flex-1 p-4 md:p-6 relative z-10 overflow-y-auto">
                 {activeTab === 'attendance' && <AttendanceModule gradeId={selectedGradeId} divisionId={selectedDivisionId} />}
                 {activeTab === 'homework' && <HomeworkModule gradeId={selectedGradeId} divisionId={selectedDivisionId} teacherId={user?.id || ''} />}
                 {activeTab === 'exams' && <ExamBuilderModule gradeId={selectedGradeId} divisionId={selectedDivisionId} teacherId={user?.id || ''} />}
@@ -182,7 +183,7 @@ const AttendanceModule = ({ gradeId, divisionId }: { gradeId: string, divisionId
     const renderCalendar = () => {
         const grid = [];
         // Empty cells
-        for (let i = 0; i < startOffset; i++) grid.push(<div key={`empty-${i}`} className="h-24 bg-gray-50/50" />);
+        for (let i = 0; i < startOffset; i++) grid.push(<div key={`empty-${i}`} className="h-16 md:h-24 bg-gray-50/50" />);
         // Days
         for (let d = 1; d <= days; d++) {
             const dateStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
@@ -193,13 +194,13 @@ const AttendanceModule = ({ gradeId, divisionId }: { gradeId: string, divisionId
                 <div 
                     key={d} 
                     onClick={() => setSelectedDate(dateStr)}
-                    className={`h-24 border border-gray-100 p-2 cursor-pointer hover:bg-purple-50 transition-colors relative group rounded-lg ${isToday ? 'bg-blue-50 border-blue-200' : 'bg-white'}`}
+                    className={`h-16 md:h-24 border border-gray-100 p-1 md:p-2 cursor-pointer hover:bg-purple-50 transition-colors relative group rounded-lg ${isToday ? 'bg-blue-50 border-blue-200' : 'bg-white'}`}
                 >
                     <span className={`font-bold text-sm ${isToday ? 'text-blue-600' : 'text-gray-700'}`}>{d}</span>
                     {hasRecord && (
                         <div className="absolute bottom-2 right-2 w-2 h-2 bg-green-500 rounded-full" title="Attendance Taken"></div>
                     )}
-                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hidden md:flex">
                         <span className="bg-purple-600 text-white text-xs px-2 py-1 rounded">Take Roll</span>
                     </div>
                 </div>
@@ -210,25 +211,25 @@ const AttendanceModule = ({ gradeId, divisionId }: { gradeId: string, divisionId
 
     return (
         <div className="max-w-5xl mx-auto">
-            <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold text-gray-800">Attendance Calendar</h2>
-                <div className="flex items-center gap-4">
-                    <button onClick={() => setCurrentDate(new Date(currentDate.setMonth(currentDate.getMonth() - 1)))} className="p-2 hover:bg-gray-200 rounded-full"><ChevronLeft/></button>
-                    <span className="text-lg font-bold w-32 text-center">{currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })}</span>
-                    <button onClick={() => setCurrentDate(new Date(currentDate.setMonth(currentDate.getMonth() + 1)))} className="p-2 hover:bg-gray-200 rounded-full"><ChevronRight/></button>
+            <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+                <h2 className="text-xl md:text-2xl font-bold text-gray-800">Attendance Calendar</h2>
+                <div className="flex items-center gap-4 bg-white rounded-full shadow-sm border border-gray-100 p-1">
+                    <button onClick={() => setCurrentDate(new Date(currentDate.setMonth(currentDate.getMonth() - 1)))} className="p-2 hover:bg-gray-100 rounded-full transition-colors"><ChevronLeft size={20}/></button>
+                    <span className="text-sm md:text-lg font-bold w-32 text-center select-none">{currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })}</span>
+                    <button onClick={() => setCurrentDate(new Date(currentDate.setMonth(currentDate.getMonth() + 1)))} className="p-2 hover:bg-gray-100 rounded-full transition-colors"><ChevronRight size={20}/></button>
                 </div>
             </div>
 
-            <div className="grid grid-cols-7 gap-4 mb-4 text-center font-bold text-gray-400 uppercase text-xs tracking-wider">
-                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => <div key={d}>{d}</div>)}
+            <div className="grid grid-cols-7 gap-1 md:gap-4 mb-2 text-center font-bold text-gray-400 uppercase text-[10px] md:text-xs tracking-wider">
+                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => <div key={d}>{d.slice(0,3)}</div>)}
             </div>
-            <div className="grid grid-cols-7 gap-2">
+            <div className="grid grid-cols-7 gap-1 md:gap-2">
                 {renderCalendar()}
             </div>
 
             {/* Attendance Modal */}
             {selectedDate && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
                     <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col max-h-[90vh]">
                         <div className="p-4 bg-purple-600 text-white flex justify-between items-center">
                             <h3 className="font-bold">Roll Call: {selectedDate}</h3>
@@ -340,23 +341,23 @@ const HomeworkModule = ({ gradeId, divisionId, teacherId }: { gradeId: string, d
     }
 
     return (
-        <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 h-fit">
                 <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-purple-700"><Plus size={20}/> Assign Homework</h3>
                 <form onSubmit={assignHomework} className="space-y-4">
                     <div>
                         <label className="block text-sm font-bold text-gray-600 mb-1">Subject</label>
-                        <input required className="w-full border rounded-lg px-3 py-2" placeholder="Maths, Science..." value={subject} onChange={e => setSubject(e.target.value)} />
+                        <input required className="w-full border rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-purple-500" placeholder="Maths, Science..." value={subject} onChange={e => setSubject(e.target.value)} />
                     </div>
                     <div>
                         <label className="block text-sm font-bold text-gray-600 mb-1">Due Date</label>
-                        <input required type="date" className="w-full border rounded-lg px-3 py-2" value={dueDate} onChange={e => setDueDate(e.target.value)} />
+                        <input required type="date" className="w-full border rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-purple-500" value={dueDate} onChange={e => setDueDate(e.target.value)} />
                     </div>
                     <div>
                         <label className="block text-sm font-bold text-gray-600 mb-1">Task Description</label>
-                        <textarea required className="w-full border rounded-lg px-3 py-2 h-32" placeholder="Read Chapter 4 and solve Exercise 2.1..." value={task} onChange={e => setTask(e.target.value)} />
+                        <textarea required className="w-full border rounded-lg px-3 py-2 h-32 outline-none focus:ring-2 focus:ring-purple-500" placeholder="Read Chapter 4 and solve Exercise 2.1..." value={task} onChange={e => setTask(e.target.value)} />
                     </div>
-                    <button type="submit" className="w-full bg-purple-600 text-white font-bold py-3 rounded-lg hover:bg-purple-700">Assign to Class</button>
+                    <button type="submit" className="w-full bg-purple-600 text-white font-bold py-3 rounded-lg hover:bg-purple-700 transition-colors">Assign to Class</button>
                 </form>
             </div>
 
@@ -372,6 +373,7 @@ const HomeworkModule = ({ gradeId, divisionId, teacherId }: { gradeId: string, d
                         <div className="mt-3 text-purple-600 text-sm font-bold flex items-center gap-1">Check Status <ChevronRight size={14}/></div>
                     </div>
                 ))}
+                {homeworkList.length === 0 && <p className="text-center text-gray-400 py-8">No homework assigned yet.</p>}
             </div>
         </div>
     );
@@ -431,7 +433,7 @@ const ExamBuilderModule = ({ gradeId, divisionId, teacherId }: { gradeId: string
                 <h3 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2"><PenTool className="text-purple-600"/> Create New Exam</h3>
                 
                 {/* Header */}
-                <div className="grid grid-cols-3 gap-4 mb-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                     <input className="border rounded-lg px-4 py-2" placeholder="Subject (e.g. Science)" value={examMeta.subject} onChange={e => setExamMeta({...examMeta, subject: e.target.value})} />
                     <input className="border rounded-lg px-4 py-2" type="date" value={examMeta.examDate} onChange={e => setExamMeta({...examMeta, examDate: e.target.value})} />
                     <input className="border rounded-lg px-4 py-2" type="number" placeholder="Total Marks" value={examMeta.totalMarks} onChange={e => setExamMeta({...examMeta, totalMarks: parseInt(e.target.value)})} />
@@ -444,9 +446,9 @@ const ExamBuilderModule = ({ gradeId, divisionId, teacherId }: { gradeId: string
                             <div className="absolute top-2 left-2 text-xs font-bold text-gray-400">Q{idx + 1}</div>
                             <button onClick={() => removeQuestion(q.id)} className="absolute top-2 right-2 text-red-400 hover:text-red-600"><Trash2 size={16}/></button>
                             
-                            <div className="mt-4 flex gap-4">
+                            <div className="mt-4 flex flex-col md:flex-row gap-4">
                                 <select 
-                                    className="border rounded px-2 py-1 bg-white text-sm w-32"
+                                    className="border rounded px-2 py-1 bg-white text-sm w-full md:w-32"
                                     value={q.type}
                                     onChange={(e) => updateQuestion(q.id, 'type', e.target.value)}
                                 >
@@ -462,7 +464,7 @@ const ExamBuilderModule = ({ gradeId, divisionId, teacherId }: { gradeId: string
                                 />
                                 <input 
                                     type="number" 
-                                    className="w-20 border rounded px-2 py-1 text-center" 
+                                    className="w-full md:w-20 border rounded px-2 py-1 text-center" 
                                     placeholder="Marks"
                                     value={q.marks}
                                     onChange={(e) => updateQuestion(q.id, 'marks', parseInt(e.target.value))}
@@ -473,14 +475,14 @@ const ExamBuilderModule = ({ gradeId, divisionId, teacherId }: { gradeId: string
                 </div>
 
                 {/* Footer Actions */}
-                <div className="flex justify-between items-center border-t pt-6">
+                <div className="flex flex-col md:flex-row justify-between items-center border-t pt-6 gap-4">
                     <button onClick={addQuestion} className="flex items-center gap-2 text-purple-600 font-bold hover:bg-purple-50 px-4 py-2 rounded-lg transition-colors">
                         <Plus size={20}/> Add Question
                     </button>
                     
-                    <div className="flex items-center gap-6">
+                    <div className="flex items-center gap-6 w-full md:w-auto justify-between md:justify-end">
                         <div className={`text-sm font-bold ${currentTotal === examMeta.totalMarks ? 'text-green-600' : 'text-red-500'}`}>
-                            Current Total: {currentTotal} / {examMeta.totalMarks}
+                            Total: {currentTotal} / {examMeta.totalMarks}
                         </div>
                         <button 
                             onClick={saveExam}
@@ -543,8 +545,8 @@ const GradingModule = ({ teacherId }: { teacherId: string }) => {
                      <p className="text-gray-500">Total Marks: {selectedExam.totalMarks} | Date: {selectedExam.examDate}</p>
                  </div>
                  
-                 <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100">
-                     <table className="w-full text-left">
+                 <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100 overflow-x-auto">
+                     <table className="w-full text-left min-w-[600px]">
                          <thead className="bg-gray-50 text-gray-600 font-bold text-sm uppercase">
                              <tr>
                                  <th className="p-4">Student Name</th>
@@ -601,7 +603,7 @@ const GradingModule = ({ teacherId }: { teacherId: string }) => {
                     <div className="mt-4 text-purple-600 font-bold text-sm flex items-center gap-1">Enter Grades <ChevronRight size={16}/></div>
                 </div>
             ))}
-            {exams.length === 0 && <div className="col-span-2 text-center text-gray-400 py-10">No exams created yet. Go to Exam Builder to create one.</div>}
+            {exams.length === 0 && <div className="col-span-1 md:col-span-2 text-center text-gray-400 py-10">No exams created yet. Go to Exam Builder to create one.</div>}
         </div>
     );
 };

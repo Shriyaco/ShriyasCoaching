@@ -37,23 +37,23 @@ const StudentDashboard: React.FC = () => {
       <ThreeOrb className="absolute top-0 right-0 w-[500px] h-[500px] opacity-20 pointer-events-none translate-x-1/3 -translate-y-1/3" color="#6366f1" />
       
       {/* Header */}
-      <header className="bg-white/80 backdrop-blur-md sticky top-0 z-20 border-b border-gray-200 px-6 py-4 flex justify-between items-center shadow-sm">
+      <header className="bg-white/80 backdrop-blur-md sticky top-0 z-20 border-b border-gray-200 px-4 md:px-6 py-4 flex justify-between items-center shadow-sm">
         <div className="flex items-center space-x-3">
             <div className="h-10 w-10 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold text-lg">
                 {user.username.charAt(0)}
             </div>
             <div>
-                <h1 className="text-xl font-bold text-gray-800">Hi, {user.username}</h1>
+                <h1 className="text-lg md:text-xl font-bold text-gray-800">Hi, {user.username}</h1>
                 <p className="text-xs text-gray-500">ID: {studentDetails.studentCustomId}</p>
             </div>
         </div>
-        <button onClick={handleLogout} className="text-gray-500 hover:text-red-500 transition-colors">
+        <button onClick={handleLogout} className="text-gray-500 hover:text-red-500 transition-colors p-2 rounded-full hover:bg-gray-100">
             <LogOut size={20} />
         </button>
       </header>
 
       {/* Tabs */}
-      <div className="bg-white border-b border-gray-200 px-6 flex space-x-6 overflow-x-auto relative z-10 sticky top-[73px]">
+      <div className="bg-white border-b border-gray-200 px-4 md:px-6 flex space-x-6 overflow-x-auto relative z-10 sticky top-[73px]">
            {[
                { id: 'dashboard', label: 'Dashboard', icon: Calendar },
                { id: 'homework', label: 'Homework', icon: BookOpen },
@@ -63,14 +63,14 @@ const StudentDashboard: React.FC = () => {
                <button 
                    key={tab.id}
                    onClick={() => setActiveTab(tab.id as any)}
-                   className={`flex items-center gap-2 py-4 px-2 border-b-2 transition-colors whitespace-nowrap ${activeTab === tab.id ? 'border-purple-600 text-purple-600 font-bold' : 'border-transparent text-gray-500 hover:text-purple-600'}`}
+                   className={`flex items-center gap-2 py-4 px-2 border-b-2 transition-colors whitespace-nowrap text-sm md:text-base ${activeTab === tab.id ? 'border-purple-600 text-purple-600 font-bold' : 'border-transparent text-gray-500 hover:text-purple-600'}`}
                >
                    <tab.icon size={18} /> {tab.label}
                </button>
            ))}
        </div>
 
-      <main className="max-w-7xl mx-auto px-6 py-8 relative z-10 space-y-8 pb-20">
+      <main className="max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-8 relative z-10 space-y-8 pb-20">
          {activeTab === 'dashboard' && <DashboardOverview student={studentDetails} />}
          {activeTab === 'homework' && <HomeworkSection student={studentDetails} />}
          {activeTab === 'exams' && <ExamSection student={studentDetails} />}
@@ -114,7 +114,7 @@ const DashboardOverview = ({ student }: { student: Student }) => {
     const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-fade-in">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8 animate-fade-in">
              {liveClass && (
                 <div className="lg:col-span-3 bg-gradient-to-r from-rose-500 to-pink-600 rounded-2xl p-6 text-white shadow-lg flex flex-col sm:flex-row items-center justify-between animate-pulse-slow">
                     <div className="flex items-center space-x-4">
@@ -124,7 +124,7 @@ const DashboardOverview = ({ student }: { student: Student }) => {
                             <p className="opacity-90">{liveClass.title} • Started just now</p>
                         </div>
                     </div>
-                    <a href={liveClass.meetingLink} target="_blank" rel="noreferrer" className="mt-4 sm:mt-0 px-8 py-3 bg-white text-rose-600 font-bold rounded-full shadow-md hover:scale-105 transition-transform">Join Now</a>
+                    <a href={liveClass.meetingLink} target="_blank" rel="noreferrer" className="mt-4 sm:mt-0 px-8 py-3 bg-white text-rose-600 font-bold rounded-full shadow-md hover:scale-105 transition-transform w-full sm:w-auto text-center">Join Now</a>
                 </div>
             )}
 
@@ -233,7 +233,7 @@ const HomeworkSection = ({ student }: { student: Student }) => {
     };
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 relative">
             <div className="space-y-4">
                 <h3 className="text-xl font-bold text-gray-700">Assignments</h3>
                 {homework.map(hw => (
@@ -254,22 +254,24 @@ const HomeworkSection = ({ student }: { student: Student }) => {
             </div>
 
             {selectedHw && (
-                <div className="bg-white p-6 rounded-xl shadow-lg border border-purple-100 h-fit sticky top-24">
-                    <div className="flex justify-between items-center mb-4">
-                        <h3 className="font-bold text-gray-800">Submit: {selectedHw.subject}</h3>
-                        <button onClick={() => setSelectedHw(null)}><X size={20} className="text-gray-400"/></button>
+                <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 md:static md:bg-transparent md:p-0">
+                    <div className="bg-white p-6 rounded-xl shadow-lg border border-purple-100 w-full max-w-lg md:h-fit md:sticky md:top-24">
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="font-bold text-gray-800">Submit: {selectedHw.subject}</h3>
+                            <button onClick={() => setSelectedHw(null)}><X size={20} className="text-gray-400"/></button>
+                        </div>
+                        <form onSubmit={handleSubmit}>
+                            <label className="block text-sm text-gray-600 mb-2">Your Answer / Response</label>
+                            <textarea 
+                                required
+                                className="w-full h-48 border rounded-lg p-3 text-sm focus:ring-2 focus:ring-purple-500 outline-none"
+                                placeholder="Type your homework answer here..."
+                                value={submissionText}
+                                onChange={e => setSubmissionText(e.target.value)}
+                            />
+                            <button type="submit" className="w-full mt-4 bg-purple-600 text-white py-2 rounded-lg font-bold hover:bg-purple-700">Send to Teacher</button>
+                        </form>
                     </div>
-                    <form onSubmit={handleSubmit}>
-                        <label className="block text-sm text-gray-600 mb-2">Your Answer / Response</label>
-                        <textarea 
-                            required
-                            className="w-full h-48 border rounded-lg p-3 text-sm focus:ring-2 focus:ring-purple-500 outline-none"
-                            placeholder="Type your homework answer here..."
-                            value={submissionText}
-                            onChange={e => setSubmissionText(e.target.value)}
-                        />
-                        <button type="submit" className="w-full mt-4 bg-purple-600 text-white py-2 rounded-lg font-bold hover:bg-purple-700">Send to Teacher</button>
-                    </form>
                 </div>
             )}
         </div>
@@ -317,11 +319,11 @@ const ExamSection = ({ student }: { student: Student }) => {
 
     if (activeExam) {
         return (
-            <div className="max-w-3xl mx-auto bg-white p-8 rounded-xl shadow-lg border border-purple-100">
-                <div className="border-b pb-4 mb-6 flex justify-between items-center">
+            <div className="max-w-3xl mx-auto bg-white p-6 md:p-8 rounded-xl shadow-lg border border-purple-100">
+                <div className="border-b pb-4 mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                      <div>
-                         <h2 className="text-2xl font-bold text-gray-800">{activeExam.subject} Exam</h2>
-                         <p className="text-gray-500">Total Marks: {activeExam.totalMarks}</p>
+                         <h2 className="text-xl md:text-2xl font-bold text-gray-800">{activeExam.subject} Exam</h2>
+                         <p className="text-gray-500 text-sm">Total Marks: {activeExam.totalMarks}</p>
                      </div>
                      <div className="bg-red-50 text-red-600 px-3 py-1 rounded-full text-xs font-bold animate-pulse">Live Exam</div>
                 </div>
@@ -332,15 +334,15 @@ const ExamSection = ({ student }: { student: Student }) => {
                             <p className="font-bold text-gray-800 mb-3"><span className="text-purple-600 mr-2">Q{idx+1}.</span> {q.text} <span className="text-xs text-gray-400 ml-2">({q.marks} Marks)</span></p>
                             
                             {q.type === 'short' && (
-                                <input className="w-full border p-2 rounded" placeholder="Your Answer" onChange={e => setAnswers({...answers, [q.id]: e.target.value})} />
+                                <input className="w-full border p-2 rounded focus:ring-2 focus:ring-purple-500 outline-none" placeholder="Your Answer" onChange={e => setAnswers({...answers, [q.id]: e.target.value})} />
                             )}
                             
                             {q.type === 'paragraph' && (
-                                <textarea className="w-full border p-2 rounded h-24" placeholder="Detailed Answer" onChange={e => setAnswers({...answers, [q.id]: e.target.value})} />
+                                <textarea className="w-full border p-2 rounded h-24 focus:ring-2 focus:ring-purple-500 outline-none" placeholder="Detailed Answer" onChange={e => setAnswers({...answers, [q.id]: e.target.value})} />
                             )}
                             
                             {q.type === 'mcq' && (
-                                <select className="w-full border p-2 rounded" onChange={e => setAnswers({...answers, [q.id]: e.target.value})}>
+                                <select className="w-full border p-2 rounded focus:ring-2 focus:ring-purple-500 outline-none" onChange={e => setAnswers({...answers, [q.id]: e.target.value})}>
                                     <option value="">Select Option</option>
                                     <option value="A">Option A</option>
                                     <option value="B">Option B</option>
@@ -352,9 +354,9 @@ const ExamSection = ({ student }: { student: Student }) => {
                     ))}
                 </div>
                 
-                <div className="mt-8 flex justify-end gap-4">
-                    <button onClick={() => setActiveExam(null)} className="text-gray-500">Cancel</button>
-                    <button onClick={submitExam} className="bg-purple-600 text-white px-8 py-3 rounded-lg font-bold hover:bg-purple-700">Submit Exam</button>
+                <div className="mt-8 flex justify-end gap-4 sticky bottom-0 bg-white py-4 border-t">
+                    <button onClick={() => setActiveExam(null)} className="text-gray-500 font-medium">Cancel</button>
+                    <button onClick={submitExam} className="bg-purple-600 text-white px-8 py-3 rounded-lg font-bold hover:bg-purple-700 shadow-lg">Submit Exam</button>
                 </div>
             </div>
         );
