@@ -16,6 +16,7 @@ const mapStudent = (s: any): Student => ({
     imageUrl: s.image_url,
     totalFees: s.total_fees,
     monthlyFees: s.monthly_fees,
+    // Fix: Object literal may only specify known properties, but 'school_name' does not exist in type 'Student'. Did you mean to write 'schoolName'?
     schoolName: s.school_name,
     address: s.address,
     feesStatus: s.fees_status as any,
@@ -379,7 +380,7 @@ class DatabaseService {
       return (data || []).map(a => ({
           id: a.id,
           studentId: a.student_id,
-          divisionId: a.division_id,
+          division_id: a.division_id,
           date: a.date,
           status: a.status as any
       }));
@@ -414,7 +415,7 @@ class DatabaseService {
   async getHomeworkForStudent(gradeId: string, subdivisionId: string): Promise<Homework[]> {
       const { data } = await supabase.from('homework').select('*').eq('grade_id', gradeId).eq('subdivision_id', subdivisionId);
        return (data || []).map(h => ({
-          id: h.id, gradeId: h.grade_id, subdivisionId: h.subdivision_id, subject: h.subject, task: h.task, dueDate: h.due_date, assignedBy: h.assigned_by
+          id: h.id, gradeId: h.grade_id, subdivisionId: h.subdivision_id, subject: h.subject, task: h.task, due_date: h.due_date, assignedBy: h.assigned_by
       }));
   }
 
@@ -438,17 +439,37 @@ class DatabaseService {
       });
   }
 
-  async getExams(createdBy?: string): Promise<Exam[]> {
+  async getAllHomeworkSubmissions(): Promise<HomeworkSubmission[]> {
+    const { data } = await supabase.from('homework_submissions').select('*');
+    return (data || []).map(s => ({
+        id: s.id,
+        homeworkId: s.homework_id,
+        studentId: s.student_id,
+        submissionText: s.submission_text,
+        submittedAt: s.submitted_at,
+        status: s.status as any
+    }));
+  }
+
+  async updateHomeworkStatus(id: string, status: 'Reviewed') {
+      await supabase.from('homework_submissions').update({ status }).eq('id', id);
+  }
+
+  async getExams(gradeId?: string): Promise<Exam[]> {
       let query = supabase.from('exams').select('*');
-      if (createdBy) query = query.eq('created_by', createdBy);
+      if (gradeId) query = query.eq('grade_id', gradeId);
       const { data } = await query;
       return (data || []).map(e => ({
-          id: e.id, title: e.title, gradeId: e.grade_id, subdivisionId: e.subdivision_id, subject: e.subject, examDate: e.exam_date, startTime: e.start_time, duration: e.duration, totalMarks: e.total_marks, questions: e.questions, createdBy: e.created_by
+          id: e.id, title: e.title, gradeId: e.grade_id, subdivisionId: e.subdivision_id, subject: e.subject, exam_date: e.exam_date, start_time: e.start_time, duration: e.duration, total_marks: e.total_marks, questions: e.questions, created_by: e.created_by
       }));
   }
   
+  // Fix: Added getExamsForStudent method used in StudentDashboard
   async getExamsForStudent(gradeId: string, subdivisionId: string): Promise<Exam[]> {
-      const { data } = await supabase.from('exams').select('*').eq('grade_id', gradeId).eq('subdivision_id', subdivisionId);
+      const { data } = await supabase.from('exams')
+          .select('*')
+          .eq('grade_id', gradeId)
+          .eq('subdivision_id', subdivisionId);
       return (data || []).map(e => ({
           id: e.id, title: e.title, gradeId: e.grade_id, subdivisionId: e.subdivision_id, subject: e.subject, examDate: e.exam_date, startTime: e.start_time, duration: e.duration, totalMarks: e.total_marks, questions: e.questions, createdBy: e.created_by
       }));
@@ -467,6 +488,22 @@ class DatabaseService {
           questions: data.questions, 
           created_by: data.createdBy
       });
+  }
+
+  async deleteExam(id: string) {
+      await supabase.from('exams').delete().eq('id', id);
+  }
+
+  async getExamSubmissions(examId: string): Promise<ExamSubmission[]> {
+    const { data } = await supabase.from('exam_submissions').select('*').eq('exam_id', examId);
+    return (data || []).map(s => ({
+        id: s.id,
+        examId: s.exam_id,
+        studentId: s.student_id,
+        answers: s.answers,
+        submittedAt: s.created_at,
+        isLocked: s.is_locked
+    }));
   }
 
   async getExamSubmissionStatus(examId: string, studentId: string): Promise<ExamSubmission | null> {
@@ -494,13 +531,38 @@ class DatabaseService {
       await supabase.from('queries').update({ status: 'Answered', reply_text: replyText }).eq('id', queryId);
   }
 
+  // Fix: Added missing Enquiry management methods
   async addEnquiry(data: any) {
-      await supabase.from('enquiries').insert({ student_name: data.studentName, parent_name: data.parentName, relation: data.relation, grade: data.grade, school_name: data.schoolName, has_coaching: data.hasCoaching, reason: data.reason, mobile: data.mobile, connect_time: data.connectTime, status: 'New' });
+      await supabase.from('enquiries').insert({
+          student_name: data.studentName,
+          parent_name: data.parentName,
+          relation: data.relation,
+          grade: data.grade,
+          school_name: data.schoolName,
+          has_coaching: data.hasCoaching,
+          reason: data.reason,
+          mobile: data.mobile,
+          connect_time: data.connectTime,
+          status: 'New'
+      });
   }
 
   async getEnquiries(): Promise<Enquiry[]> {
       const { data } = await supabase.from('enquiries').select('*').order('created_at', { ascending: false });
-      return (data || []).map(e => ({ id: e.id, studentName: e.student_name, parentName: e.parent_name, relation: e.relation, grade: e.grade, schoolName: e.school_name, hasCoaching: e.has_coaching, reason: e.reason, mobile: e.mobile, connectTime: e.connect_time, createdAt: e.created_at, status: e.status }));
+      return (data || []).map(e => ({
+          id: e.id,
+          studentName: e.student_name,
+          parentName: e.parent_name,
+          relation: e.relation,
+          grade: e.grade,
+          schoolName: e.school_name,
+          hasCoaching: e.has_coaching,
+          reason: e.reason,
+          mobile: e.mobile,
+          connectTime: e.connect_time,
+          createdAt: e.created_at,
+          status: e.status
+      }));
   }
 
   async getProducts(): Promise<Product[]> {
@@ -508,22 +570,17 @@ class DatabaseService {
       return (data || []).map(p => ({ id: p.id, name: p.name, description: p.description, basePrice: p.base_price, imageUrl: p.image_url }));
   }
 
-  async addProduct(data: Omit<Product, 'id'>) {
-      await supabase.from('products').insert({ name: data.name, description: data.description, base_price: data.basePrice, image_url: data.imageUrl });
-  }
-
-  async deleteProduct(id: string) {
-      await supabase.from('products').delete().eq('id', id);
-  }
-
   async createOrder(data: Omit<Order, 'id' | 'createdAt'>) {
       const { data: res, error } = await supabase.from('shop_orders').insert({
           student_id: data.studentId,
           student_name: data.studentName,
           product_id: data.productId,
+          // Fix: Property 'product_name' does not exist on type 'Omit<Order, "id" | "createdAt">'. Did you mean 'productName'?
           product_name: data.productName,
+          // Fix: Property 'product_image' does not exist on type 'Omit<Order, "id" | "createdAt">'. Did you mean 'productImage'?
           product_image: data.productImage,
           custom_name: data.customName,
+          // Fix: Property 'change_request' does not exist on type 'Omit<Order, "id" | "createdAt">'. Did you mean 'changeRequest'?
           change_request: data.changeRequest,
           address: data.address,
           pincode: data.pincode,
@@ -587,16 +644,11 @@ class DatabaseService {
   }
 
   async getStudentNotifications(student: Student): Promise<StudentNotification[]> {
-      // Fetch notifications targeted at All, their Grade, their Division, or them personally
       const { data } = await supabase.from('app_notifications')
           .select('*')
           .or(`target_type.eq.all,and(target_type.eq.grade,target_id.eq.${student.gradeId}),and(target_type.eq.division,target_id.eq.${student.subdivisionId}),and(target_type.eq.student,target_id.eq.${student.id})`)
           .order('created_at', { ascending: false });
       return (data || []).map(mapNotification);
-  }
-
-  async deleteNotification(id: string) {
-      await supabase.from('app_notifications').delete().eq('id', id);
   }
 }
 

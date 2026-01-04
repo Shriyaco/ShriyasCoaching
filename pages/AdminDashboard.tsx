@@ -2,7 +2,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { db } from '../services/db';
 import { Student, TabView, Grade, Subdivision, Teacher, FeeSubmission, SystemSettings, GatewayConfig, Enquiry, Product, Order, StudentNotification, Notice } from '../types';
-// Added missing QrCode import from lucide-react
 import { Users, Settings, LogOut, Plus, Edit2, Search, Briefcase, CreditCard, Save, Layers, UserPlus, Lock, ShieldAlert, Key, Power, X, Trash2, GraduationCap, TrendingUp, DollarSign, RefreshCw, Menu, Check, Upload, Calendar, MessageCircle, Phone, Clock, ShoppingBag, Send, MapPin, Truck, Megaphone, Bell, Info, AlertTriangle, User, UserCheck, AlertCircle, Globe, Smartphone, QrCode } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -61,6 +60,8 @@ export default function AdminDashboard() {
     const user = sessionStorage.getItem('sc_user');
     if (!user) { navigate('/login'); return; }
     refreshData().then(() => setLoading(false));
+    
+    // Setup generic subscription to refresh on any change
     const channels = [
         db.subscribe('students', refreshData),
         db.subscribe('teachers', refreshData),
@@ -280,7 +281,7 @@ const StudentsModule = ({ students, grades, subdivisions, onNotify, refresh }: a
                                     <div className="flex justify-center gap-2">
                                         <button onClick={() => { setEditingStudent(s); setIsModalOpen(true); }} className="p-2 rounded-lg text-indigo-600 bg-indigo-50 hover:bg-indigo-100 transition-all" title="Modify Details"><Edit2 size={16}/></button>
                                         <button onClick={() => handleResetPassword(s.id)} className="p-2 rounded-lg text-amber-600 bg-amber-50 hover:bg-amber-100 transition-all" title="Reset Password"><Key size={16}/></button>
-                                        <button onClick={async () => { if(confirm("Suspend student?")) { await db.updateStudentStatus(s.id, s.status === 'Active' ? 'Suspended' : 'Active'); refresh(); } }} className={`p-2 rounded-lg ${s.status === 'Active' ? 'text-emerald-500 bg-emerald-50' : 'text-slate-400 bg-slate-50'}`}><Power size={16}/></button>
+                                        <button onClick={async () => { if(confirm("Change status?")) { await db.updateStudentStatus(s.id, s.status === 'Active' ? 'Suspended' : 'Active'); refresh(); } }} className={`p-2 rounded-lg ${s.status === 'Active' ? 'text-emerald-500 bg-emerald-50' : 'text-slate-400 bg-slate-50'}`}><Power size={16}/></button>
                                         <button onClick={async () => { if(confirm("Permanent Delete?")) { await db.deleteStudent(s.id); refresh(); } }} className="p-2 rounded-lg text-rose-400 hover:text-rose-600 hover:bg-rose-50"><Trash2 size={16}/></button>
                                     </div>
                                 </td>
@@ -402,7 +403,7 @@ const TeachersModule = ({ teachers, onNotify, refresh }: any) => {
                 {isModalOpen && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
                         <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="bg-white rounded-3xl p-8 w-full max-w-md shadow-2xl relative">
-                            <button onClick={() => setIsModalOpen(false)} className="absolute top-4 right-4 text-slate-400"><X/></button>
+                            <button onClick={() => setIsModalOpen(false)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-800"><X/></button>
                             <h3 className="text-2xl font-black text-slate-800 mb-6 flex items-center gap-2"><Briefcase className="text-indigo-600"/> {editingTeacher ? 'Modify Profile' : 'New Teacher Profile'}</h3>
                             <form onSubmit={handleSubmit} className="space-y-4">
                                 <div className="space-y-1"><label className="text-[10px] font-black uppercase text-slate-400">Teacher Name</label><input required className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-500" value={form.name} onChange={e => setForm({...form, name: e.target.value})} /></div>
