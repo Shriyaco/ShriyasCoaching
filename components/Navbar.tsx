@@ -40,20 +40,25 @@ const Navbar: React.FC = () => {
     <nav
       className={`fixed w-full z-50 transition-all duration-500 ${
         scrolled || isOpen
-          ? 'bg-[#020617]/80 backdrop-blur-xl border-b border-[#00E5FF]/10 shadow-[0_4px_30px_rgba(0,0,0,0.1)] py-3'
+          ? 'bg-[#020617]/90 backdrop-blur-xl border-b border-[#00E5FF]/20 shadow-[0_4px_30px_rgba(0,0,0,0.5)] py-3'
           : 'bg-transparent py-6'
       } ${isLoginPage ? 'lg:hidden' : ''}`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2 group relative">
-            <div className="absolute inset-0 bg-[#00E5FF] blur-2xl opacity-0 group-hover:opacity-20 transition-opacity duration-500 rounded-full" />
-            <img 
-              src="https://advedasolutions.in/sc.png" 
-              alt="Shriya's Coaching" 
-              className="h-10 md:h-12 w-auto object-contain relative z-10 transition-transform duration-300 group-hover:scale-105" 
-            />
+          <Link to="/" className="flex items-center gap-3 group relative">
+            {/* Glow Effect */}
+            <div className="absolute -inset-4 bg-[#00E5FF] opacity-0 group-hover:opacity-20 blur-xl transition-opacity duration-500 rounded-full pointer-events-none" />
+            
+            {/* Logo Image Container */}
+            <div className="relative z-10 bg-gradient-to-br from-gray-900 to-black p-2 rounded-xl shadow-[0_0_15px_rgba(0,229,255,0.4)] border border-[#00E5FF]/30 group-hover:scale-105 transition-transform duration-300">
+                <img 
+                  src="https://advedasolutions.in/sc.png" 
+                  alt="Shriya's Coaching" 
+                  className="h-12 w-auto object-contain" 
+                />
+            </div>
           </Link>
 
           {/* Desktop Nav */}

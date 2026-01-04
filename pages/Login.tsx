@@ -2,7 +2,7 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../services/db';
-import { ArrowRight, User as UserIcon, Lock, BookOpen, Sparkles, AlertCircle } from 'lucide-react';
+import { ArrowRight, User as UserIcon, Lock, BookOpen, Sparkles, AlertCircle, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Float, Environment, ContactShadows, Sphere, Box, Cylinder, Torus, Cone, Icosahedron } from '@react-three/drei';
@@ -182,8 +182,16 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#020617] flex overflow-hidden font-sans text-white">
+    <div className="min-h-screen bg-[#020617] flex overflow-hidden font-sans text-white relative">
       
+      {/* Close/Home Button */}
+      <button 
+        onClick={() => navigate('/')}
+        className="absolute top-6 right-6 z-50 p-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-full text-gray-400 hover:text-white transition-all backdrop-blur-md"
+      >
+        <X size={24} />
+      </button>
+
       {/* LEFT SIDE: 3D Animation */}
       <div className="hidden lg:flex w-1/2 relative flex-col items-center justify-center bg-[#020617] border-r border-white/5">
         <div className="absolute inset-0 z-0 opacity-80">

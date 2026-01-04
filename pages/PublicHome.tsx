@@ -271,8 +271,9 @@ const PublicHome: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-12 relative z-10">
           <div className="col-span-1 md:col-span-2">
             <div className="flex items-center gap-3 mb-6">
-                <img src="https://advedasolutions.in/sc.png" alt="Shriya's Coaching" className="h-12 w-auto object-contain" />
-                <span className="text-xl font-bold text-white tracking-tight">Shriya's Coaching</span>
+                <div className="bg-gradient-to-br from-gray-900 to-black p-2 rounded-xl shadow-[0_0_15px_rgba(0,229,255,0.2)] border border-white/10">
+                    <img src="https://advedasolutions.in/sc.png" alt="Shriya's Coaching" className="h-14 w-auto object-contain" />
+                </div>
             </div>
             <p className="mt-4 text-sm leading-relaxed max-w-sm text-gray-500">
               The premier destination for primary and middle school education (Grade 1-8). We build the leaders of tomorrow with a strong academic foundation.
