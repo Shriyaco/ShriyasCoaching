@@ -6,6 +6,7 @@ import { Float, Box, Sphere, MeshDistortMaterial, Environment, ContactShadows, S
 import * as THREE from 'three';
 import { Languages, Zap, Award, Palette, Code, Smartphone, Layout, Star, ArrowRight, Quote, CheckCircle, GraduationCap, Map } from 'lucide-react';
 import ThreeOrb from '../components/ThreeOrb';
+import Footer from '../components/Footer';
 import { useTheme } from '../App';
 
 // --- 3D Scene Component for State Board ---
@@ -237,6 +238,7 @@ const StateBoard: React.FC = () => {
           </div>
       </section>
 
+      <Footer />
     </div>
   );
 };

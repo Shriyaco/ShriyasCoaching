@@ -2,10 +2,11 @@
 import React, { useRef } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { Float, Text, Box, Sphere, MeshDistortMaterial, Environment, ContactShadows, Stars, PerspectiveCamera } from '@react-three/drei';
+import { Float, Box, Sphere, MeshDistortMaterial, Environment, ContactShadows, Stars, PerspectiveCamera } from '@react-three/drei';
 import * as THREE from 'three';
 import { BookOpen, CheckCircle2, Star, Calculator, Microscope, Globe, Palette, Brain, ArrowRight, Zap, Award } from 'lucide-react';
 import ThreeOrb from '../components/ThreeOrb';
+import Footer from '../components/Footer';
 import { useTheme } from '../App';
 
 // --- 3D Scene Component for CBSE ---
@@ -222,6 +223,7 @@ const CBSEBoard: React.FC = () => {
           </div>
       </section>
 
+      <Footer />
     </div>
   );
 };

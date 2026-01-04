@@ -6,6 +6,7 @@ import { Float, Environment, ContactShadows, Stars, PerspectiveCamera, Torus, Sp
 import * as THREE from 'three';
 import { Target, Compass, Lightbulb, Users, Shield, Sparkles, BookOpen, Heart, Rocket, ArrowRight, Quote } from 'lucide-react';
 import ThreeOrb from '../components/ThreeOrb';
+import Footer from '../components/Footer';
 import { useTheme } from '../App';
 
 // --- 3D Scene Component for Vision ---
@@ -221,6 +222,7 @@ const Vision: React.FC = () => {
         </div>
       </section>
 
+      <Footer />
     </div>
   );
 };

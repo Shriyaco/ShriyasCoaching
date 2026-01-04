@@ -6,6 +6,7 @@ import { Float, Environment, ContactShadows, Stars, PerspectiveCamera, MeshWobbl
 import * as THREE from 'three';
 import { Heart, Brain, Zap, ShieldCheck, GraduationCap, Users, TrendingUp, Sparkles, ArrowRight, Quote, BookOpen, Clock } from 'lucide-react';
 import ThreeOrb from '../components/ThreeOrb';
+import Footer from '../components/Footer';
 import { useTheme } from '../App';
 
 // --- 3D Scene Component for Why Us ---
@@ -260,6 +261,7 @@ const WhyUs: React.FC = () => {
           </div>
       </section>
 
+      <Footer />
     </div>
   );
 };

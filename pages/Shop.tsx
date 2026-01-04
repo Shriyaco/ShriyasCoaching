@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { db } from '../services/db';
 import { Product, Order, User, SystemSettings, GatewayConfig } from '../types';
 import ThreeOrb from '../components/ThreeOrb';
+import Footer from '../components/Footer';
 import { ShoppingBag, ArrowRight, Check, X, CreditCard, Smartphone, QrCode, Copy, MapPin, User as UserIcon, Phone, Hash } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
@@ -144,7 +145,7 @@ const Shop: React.FC = () => {
                 </div>
 
                 {activeTab === 'products' ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-20">
                         {products.map(product => (
                             <motion.div key={product.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white dark:bg-[#0B1120] rounded-3xl overflow-hidden shadow-lg border border-slate-200 dark:border-white/10 group h-full flex flex-col">
                                 <div className="h-64 bg-slate-100 dark:bg-black/50 relative overflow-hidden shrink-0">
@@ -167,7 +168,7 @@ const Shop: React.FC = () => {
                         ))}
                     </div>
                 ) : (
-                    <div className="space-y-4 max-w-4xl mx-auto">
+                    <div className="space-y-4 max-w-4xl mx-auto mb-20">
                         {orders.map(order => (
                             <motion.div key={order.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white dark:bg-[#0B1120] p-6 rounded-2xl border border-slate-200 dark:border-white/10 flex flex-col md:flex-row justify-between items-center gap-4">
                                 <div className="flex items-center gap-4 w-full md:w-auto">
@@ -202,11 +203,13 @@ const Shop: React.FC = () => {
                 )}
             </div>
 
+            <Footer />
+
             {/* Step 1: Order Details Form Modal */}
             <AnimatePresence>
                 {selectedProduct && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-                        <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} className="bg-white dark:bg-[#0B1120] rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden relative flex flex-col max-h-[90vh]">
+                        <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className="bg-white dark:bg-[#0B1120] rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden relative flex flex-col max-h-[90vh]">
                              <div className="bg-gradient-to-r from-pink-600 to-purple-600 p-6 text-white shrink-0">
                                 <div className="flex justify-between items-center mb-1">
                                     <h3 className="text-2xl font-black font-[Poppins]">Order Details</h3>
@@ -267,7 +270,7 @@ const Shop: React.FC = () => {
             <AnimatePresence>
                 {activeOrder && settings && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-                        <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} className="bg-white dark:bg-[#0B1120] rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl relative flex flex-col md:flex-row">
+                        <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className="bg-white dark:bg-[#0B1120] rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl relative flex flex-col md:flex-row">
                             <button onClick={() => setActiveOrder(null)} className="absolute top-4 right-4 text-white z-20 hover:bg-white/10 p-2 rounded-full"><X size={20}/></button>
                             
                             {/* Invoice Sidebar */}
