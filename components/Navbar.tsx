@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, ChevronDown, CreditCard, LogIn, Sun, Moon, ArrowRight, ShoppingBag } from 'lucide-react';
+import { Menu, X, ChevronDown, CreditCard, LogIn, Sun, Moon, ArrowRight, ShoppingBag, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence, Variants } from 'framer-motion';
 import { useTheme } from '../App';
 import { db } from '../services/db';
@@ -10,6 +10,7 @@ const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [hoveredLink, setHoveredLink] = useState<string | null>(null);
+  const [expandedMobileMenu, setExpandedMobileMenu] = useState<string | null>(null);
   
   // Badge State
   const [pendingPaymentCount, setPendingPaymentCount] = useState(0);
@@ -28,7 +29,6 @@ const Navbar: React.FC = () => {
             const user = JSON.parse(storedUser);
             if (user.role === 'student') {
                 const orders = await db.getOrders(user.id);
-                // Fix: changed 'Awaiting Payment' to 'Payment Pending' to match Order status type
                 const count = orders.filter(o => o.status === 'Payment Pending').length;
                 setPendingPaymentCount(count);
             }
@@ -38,10 +38,9 @@ const Navbar: React.FC = () => {
     };
 
     checkBadge();
-    // Re-check periodically or on specific events
     const interval = setInterval(checkBadge, 10000);
     return () => clearInterval(interval);
-  }, [location.pathname]); // Re-check when route changes
+  }, [location.pathname]);
 
   // Prevent scrolling when mobile menu is open
   useEffect(() => {
@@ -49,6 +48,7 @@ const Navbar: React.FC = () => {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'unset';
+      setExpandedMobileMenu(null); // Reset expansion when closing
     }
   }, [isOpen]);
 
@@ -75,8 +75,6 @@ const Navbar: React.FC = () => {
     },
     { name: 'Contact Us', path: '/contact' }
   ];
-
-  // --- Animation Variants ---
 
   const menuContainerVariants: Variants = {
     closed: {
@@ -115,6 +113,10 @@ const Navbar: React.FC = () => {
     }
   };
 
+  const toggleMobileAccordion = (name: string) => {
+    setExpandedMobileMenu(prev => (prev === name ? null : name));
+  };
+
   return (
     <nav
       className={`fixed w-full z-50 transition-all duration-300 ${
@@ -125,7 +127,6 @@ const Navbar: React.FC = () => {
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between">
-          {/* Logo */}
           <Link to="/" className="flex items-center gap-3 group relative z-50">
             <div className="relative z-10 bg-gradient-to-br from-gray-900 to-black p-2 rounded-xl shadow-[0_0_15px_rgba(0,229,255,0.4)] border border-[#00E5FF]/30 group-hover:scale-105 transition-transform duration-300">
                 <img 
@@ -137,7 +138,6 @@ const Navbar: React.FC = () => {
             <span className="font-bold text-lg md:text-xl text-slate-800 dark:text-white hidden sm:block font-[Poppins]">Shriya's</span>
           </Link>
 
-          {/* Desktop Nav */}
           <div className="hidden md:flex items-center space-x-8">
             {navLinks.map((link) => (
               <div 
@@ -155,7 +155,6 @@ const Navbar: React.FC = () => {
                   {link.dropdown && <ChevronDown size={14} className="ml-1 group-hover:rotate-180 transition-transform text-[#00E5FF]" />}
                 </Link>
                 
-                {/* Dropdown */}
                 {link.dropdown && (
                   <AnimatePresence>
                     {hoveredLink === link.name && (
@@ -181,7 +180,6 @@ const Navbar: React.FC = () => {
               </div>
             ))}
             
-            {/* Shop Link with Badge */}
             <Link 
                 to="/shop"
                 className="flex items-center text-slate-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 px-3 py-2 text-sm font-medium transition-colors font-[Poppins] relative"
@@ -195,7 +193,6 @@ const Navbar: React.FC = () => {
             </Link>
           </div>
 
-          {/* Desktop Action Buttons */}
           <div className="hidden md:flex items-center space-x-4">
             <button 
                 onClick={toggleTheme}
@@ -222,7 +219,6 @@ const Navbar: React.FC = () => {
             </Link>
           </div>
 
-          {/* Mobile Menu Button & Theme Toggle */}
           <div className="md:hidden flex items-center gap-3 z-50">
              <button 
                 onClick={toggleTheme}
@@ -240,7 +236,6 @@ const Navbar: React.FC = () => {
         </div>
       </div>
 
-      {/* --- 3D Mobile Menu Overlay --- */}
       <AnimatePresence>
         {isOpen && (
           <motion.div 
@@ -252,39 +247,60 @@ const Navbar: React.FC = () => {
             className="md:hidden fixed inset-0 z-40 bg-white/95 dark:bg-[#020617]/95 backdrop-blur-2xl flex flex-col pt-24 px-6 h-screen overflow-y-auto"
             style={{ perspective: "1000px" }}
           >
-            {/* Background Decoration */}
             <div className="absolute top-0 right-0 w-64 h-64 bg-[#00E5FF] rounded-full filter blur-[100px] opacity-10 pointer-events-none" />
             <div className="absolute bottom-0 left-0 w-48 h-48 bg-purple-500 rounded-full filter blur-[80px] opacity-10 pointer-events-none" />
 
             <div className="flex flex-col space-y-2 pb-10">
-              {navLinks.map((link, idx) => (
+              {navLinks.map((link) => (
                 <motion.div 
                   key={link.name} 
                   variants={menuItemVariants}
                 >
-                  <Link 
-                    to={link.path}
-                    onClick={() => setIsOpen(false)}
-                    className="group flex items-center justify-between py-4 text-2xl font-bold text-slate-800 dark:text-white border-b border-slate-100 dark:border-white/5 hover:text-[#00E5FF] transition-colors font-[Poppins]"
-                  >
-                    <span>{link.name}</span>
-                    <ArrowRight size={20} className="opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all text-[#00E5FF]"/>
-                  </Link>
-                  
-                  {/* Nested Links */}
-                  {link.dropdown && (
-                    <div className="pl-4 mt-2 space-y-3 mb-4 border-l-2 border-slate-100 dark:border-white/10 ml-2">
-                      {link.dropdown.map((item, subIdx) => (
-                         <Link
-                            key={item}
-                            to={link.path}
-                            onClick={() => setIsOpen(false)}
-                            className="block text-slate-500 dark:text-gray-400 text-lg hover:text-[#00E5FF] dark:hover:text-[#00E5FF] transition-colors"
-                         >
-                           {item}
-                         </Link>
-                      ))}
-                    </div>
+                  {link.dropdown ? (
+                    <>
+                      <button 
+                        onClick={() => toggleMobileAccordion(link.name)}
+                        className="w-full flex items-center justify-between py-4 text-2xl font-bold text-slate-800 dark:text-white border-b border-slate-100 dark:border-white/5 hover:text-[#00E5FF] transition-colors font-[Poppins]"
+                      >
+                        <span>{link.name}</span>
+                        <ChevronRight 
+                          size={24} 
+                          className={`text-[#00E5FF] transition-transform duration-300 ${expandedMobileMenu === link.name ? 'rotate-90' : ''}`}
+                        />
+                      </button>
+                      <AnimatePresence>
+                        {expandedMobileMenu === link.name && (
+                          <motion.div 
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            className="overflow-hidden bg-slate-50/50 dark:bg-white/5 rounded-xl mt-2 mb-4"
+                          >
+                            <div className="pl-6 py-4 space-y-4 border-l-4 border-[#00E5FF]">
+                              {link.dropdown.map((item) => (
+                                <Link
+                                    key={item}
+                                    to={link.path}
+                                    onClick={() => setIsOpen(false)}
+                                    className="block text-slate-600 dark:text-gray-300 text-lg hover:text-[#00E5FF] dark:hover:text-[#00E5FF] transition-colors font-medium"
+                                >
+                                  {item}
+                                </Link>
+                              ))}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </>
+                  ) : (
+                    <Link 
+                      to={link.path}
+                      onClick={() => setIsOpen(false)}
+                      className="group flex items-center justify-between py-4 text-2xl font-bold text-slate-800 dark:text-white border-b border-slate-100 dark:border-white/5 hover:text-[#00E5FF] transition-colors font-[Poppins]"
+                    >
+                      <span>{link.name}</span>
+                      <ArrowRight size={20} className="opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all text-[#00E5FF]"/>
+                    </Link>
                   )}
                 </motion.div>
               ))}
