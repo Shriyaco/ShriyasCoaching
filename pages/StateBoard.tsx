@@ -1,10 +1,10 @@
 
-import React, { useRef } from 'react';
+import React, { useRef, Suspense } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Float, Box, Sphere, MeshDistortMaterial, Environment, ContactShadows, Stars, PerspectiveCamera, Icosahedron } from '@react-three/drei';
 import * as THREE from 'three';
-import { Languages, Zap, Award, Palette, Code, Smartphone, Layout, Star, ArrowRight, Quote, CheckCircle, GraduationCap, Map } from 'lucide-react';
+import { Languages, Zap, Award, Palette, Code, Smartphone, Layout, Star, ArrowRight, Quote, CheckCircle2, GraduationCap, Map } from 'lucide-react';
 import ThreeOrb from '../components/ThreeOrb';
 import Footer from '../components/Footer';
 import { useTheme } from '../App';
@@ -70,12 +70,14 @@ const StateBoard: React.FC = () => {
       <section className="relative min-h-[85vh] flex flex-col items-center justify-center pt-24 overflow-hidden">
         <div className="absolute inset-0 z-0">
           <Canvas>
-            <PerspectiveCamera makeDefault position={[0, 0, 9]} />
-            <ambientLight intensity={1} />
-            <pointLight position={[10, 10, 10]} intensity={1.5} color="#10b981" />
-            <spotLight position={[-10, 10, 10]} angle={0.2} penumbra={1} intensity={2} color="#34d399" />
-            <StateBoardScene />
-            {isDark && <Stars radius={120} depth={50} count={4000} factor={4} saturation={0} fade speed={1} />}
+            <Suspense fallback={null}>
+                <PerspectiveCamera makeDefault position={[0, 0, 9]} />
+                <ambientLight intensity={1} />
+                <pointLight position={[10, 10, 10]} intensity={1.5} color="#10b981" />
+                <spotLight position={[-10, 10, 10]} angle={0.2} penumbra={1} intensity={2} color="#34d399" />
+                <StateBoardScene />
+                {isDark && <Stars radius={120} depth={50} count={4000} factor={4} saturation={0} fade speed={1} />}
+            </Suspense>
           </Canvas>
         </div>
 

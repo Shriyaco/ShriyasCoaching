@@ -1,4 +1,3 @@
-
 import { supabase } from './supabase';
 import { RealtimeChannel } from '@supabase/supabase-js';
 import { Student, Grade, Subdivision, Notice, User, Teacher, TimetableEntry, FeeSubmission, SystemSettings, AttendanceRecord, Homework, Exam, ExamResult, HomeworkSubmission, ExamSubmission, StudentQuery, Enquiry, Product, Order, StudyNote, StudentNotification } from '../types';
@@ -16,7 +15,6 @@ const mapStudent = (s: any): Student => ({
     imageUrl: s.image_url,
     totalFees: s.total_fees,
     monthlyFees: s.monthly_fees,
-    // Fix: Object literal may only specify known properties, but 'school_name' does not exist in type 'Student'. Did you mean to write 'schoolName'?
     schoolName: s.school_name,
     address: s.address,
     feesStatus: s.fees_status as any,
@@ -380,7 +378,7 @@ class DatabaseService {
       return (data || []).map(a => ({
           id: a.id,
           studentId: a.student_id,
-          division_id: a.division_id,
+          divisionId: a.division_id, // Fixed: division_id -> divisionId
           date: a.date,
           status: a.status as any
       }));
@@ -415,7 +413,13 @@ class DatabaseService {
   async getHomeworkForStudent(gradeId: string, subdivisionId: string): Promise<Homework[]> {
       const { data } = await supabase.from('homework').select('*').eq('grade_id', gradeId).eq('subdivision_id', subdivisionId);
        return (data || []).map(h => ({
-          id: h.id, gradeId: h.grade_id, subdivisionId: h.subdivision_id, subject: h.subject, task: h.task, due_date: h.due_date, assignedBy: h.assigned_by
+          id: h.id, 
+          gradeId: h.grade_id, 
+          subdivisionId: h.subdivision_id, 
+          subject: h.subject, 
+          task: h.task, 
+          dueDate: h.due_date, // Fixed: due_date -> dueDate
+          assignedBy: h.assigned_by
       }));
   }
 
@@ -460,18 +464,37 @@ class DatabaseService {
       if (gradeId) query = query.eq('grade_id', gradeId);
       const { data } = await query;
       return (data || []).map(e => ({
-          id: e.id, title: e.title, gradeId: e.grade_id, subdivisionId: e.subdivision_id, subject: e.subject, exam_date: e.exam_date, start_time: e.start_time, duration: e.duration, total_marks: e.total_marks, questions: e.questions, created_by: e.created_by
+          id: e.id, 
+          title: e.title, 
+          gradeId: e.grade_id, 
+          subdivisionId: e.subdivision_id, 
+          subject: e.subject, 
+          examDate: e.exam_date, // Fixed: exam_date -> examDate
+          startTime: e.start_time, // Fixed: start_time -> startTime
+          duration: e.duration, 
+          totalMarks: e.total_marks, // Fixed: total_marks -> totalMarks
+          questions: e.questions, 
+          createdBy: e.created_by // Fixed: created_by -> createdBy
       }));
   }
   
-  // Fix: Added getExamsForStudent method used in StudentDashboard
   async getExamsForStudent(gradeId: string, subdivisionId: string): Promise<Exam[]> {
       const { data } = await supabase.from('exams')
           .select('*')
           .eq('grade_id', gradeId)
           .eq('subdivision_id', subdivisionId);
       return (data || []).map(e => ({
-          id: e.id, title: e.title, gradeId: e.grade_id, subdivisionId: e.subdivision_id, subject: e.subject, examDate: e.exam_date, startTime: e.start_time, duration: e.duration, totalMarks: e.total_marks, questions: e.questions, createdBy: e.created_by
+          id: e.id, 
+          title: e.title, 
+          gradeId: e.grade_id, 
+          subdivisionId: e.subdivision_id, 
+          subject: e.subject, 
+          examDate: e.exam_date, 
+          startTime: e.start_time, 
+          duration: e.duration, 
+          totalMarks: e.total_marks, 
+          questions: e.questions, 
+          createdBy: e.created_by
       }));
   }
 
@@ -531,7 +554,6 @@ class DatabaseService {
       await supabase.from('queries').update({ status: 'Answered', reply_text: replyText }).eq('id', queryId);
   }
 
-  // Fix: Added missing Enquiry management methods
   async addEnquiry(data: any) {
       await supabase.from('enquiries').insert({
           student_name: data.studentName,
@@ -575,12 +597,9 @@ class DatabaseService {
           student_id: data.studentId,
           student_name: data.studentName,
           product_id: data.productId,
-          // Fix: Property 'product_name' does not exist on type 'Omit<Order, "id" | "createdAt">'. Did you mean 'productName'?
           product_name: data.productName,
-          // Fix: Property 'product_image' does not exist on type 'Omit<Order, "id" | "createdAt">'. Did you mean 'productImage'?
           product_image: data.productImage,
           custom_name: data.customName,
-          // Fix: Property 'change_request' does not exist on type 'Omit<Order, "id" | "createdAt">'. Did you mean 'changeRequest'?
           change_request: data.changeRequest,
           address: data.address,
           pincode: data.pincode,
