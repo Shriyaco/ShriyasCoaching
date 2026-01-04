@@ -65,13 +65,20 @@ const Navbar: React.FC = () => {
   const navLinks = [
     { 
       name: 'Boards', 
-      path: '/#about', 
-      dropdown: ['ICSE', 'CBSE', 'State Board'] 
+      path: '#', 
+      dropdown: [
+        { label: 'CBSE Board', path: '/cbse' },
+        { label: 'ICSE Board', path: '/icse' },
+        { label: 'State Board', path: '/state-board' }
+      ] 
     },
     { 
       name: 'About Us', 
-      path: '/#about',
-      dropdown: ['Why Us', 'Our Vision'] 
+      path: '#',
+      dropdown: [
+        { label: 'Why Choose Us', path: '/why-us' },
+        { label: 'Vision & Mission', path: '/vision' }
+      ] 
     },
     { name: 'Contact Us', path: '/contact' }
   ];
@@ -165,13 +172,13 @@ const Navbar: React.FC = () => {
                         className="absolute top-full left-0 w-56 bg-white/95 dark:bg-[#0B1120]/95 backdrop-blur-xl border border-slate-200 dark:border-[#00E5FF]/20 rounded-xl shadow-xl dark:shadow-[0_0_30px_rgba(0,229,255,0.1)] overflow-hidden pt-2 p-2 mt-2"
                       >
                         {link.dropdown.map((item) => (
-                          <a 
-                            key={item} 
-                            href={link.path} 
+                          <Link 
+                            key={item.label} 
+                            to={item.path} 
                             className="block px-4 py-3 text-sm text-slate-600 dark:text-gray-300 hover:bg-slate-50 dark:hover:bg-[#00E5FF]/10 hover:text-[#00E5FF] dark:hover:text-[#00E5FF] rounded-lg transition-all"
                           >
-                            {item}
-                          </a>
+                            {item.label}
+                          </Link>
                         ))}
                       </motion.div>
                     )}
@@ -279,12 +286,12 @@ const Navbar: React.FC = () => {
                             <div className="pl-6 py-4 space-y-4 border-l-4 border-[#00E5FF]">
                               {link.dropdown.map((item) => (
                                 <Link
-                                    key={item}
-                                    to={link.path}
+                                    key={item.label}
+                                    to={item.path}
                                     onClick={() => setIsOpen(false)}
                                     className="block text-slate-600 dark:text-gray-300 text-lg hover:text-[#00E5FF] dark:hover:text-[#00E5FF] transition-colors font-medium"
                                 >
-                                  {item}
+                                  {item.label}
                                 </Link>
                               ))}
                             </div>

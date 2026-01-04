@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect, useState, Component, ErrorInfo } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
@@ -9,6 +10,11 @@ import Login from './pages/Login';
 import PayFees from './pages/PayFees';
 import ContactUs from './pages/ContactUs';
 import Shop from './pages/Shop';
+import CBSEBoard from './pages/CBSEBoard';
+import ICSEBoard from './pages/ICSEBoard';
+import StateBoard from './pages/StateBoard';
+import WhyUs from './pages/WhyUs';
+import Vision from './pages/Vision';
 import { AlertCircle } from 'lucide-react';
 
 // --- Error Boundary ---
@@ -105,6 +111,11 @@ export default function App() {
             <Route path="/shop" element={<Shop />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/pay-fees" element={<PayFees />} />
+            <Route path="/why-us" element={<WhyUs />} />
+            <Route path="/vision" element={<Vision />} />
+            <Route path="/cbse" element={<CBSEBoard />} />
+            <Route path="/icse" element={<ICSEBoard />} />
+            <Route path="/state-board" element={<StateBoard />} />
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/student" element={<StudentDashboard />} />
             <Route path="/teacher" element={<TeacherDashboard />} />
