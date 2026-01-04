@@ -7,6 +7,7 @@ import StudentDashboard from './pages/StudentDashboard';
 import TeacherDashboard from './pages/TeacherDashboard';
 import Login from './pages/Login';
 import PayFees from './pages/PayFees';
+import ContactUs from './pages/ContactUs';
 
 // Login Page Wrapper
 const LoginPage: React.FC = () => {
@@ -19,6 +20,7 @@ export default function App() {
       <Navbar />
       <Routes>
         <Route path="/" element={<PublicHome />} />
+        <Route path="/contact" element={<ContactUs />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/pay-fees" element={<PayFees />} />
         <Route path="/admin" element={<AdminDashboard />} />

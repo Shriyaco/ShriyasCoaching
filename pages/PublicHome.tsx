@@ -293,15 +293,15 @@ const PublicHome: React.FC = () => {
             <ul className="space-y-4 text-sm">
                 <li className="flex items-start gap-3 group">
                     <div className="mt-1 text-gray-500 group-hover:text-[#00E5FF] transition-colors"><MapPin size={16}/></div>
-                    <span>123 Education Lane, Knowledge Park<br/>Mumbai, MH 400001</span>
+                    <span>Bungalow no 19, Abhishek Bungalows,<br/>Behind Aman Indian Colony,<br/>Hathijan Circle, Ahmedabad - 382445</span>
                 </li>
                  <li className="flex items-center gap-3 group">
                     <div className="text-gray-500 group-hover:text-[#00E5FF] transition-colors"><Phone size={16}/></div>
-                    <span className="cursor-pointer hover:text-[#00E5FF] transition-colors">+91 98765 43210</span>
+                    <span className="cursor-pointer hover:text-[#00E5FF] transition-colors">+91 97241 11369</span>
                 </li>
                 <li className="flex items-center gap-3 group">
                     <div className="text-gray-500 group-hover:text-[#00E5FF] transition-colors"><Mail size={16}/></div>
-                    <span className="cursor-pointer hover:text-[#00E5FF] transition-colors">contact@shriyacoaching.com</span>
+                    <span className="cursor-pointer hover:text-[#00E5FF] transition-colors">info@shriyasgurukul.in</span>
                 </li>
             </ul>
           </div>

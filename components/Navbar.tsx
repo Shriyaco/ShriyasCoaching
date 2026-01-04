@@ -33,7 +33,7 @@ const Navbar: React.FC = () => {
       path: '#about',
       dropdown: ['Why Us', 'Our Vision'] 
     },
-    { name: 'Contact Us', path: '#contact' }
+    { name: 'Contact Us', path: '/contact' }
   ];
 
   return (
