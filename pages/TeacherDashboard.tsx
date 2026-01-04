@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { db } from '../services/db';
 import { Subdivision, Student, User, Grade, Homework, Exam, Question, StudentQuery, ExamSubmission, AttendanceRecord } from '../types';
 import ThreeOrb from '../components/ThreeOrb';
-import { LogOut, Calendar, BookOpen, PenTool, CheckCircle, ChevronLeft, ChevronRight, Plus, Trash2, Award, ClipboardCheck, X, Save, MessageSquare, Clock, Unlock, UserCheck, UserX, AlertCircle } from 'lucide-react';
+import { LogOut, Calendar, BookOpen, PenTool, CheckCircle, ChevronLeft, ChevronRight, Plus, Trash2, Award, ClipboardCheck, X, Save, MessageSquare, Clock, Unlock, UserCheck, UserX, AlertCircle, Send } from 'lucide-react';
 
 const TeacherDashboard: React.FC = () => {
     const navigate = useNavigate();
@@ -755,7 +755,96 @@ const GradingModule = ({ teacherId }: { teacherId: string }) => {
 
 // --- MODULE 5: QUERIES ---
 const QueriesModule = () => {
-    return <div className="text-center text-gray-500 p-10">Queries Module Loaded</div>;
+    const [queries, setQueries] = useState<StudentQuery[]>([]);
+    const [replyText, setReplyText] = useState<Record<string, string>>({}); // queryId -> text
+    const [loading, setLoading] = useState(false);
+
+    const loadQueries = useCallback(async () => {
+        setLoading(true);
+        const q = await db.getQueries();
+        // Sort by date desc
+        q.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        setQueries(q);
+        setLoading(false);
+    }, []);
+
+    useEffect(() => {
+        loadQueries();
+    }, [loadQueries]);
+
+    const handleSendReply = async (queryId: string) => {
+        const text = replyText[queryId];
+        if (!text) return;
+        
+        await db.answerQuery(queryId, text);
+        alert('Reply Sent');
+        setReplyText(prev => ({ ...prev, [queryId]: '' }));
+        loadQueries();
+    };
+
+    return (
+        <div className="max-w-4xl mx-auto space-y-6">
+            <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                <MessageSquare className="text-purple-600"/> Student Queries
+            </h3>
+
+            {loading ? <div className="text-center py-10 text-gray-400">Loading queries...</div> : queries.length === 0 ? (
+                <div className="text-center py-12 bg-white rounded-xl border border-dashed border-gray-200 text-gray-400">
+                    No queries found.
+                </div>
+            ) : (
+                <div className="space-y-4">
+                    {queries.map(q => (
+                        <div key={q.id} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                            <div className="flex justify-between items-start mb-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="h-10 w-10 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                                        {q.studentName.charAt(0)}
+                                    </div>
+                                    <div>
+                                        <h4 className="font-bold text-gray-800">{q.studentName}</h4>
+                                        <div className="flex gap-2 text-xs mt-0.5">
+                                            <span className="px-2 py-0.5 bg-gray-100 rounded text-gray-500">{q.subject}</span>
+                                            <span className="text-gray-400">{new Date(q.createdAt).toLocaleDateString()}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <span className={`px-3 py-1 rounded-full text-xs font-bold ${q.status === 'Answered' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
+                                    {q.status}
+                                </span>
+                            </div>
+
+                            <div className="bg-gray-50 p-4 rounded-lg mb-4 text-gray-700 text-sm leading-relaxed">
+                                {q.queryText}
+                            </div>
+
+                            {q.status === 'Answered' ? (
+                                <div className="pl-4 border-l-4 border-purple-500 ml-2">
+                                    <p className="text-xs font-bold text-purple-600 mb-1">Your Reply</p>
+                                    <p className="text-sm text-gray-600">{q.replyText}</p>
+                                </div>
+                            ) : (
+                                <div className="mt-4 flex gap-2">
+                                    <input 
+                                        className="flex-1 border border-gray-200 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-purple-500 outline-none"
+                                        placeholder="Type your reply here..."
+                                        value={replyText[q.id] || ''}
+                                        onChange={e => setReplyText({...replyText, [q.id]: e.target.value})}
+                                    />
+                                    <button 
+                                        onClick={() => handleSendReply(q.id)}
+                                        className="bg-purple-600 text-white px-4 py-2 rounded-lg font-bold text-sm hover:bg-purple-700 transition-colors flex items-center gap-2"
+                                    >
+                                        <Send size={16}/> Reply
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
 };
 
 export default TeacherDashboard;
