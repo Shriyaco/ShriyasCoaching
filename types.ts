@@ -1,5 +1,4 @@
 
-
 export interface Grade {
   id: string;
   gradeName: string;
@@ -14,35 +13,35 @@ export interface Subdivision {
 
 export interface Student {
   id: string;
-  studentCustomId: string; // Auto-generated
+  studentCustomId: string;
   name: string;
   mobile: string;
   parentName: string;
   gradeId: string;
   subdivisionId: string;
   joiningDate: string;
-  dob?: string; // New field
-  imageUrl?: string; // New field (Base64)
-  totalFees: string; // Kept for legacy/total calculation
+  dob?: string;
+  imageUrl?: string;
+  totalFees: string;
   monthlyFees: string; 
   schoolName: string; 
   address: string; 
   feesStatus: 'Paid' | 'Pending' | 'Overdue';
   status: 'Active' | 'Suspended';
-  password?: string; // In real app, this is hashed
-  email?: string; // Kept for legacy compatibility if needed
+  password?: string;
+  email?: string;
 }
 
 export interface Teacher {
   id: string;
-  teacherCustomId: string; // Auto-generated
+  teacherCustomId: string;
   name: string;
   mobile: string;
   gradeId: string;
   subdivisionId: string;
   joiningDate: string;
   status: 'Active' | 'Suspended';
-  specialization: string; // Kept for UI display
+  specialization: string;
   password?: string;
 }
 
@@ -75,14 +74,14 @@ export interface FeeSubmission {
 }
 
 export interface GatewayConfig {
-    name: string; // Display Name e.g. "PhonePe"
+    name: string;
     enabled: boolean;
-    credentials: Record<string, string>; // Flexible Key-Value pairs
+    credentials: Record<string, string>;
 }
 
 export interface SystemSettings {
   googleSiteKey: string;
-  gateways: Record<string, GatewayConfig>; // key: 'manual', 'phonepe', etc.
+  gateways: Record<string, GatewayConfig>;
 }
 
 export interface TimetableEntry {
@@ -95,14 +94,6 @@ export interface TimetableEntry {
   teacherName?: string;
 }
 
-export interface LiveClass {
-  id: string;
-  divisionId: string;
-  title: string;
-  meetingLink: string;
-  scheduledAt: string;
-}
-
 export interface AttendanceRecord {
   id: string;
   studentId: string;
@@ -111,8 +102,6 @@ export interface AttendanceRecord {
   status: 'Present' | 'Absent';
 }
 
-// --- New Modules ---
-
 export interface Homework {
   id: string;
   gradeId: string;
@@ -120,7 +109,7 @@ export interface Homework {
   subject: string;
   task: string;
   dueDate: string;
-  assignedBy: string; // Teacher ID
+  assignedBy: string;
 }
 
 export interface HomeworkSubmission {
@@ -141,13 +130,13 @@ export interface Question {
 
 export interface Exam {
     id: string;
-    title: string; // New: Exam Name
+    title: string;
     gradeId: string;
     subdivisionId: string;
     subject: string;
     examDate: string;
-    startTime: string; // New: HH:mm
-    duration: number; // New: Minutes
+    startTime: string;
+    duration: number;
     totalMarks: number;
     questions: Question[];
     createdBy: string;
@@ -157,9 +146,9 @@ export interface ExamSubmission {
     id: string;
     examId: string;
     studentId: string;
-    answers: Record<string, string>; // questionId -> answer text
+    answers: Record<string, string>;
     submittedAt: string;
-    isLocked: boolean; // Prevent reopening
+    isLocked: boolean;
 }
 
 export interface ExamResult {
@@ -175,7 +164,7 @@ export interface StudentQuery {
     id: string;
     studentId: string;
     studentName: string;
-    subject: string; // e.g., Math, Science
+    subject: string;
     queryText: string;
     status: 'Unanswered' | 'Answered';
     replyText?: string;
@@ -197,8 +186,6 @@ export interface Enquiry {
     status: 'New' | 'Contacted';
 }
 
-// --- Shop Module ---
-
 export interface Product {
     id: string;
     name: string;
@@ -214,12 +201,38 @@ export interface Order {
     productId: string;
     productName: string;
     productImage?: string;
-    customName: string; // Customization text
-    changeRequest: string; // Other changes
-    status: 'Pending' | 'Awaiting Payment' | 'Paid' | 'Completed';
-    finalPrice?: string; // Set by admin
-    transactionRef?: string; // Set after payment
+    customName: string;
+    changeRequest: string;
+    address: string;
+    pincode: string;
+    state: string;
+    mobile: string;
+    status: 'Payment Pending' | 'Payment Under Verification' | 'Processing Order' | 'Completed' | 'Rejected';
+    finalPrice: string;
+    transactionRef?: string;
     createdAt: string;
 }
 
-export type TabView = 'dashboard' | 'students' | 'notices' | 'timetable' | 'grades' | 'teachers' | 'fees' | 'settings' | 'enquiries' | 'shop';
+export interface StudyNote {
+  id: string;
+  gradeId: string;
+  divisionId: string;
+  subject: string;
+  title: string;
+  content: string;
+  fileUrl?: string;
+  createdAt: string;
+  teacherId: string;
+}
+
+export interface StudentNotification {
+    id: string;
+    targetType: 'all' | 'grade' | 'division' | 'student';
+    targetId?: string; // grade_id, division_id, or student_id
+    type: 'fee' | 'announcement' | 'notice';
+    title: string;
+    message: string;
+    createdAt: string;
+}
+
+export type TabView = 'dashboard' | 'students' | 'notices' | 'timetable' | 'grades' | 'teachers' | 'fees' | 'settings' | 'enquiries' | 'shop' | 'broadcast';

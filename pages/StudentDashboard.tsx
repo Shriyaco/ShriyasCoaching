@@ -1,16 +1,18 @@
+
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { db } from '../services/db';
-import { User, TimetableEntry, AttendanceRecord, Student, Homework, Exam, StudentQuery, HomeworkSubmission } from '../types';
+import { User, TimetableEntry, AttendanceRecord, Student, Homework, Exam, StudentQuery, HomeworkSubmission, StudyNote, StudentNotification } from '../types';
 import ThreeOrb from '../components/ThreeOrb';
-import { LogOut, Calendar, BookOpen, PenTool, HelpCircle, Send, CheckCircle, X, Timer, GraduationCap, ChevronRight, MessageSquare, Plus, UserCheck, ShoppingBag, CreditCard, Clock, Settings, Lock, Eye, EyeOff, ShieldCheck } from 'lucide-react';
+import { LogOut, Calendar, BookOpen, PenTool, HelpCircle, Send, CheckCircle, X, Timer, GraduationCap, ChevronRight, MessageSquare, Plus, UserCheck, ShoppingBag, CreditCard, Clock, Settings, Lock, Eye, EyeOff, ShieldCheck, FileText, Download, Bell, Info, AlertCircle, Megaphone } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const StudentDashboard: React.FC = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
   const [studentDetails, setStudentDetails] = useState<Student | null>(null);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'homework' | 'exams' | 'queries' | 'settings'>('dashboard');
+  const [notifications, setNotifications] = useState<StudentNotification[]>([]);
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'homework' | 'notes' | 'exams' | 'queries' | 'settings'>('dashboard');
 
   useEffect(() => {
     const storedUser = sessionStorage.getItem('sc_user');
@@ -23,7 +25,11 @@ const StudentDashboard: React.FC = () => {
     const init = async () => {
         const students = await db.getStudents();
         const me = students.find(s => s.id === parsedUser.id);
-        if (me) setStudentDetails(me);
+        if (me) {
+            setStudentDetails(me);
+            const notifs = await db.getStudentNotifications(me);
+            setNotifications(notifs);
+        }
     };
     init();
   }, [navigate]);
@@ -50,15 +56,18 @@ const StudentDashboard: React.FC = () => {
                 <p className="text-xs text-gray-500 dark:text-gray-400 font-mono">ID: {studentDetails.studentCustomId}</p>
             </div>
         </div>
-        <button onClick={handleLogout} className="text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors p-2 rounded-full hover:bg-gray-100 dark:hover:bg-white/5">
-            <LogOut size={20} />
-        </button>
+        <div className="flex items-center gap-3">
+            <button onClick={handleLogout} className="text-gray-500 dark:text-gray-400 hover:text-red-500 transition-colors p-2 rounded-full hover:bg-gray-100 dark:hover:bg-white/5">
+                <LogOut size={20} />
+            </button>
+        </div>
       </header>
 
       <div className="bg-white dark:bg-[#0B1120] border-b border-gray-200 dark:border-white/10 px-4 md:px-6 flex space-x-6 overflow-x-auto relative z-10 sticky top-[73px] scrollbar-hide">
            {[
                { id: 'dashboard', label: 'Dashboard', icon: Calendar },
                { id: 'homework', label: 'Homework', icon: BookOpen },
+               { id: 'notes', label: 'Notes', icon: FileText },
                { id: 'exams', label: 'Exams', icon: PenTool },
                { id: 'queries', label: 'My Queries', icon: HelpCircle },
                { id: 'settings', label: 'Settings', icon: Settings }
@@ -82,8 +91,9 @@ const StudentDashboard: React.FC = () => {
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.2 }}
              >
-                {activeTab === 'dashboard' && <DashboardOverview student={studentDetails} />}
+                {activeTab === 'dashboard' && <DashboardOverview student={studentDetails} notifications={notifications} />}
                 {activeTab === 'homework' && <HomeworkSection student={studentDetails} />}
+                {activeTab === 'notes' && <NotesSection student={studentDetails} />}
                 {activeTab === 'exams' && <ExamSection student={studentDetails} />}
                 {activeTab === 'queries' && <QuerySection student={studentDetails} />}
                 {activeTab === 'settings' && <SettingsSection user={user} />}
@@ -102,7 +112,7 @@ const StudentDashboard: React.FC = () => {
 };
 
 // --- TAB 1: DASHBOARD ---
-const DashboardOverview = ({ student }: { student: Student }) => {
+const DashboardOverview = ({ student, notifications }: { student: Student, notifications: StudentNotification[] }) => {
     const navigate = useNavigate();
     const [timetable, setTimetable] = useState<TimetableEntry[]>([]);
     const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
@@ -130,7 +140,43 @@ const DashboardOverview = ({ student }: { student: Student }) => {
     return (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-6">
-                {/* Shop and Fees Quick Actions */}
+                
+                {/* Visual Notifications Area */}
+                {notifications.length > 0 && (
+                    <div className="space-y-3">
+                        <h3 className="text-xs font-black uppercase text-slate-400 tracking-widest flex items-center gap-2"><Bell size={14}/> Important Alerts</h3>
+                        {notifications.map(notif => (
+                            <motion.div 
+                                initial={{ x: -20, opacity: 0 }} 
+                                animate={{ x: 0, opacity: 1 }}
+                                key={notif.id} 
+                                className={`p-4 rounded-2xl border flex items-start gap-4 shadow-sm ${
+                                    notif.type === 'fee' ? 'bg-rose-50 border-rose-100 dark:bg-rose-900/10 dark:border-rose-500/20' : 
+                                    notif.type === 'announcement' ? 'bg-indigo-50 border-indigo-100 dark:bg-indigo-900/10 dark:border-indigo-500/20' : 
+                                    'bg-amber-50 border-amber-100 dark:bg-amber-900/10 dark:border-amber-500/20'
+                                }`}
+                            >
+                                <div className={`p-2 rounded-xl shrink-0 ${
+                                    notif.type === 'fee' ? 'bg-rose-100 text-rose-600 dark:bg-rose-500/20 dark:text-rose-400' : 
+                                    notif.type === 'announcement' ? 'bg-indigo-100 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400' : 
+                                    'bg-amber-100 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400'
+                                }`}>
+                                    {notif.type === 'fee' ? <AlertCircle size={18}/> : notif.type === 'announcement' ? <Megaphone size={18}/> : <Info size={18}/>}
+                                </div>
+                                <div className="flex-1">
+                                    <h4 className={`font-bold text-sm ${notif.type === 'fee' ? 'text-rose-800 dark:text-rose-200' : notif.type === 'announcement' ? 'text-indigo-800 dark:text-indigo-200' : 'text-amber-800 dark:text-amber-200'}`}>{notif.title}</h4>
+                                    <p className="text-xs opacity-70 mt-1 leading-relaxed dark:text-gray-300">{notif.message}</p>
+                                    <p className="text-[9px] uppercase font-black opacity-40 mt-2">{new Date(notif.createdAt).toLocaleDateString()}</p>
+                                </div>
+                                {notif.type === 'fee' && (
+                                    <Link to="/pay-fees" className="shrink-0 bg-rose-600 text-white px-3 py-1.5 rounded-lg text-[10px] font-black uppercase hover:bg-rose-700 transition-colors">Pay Now</Link>
+                                )}
+                            </motion.div>
+                        ))}
+                    </div>
+                )}
+
+                {/* Quick Actions */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <Link to="/shop" className="bg-gradient-to-r from-pink-500 to-purple-600 p-6 rounded-2xl text-white shadow-lg hover:shadow-purple-500/20 transition-all group overflow-hidden relative">
                         <ShoppingBag size={64} className="absolute -right-4 -bottom-4 opacity-20 group-hover:scale-110 transition-transform" />
@@ -219,15 +265,15 @@ const DashboardOverview = ({ student }: { student: Student }) => {
                 <div className="bg-slate-900 p-6 rounded-2xl text-white shadow-xl relative overflow-hidden group">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500 rounded-full blur-[60px] opacity-20"></div>
                     <h3 className="font-bold text-lg mb-2 relative z-10">Notice Board</h3>
-                    <p className="text-slate-400 text-sm mb-4 relative z-10">No new notices for your division today.</p>
-                    <button className="text-indigo-400 text-xs font-bold hover:text-indigo-300 transition-colors flex items-center gap-1">View Archive <ChevronRight size={14}/></button>
+                    <p className="text-slate-400 text-sm mb-4 relative z-10">Check your alerts for specific division announcements.</p>
+                    <button className="text-indigo-400 text-xs font-bold hover:text-indigo-300 transition-colors flex items-center gap-1">Public Notices <ChevronRight size={14}/></button>
                 </div>
             </div>
         </div>
     );
 };
 
-// --- TAB 2: HOMEWORK ---
+// ... Remaining tab sections (Homework, Notes, Exams, Queries, Settings) same as original ...
 const HomeworkSection = ({ student }: { student: Student }) => {
     const [homework, setHomework] = useState<Homework[]>([]);
     const [submissions, setSubmissions] = useState<Record<string, HomeworkSubmission>>({});
@@ -300,15 +346,46 @@ const HomeworkSection = ({ student }: { student: Student }) => {
         </div>
     );
 };
-
-// --- TAB 3: EXAMS ---
+const NotesSection = ({ student }: { student: Student }) => {
+    const [notes, setNotes] = useState<StudyNote[]>([]);
+    const [loading, setLoading] = useState(true);
+    useEffect(() => {
+        const load = async () => {
+            const list = await db.getNotes(student.gradeId, student.subdivisionId);
+            setNotes(list);
+            setLoading(false);
+        };
+        load();
+    }, [student]);
+    return (
+        <div className="space-y-6">
+            <h2 className="text-2xl font-bold dark:text-white flex items-center gap-2"><FileText className="text-indigo-600"/> Study Material</h2>
+            {loading ? <div className="text-center py-20 text-gray-400">Loading notes...</div> : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {notes.map(note => (
+                        <div key={note.id} className="bg-white dark:bg-[#0B1120] p-6 rounded-2xl border border-gray-100 dark:border-white/5 shadow-sm">
+                            <span className="text-[10px] font-black uppercase text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/20 px-2 py-1 rounded-full mb-3 inline-block">{note.subject}</span>
+                            <h4 className="font-bold text-gray-800 dark:text-white mb-2">{note.title}</h4>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">{note.content}</p>
+                            {note.fileUrl && (
+                                <a href={note.fileUrl} target="_blank" rel="noopener noreferrer" className="w-full py-2.5 bg-slate-50 dark:bg-white/5 rounded-xl text-xs font-bold text-indigo-600 dark:text-indigo-400 flex items-center justify-center gap-2 border border-slate-100 dark:border-white/5 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all">
+                                    <Download size={14}/> Download Resources
+                                </a>
+                            )}
+                        </div>
+                    ))}
+                    {notes.length === 0 && <div className="col-span-full text-center py-20 text-gray-400">No study notes available for your class.</div>}
+                </div>
+            )}
+        </div>
+    );
+};
 const ExamSection = ({ student }: { student: Student }) => {
     const [exams, setExams] = useState<Exam[]>([]);
     const [activeExam, setActiveExam] = useState<Exam | null>(null);
     const [answers, setAnswers] = useState<Record<string, string>>({});
     const [takenStatus, setTakenStatus] = useState<Record<string, boolean>>({});
     const [timeLeft, setTimeLeft] = useState<number>(0); 
-
     const refresh = useCallback(async () => {
         const ex = await db.getExamsForStudent(student.gradeId, student.subdivisionId);
         setExams(ex);
@@ -319,15 +396,12 @@ const ExamSection = ({ student }: { student: Student }) => {
         }
         setTakenStatus(statusMap);
     }, [student]);
-
     useEffect(() => { refresh(); }, [refresh]);
-
     useEffect(() => {
         if (!activeExam || timeLeft <= 0) { if(activeExam && timeLeft <= 0) submitExam(true); return; }
         const timerId = setInterval(() => setTimeLeft(prev => prev - 1), 1000);
         return () => clearInterval(timerId);
     }, [activeExam, timeLeft]);
-
     const submitExam = async (auto = false) => {
         if(!activeExam) return;
         await db.submitExamAnswers(activeExam.id, student.id, answers);
@@ -335,9 +409,7 @@ const ExamSection = ({ student }: { student: Student }) => {
         setTakenStatus(prev => ({...prev, [activeExam.id]: true}));
         setActiveExam(null);
     };
-
     const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
-
     if (activeExam) return (
         <div className="max-w-4xl mx-auto bg-white dark:bg-[#0B1120] p-6 rounded-2xl shadow-2xl relative">
             <div className="flex justify-between items-center mb-8 border-b dark:border-white/5 pb-4">
@@ -358,7 +430,6 @@ const ExamSection = ({ student }: { student: Student }) => {
             <button onClick={() => submitExam()} className="mt-8 w-full bg-indigo-600 text-white py-4 rounded-xl font-bold">Finish and Submit</button>
         </div>
     );
-
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {exams.map(ex => (
@@ -374,30 +445,24 @@ const ExamSection = ({ student }: { student: Student }) => {
         </div>
     );
 };
-
-// --- TAB 4: QUERIES ---
 const QuerySection = ({ student }: { student: Student }) => {
     const [queries, setQueries] = useState<StudentQuery[]>([]);
     const [isAsking, setIsAsking] = useState(false);
     const [newQuery, setNewQuery] = useState({ subject: '', text: '' });
     const [loading, setLoading] = useState(true);
-
     const load = useCallback(async () => {
         setLoading(true);
         const q = await db.getQueries(student.id);
         setQueries(q);
         setLoading(false);
     }, [student.id]);
-
     useEffect(() => { load(); }, [load]);
-
     const handleSend = async (e: React.FormEvent) => {
         e.preventDefault();
         await db.addQuery({ studentId: student.id, studentName: student.name, subject: newQuery.subject, queryText: newQuery.text });
         alert("Sent to faculty!");
         setNewQuery({ subject: '', text: '' }); setIsAsking(false); load();
     };
-
     return (
         <div className="max-w-4xl mx-auto space-y-6">
             <div className="bg-white dark:bg-[#0B1120] p-6 rounded-2xl shadow-sm flex justify-between items-center">
@@ -432,19 +497,15 @@ const QuerySection = ({ student }: { student: Student }) => {
         </div>
     );
 };
-
-// --- TAB 5: SETTINGS (CHANGE PASSWORD) ---
 const SettingsSection = ({ user }: { user: User }) => {
     const [form, setForm] = useState({ current: '', new: '', confirm: '' });
     const [loading, setLoading] = useState(false);
     const [showPass, setShowPass] = useState(false);
     const [success, setSuccess] = useState(false);
-
     const handleUpdate = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (form.new !== form.confirm) { alert("New passwords do not match!"); return; }
+        if (form.new !== form.confirm) { alert("Passwords do not match!"); return; }
         if (form.new.length < 4) { alert("Password too short!"); return; }
-        
         setLoading(true);
         try {
             await db.changePassword(user.id, 'student', form.current, form.new);
@@ -457,7 +518,6 @@ const SettingsSection = ({ user }: { user: User }) => {
             setLoading(false);
         }
     };
-
     return (
         <div className="max-w-md mx-auto space-y-6">
             <div className="bg-white dark:bg-[#0B1120] p-8 rounded-3xl border border-gray-100 dark:border-white/10 shadow-xl text-center">
@@ -465,64 +525,38 @@ const SettingsSection = ({ user }: { user: User }) => {
                      <Lock size={32} />
                  </div>
                  <h3 className="text-2xl font-black dark:text-white mb-2">Change Password</h3>
-                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-8">Ensure your account stays secure by using a strong password.</p>
-                 
+                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-8">Secure your account by using a strong password.</p>
                  <AnimatePresence>
                      {success && (
                          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0 }} className="mb-6 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20 p-4 rounded-xl text-emerald-600 dark:text-emerald-400 text-sm font-bold flex items-center gap-2 justify-center">
-                             <ShieldCheck size={18}/> Password updated successfully!
+                             <ShieldCheck size={18}/> Updated Successfully!
                          </motion.div>
                      )}
                  </AnimatePresence>
-
                  <form onSubmit={handleUpdate} className="space-y-4">
                      <div className="relative group">
-                         <Lock size={18} className="absolute left-4 top-3.5 text-gray-400 group-focus-within:text-indigo-500 transition-colors" />
-                         <input 
-                            required
-                            type={showPass ? "text" : "password"}
-                            placeholder="Current Password"
+                         <Lock size={18} className="absolute left-4 top-3.5 text-gray-400" />
+                         <input required type={showPass ? "text" : "password"} placeholder="Current Password"
                             className="w-full bg-slate-50 dark:bg-black/30 border border-slate-200 dark:border-white/10 rounded-xl pl-12 pr-4 py-3.5 outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white"
-                            value={form.current}
-                            onChange={e => setForm({...form, current: e.target.value})}
+                            value={form.current} onChange={e => setForm({...form, current: e.target.value})}
                          />
                      </div>
                      <div className="relative group">
-                         <Lock size={18} className="absolute left-4 top-3.5 text-gray-400 group-focus-within:text-indigo-500 transition-colors" />
-                         <input 
-                            required
-                            type={showPass ? "text" : "password"}
-                            placeholder="New Password"
+                         <Lock size={18} className="absolute left-4 top-3.5 text-gray-400" />
+                         <input required type={showPass ? "text" : "password"} placeholder="New Password"
                             className="w-full bg-slate-50 dark:bg-black/30 border border-slate-200 dark:border-white/10 rounded-xl pl-12 pr-4 py-3.5 outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white"
-                            value={form.new}
-                            onChange={e => setForm({...form, new: e.target.value})}
+                            value={form.new} onChange={e => setForm({...form, new: e.target.value})}
                          />
                      </div>
                      <div className="relative group">
-                         <Lock size={18} className="absolute left-4 top-3.5 text-gray-400 group-focus-within:text-indigo-500 transition-colors" />
-                         <input 
-                            required
-                            type={showPass ? "text" : "password"}
-                            placeholder="Confirm New Password"
+                         <Lock size={18} className="absolute left-4 top-3.5 text-gray-400" />
+                         <input required type={showPass ? "text" : "password"} placeholder="Confirm New Password"
                             className="w-full bg-slate-50 dark:bg-black/30 border border-slate-200 dark:border-white/10 rounded-xl pl-12 pr-4 py-3.5 outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white"
-                            value={form.confirm}
-                            onChange={e => setForm({...form, confirm: e.target.value})}
+                            value={form.confirm} onChange={e => setForm({...form, confirm: e.target.value})}
                          />
                      </div>
-                     
-                     <div className="flex items-center gap-2 mb-2">
-                         <button type="button" onClick={() => setShowPass(!showPass)} className="text-xs text-gray-400 hover:text-indigo-500 flex items-center gap-1 ml-1 font-bold uppercase tracking-wider">
-                             {showPass ? <><EyeOff size={14}/> Hide Passwords</> : <><Eye size={14}/> Show Passwords</>}
-                         </button>
-                     </div>
-
-                     <button 
-                        type="submit" 
-                        disabled={loading}
-                        className="w-full bg-indigo-600 text-white py-4 rounded-xl font-black text-lg shadow-xl shadow-indigo-600/20 hover:bg-indigo-700 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-                     >
-                         {loading ? "Updating..." : "Update Password"}
-                     </button>
+                     <button type="button" onClick={() => setShowPass(!showPass)} className="text-xs text-gray-400 hover:text-indigo-500 font-bold uppercase block text-left ml-1 mb-2">{showPass ? 'Hide' : 'Show'} Passwords</button>
+                     <button type="submit" disabled={loading} className="w-full bg-indigo-600 text-white py-4 rounded-xl font-black text-lg shadow-xl">{loading ? "Updating..." : "Save New Password"}</button>
                  </form>
             </div>
         </div>

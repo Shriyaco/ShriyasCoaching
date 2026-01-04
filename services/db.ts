@@ -1,8 +1,8 @@
+
 import { supabase } from './supabase';
 import { RealtimeChannel } from '@supabase/supabase-js';
-import { Student, Grade, Subdivision, Notice, User, Teacher, TimetableEntry, LiveClass, FeeSubmission, SystemSettings, AttendanceRecord, Homework, Exam, ExamResult, HomeworkSubmission, ExamSubmission, StudentQuery, Enquiry, Product, Order } from '../types';
+import { Student, Grade, Subdivision, Notice, User, Teacher, TimetableEntry, FeeSubmission, SystemSettings, AttendanceRecord, Homework, Exam, ExamResult, HomeworkSubmission, ExamSubmission, StudentQuery, Enquiry, Product, Order, StudyNote, StudentNotification } from '../types';
 
-// Helper to map snake_case (DB) to camelCase (Frontend)
 const mapStudent = (s: any): Student => ({
     id: s.id,
     studentCustomId: s.student_custom_id,
@@ -37,9 +37,49 @@ const mapTeacher = (t: any): Teacher => ({
     password: t.password
 });
 
+const mapOrder = (o: any): Order => ({
+    id: o.id,
+    studentId: o.student_id,
+    studentName: o.student_name,
+    productId: o.product_id,
+    productName: o.product_name,
+    productImage: o.product_image,
+    customName: o.custom_name,
+    changeRequest: o.change_request,
+    address: o.address,
+    pincode: o.pincode,
+    state: o.state,
+    mobile: o.mobile,
+    status: o.status as any,
+    finalPrice: o.final_price,
+    transactionRef: o.transaction_ref,
+    createdAt: o.created_at
+});
+
+const mapNote = (n: any): StudyNote => ({
+    id: n.id,
+    gradeId: n.grade_id,
+    divisionId: n.division_id,
+    subject: n.subject,
+    title: n.title,
+    content: n.content,
+    fileUrl: n.file_url,
+    createdAt: n.created_at,
+    teacherId: n.teacher_id
+});
+
+const mapNotification = (n: any): StudentNotification => ({
+    id: n.id,
+    targetType: n.target_type,
+    targetId: n.target_id,
+    type: n.type,
+    title: n.title,
+    message: n.message,
+    createdAt: n.created_at
+});
+
 class DatabaseService {
   
-  // --- Auth Logic ---
   async login(username: string, password: string): Promise<User | null> {
     if (username === 'Admin' && password === 'Reset@852') {
       return { id: 'admin1', username: 'Shriya Admin', role: 'admin', status: 'Active' };
@@ -73,7 +113,6 @@ class DatabaseService {
     if (updateError) throw updateError;
   }
 
-  // --- Realtime Subscriptions ---
   subscribe(table: string, callback: () => void): RealtimeChannel {
       return supabase
           .channel(`public:${table}:${Math.random()}`)
@@ -87,7 +126,6 @@ class DatabaseService {
       supabase.removeChannel(channel);
   }
 
-  // --- Grades & Subdivisions ---
   async getGrades(): Promise<Grade[]> {
       const { data } = await supabase.from('grades').select('*');
       return (data || []).map(g => ({ id: g.id, gradeName: g.grade_name, hasSubdivision: g.has_subdivision }));
@@ -130,7 +168,6 @@ class DatabaseService {
       return (data || []).map(s => ({ id: s.id, gradeId: s.grade_id, divisionName: s.division_name }));
   }
 
-  // --- Student Management ---
   async getStudents(gradeId?: string, subdivisionId?: string): Promise<Student[]> { 
       let query = supabase.from('students').select('*');
       if (gradeId) query = query.eq('grade_id', gradeId);
@@ -145,7 +182,7 @@ class DatabaseService {
       return mapStudent(data[0]);
   }
 
-  async addStudent(data: { name: string, mobile: string, parentName: string, gradeId: string, subdivisionId: string, joiningDate: string, monthlyFees: string, schoolName: string, address: string, dob?: string, imageUrl?: string }) {
+  async addStudent(data: any) {
       const cleanName = (data.name || '').trim().replace(/\s+/g, '');
       const cleanMobile = (data.mobile || '').trim().replace(/\s+/g, '');
       const namePart = cleanName.length >= 3 ? cleanName.substring(0, 3) : cleanName.padEnd(3, 'X');
@@ -157,7 +194,7 @@ class DatabaseService {
           student_custom_id: customId,
           name: data.name,
           mobile: data.mobile,
-          parent_name: data.parentName,
+          parent_name: data.parent_name,
           grade_id: data.gradeId,
           subdivision_id: data.subdivisionId,
           joining_date: data.joiningDate,
@@ -170,10 +207,7 @@ class DatabaseService {
           email: `${customId.toLowerCase()}@sc.com`
       });
 
-      if (error) {
-          if (error.code === '23505') throw new Error(`Student ID ${customId} already exists.`);
-          throw error;
-      }
+      if (error) throw error;
   }
 
   async updateStudent(id: string, data: Partial<Student>) {
@@ -196,13 +230,12 @@ class DatabaseService {
       await supabase.from('students').update({ status }).eq('id', id);
   }
 
-  // --- Teacher Management ---
   async getTeachers(): Promise<Teacher[]> { 
       const { data } = await supabase.from('teachers').select('*');
       return (data || []).map(mapTeacher);
   }
 
-  async addTeacher(data: { name: string, mobile: string, gradeId: string, subdivisionId: string, specialization: string }) {
+  async addTeacher(data: any) {
       const cleanName = (data.name || '').trim().replace(/\s+/g, '');
       const cleanMobile = (data.mobile || '').trim().replace(/\s+/g, '');
       const namePart = cleanName.length >= 3 ? cleanName.substring(0, 3) : cleanName.padEnd(3, 'X');
@@ -214,13 +247,12 @@ class DatabaseService {
           teacher_custom_id: customId,
           name: data.name,
           mobile: data.mobile,
-          grade_id: data.gradeId,
-          subdivision_id: data.subdivisionId,
+          grade_id: data.grade_id,
+          subdivision_id: data.subdivision_id,
           specialization: data.specialization,
           password: password
       });
-      
-      if (error && error.code === '23505') throw new Error(`Teacher ID ${customId} already exists.`);
+      if (error) throw error;
   }
 
   async updateTeacher(id: string, data: Partial<Teacher>) {
@@ -246,7 +278,6 @@ class DatabaseService {
       await supabase.from(table).update({ password: newPassword }).eq('id', id);
   }
 
-  // --- General Getters/Setters ---
   async getNotices(): Promise<Notice[]> { 
       const { data } = await supabase.from('notices').select('*');
       return data || [];
@@ -311,14 +342,12 @@ class DatabaseService {
   async markAttendance(records: any[]) { 
       const payload = records.map(r => ({
           student_id: r.studentId,
-          division_id: r.divisionId,
+          division_id: r.division_id,
           date: r.date,
           status: r.status
       }));
       await supabase.from('attendance').upsert(payload, { onConflict: 'student_id, date' as any });
   }
-
-  async getLiveClasses(divId: string): Promise<LiveClass[]> { return []; } 
 
   async getSettings(): Promise<SystemSettings> { 
       const { data } = await supabase.from('system_settings').select('*').single();
@@ -329,15 +358,13 @@ class DatabaseService {
           billdesk: { name: 'BillDesk', enabled: false, credentials: { merchantId: '', secret: '' } }
       };
       if (!data) return { googleSiteKey: '', gateways: defaultGateways };
-      let gateways = data.payment_config || defaultGateways;
-      return { googleSiteKey: data.google_site_key || '', gateways };
+      return { googleSiteKey: data.google_site_key || '', gateways: data.payment_config || defaultGateways };
   }
 
   async updateSettings(s: SystemSettings) { 
       await supabase.from('system_settings').update({ google_site_key: s.googleSiteKey, payment_config: s.gateways }).eq('id', 1);
   }
 
-  // --- HOMEWORK ---
   async getHomeworkForStudent(gradeId: string, subdivisionId: string): Promise<Homework[]> {
       const { data } = await supabase.from('homework').select('*').eq('grade_id', gradeId).eq('subdivision_id', subdivisionId);
        return (data || []).map(h => ({
@@ -365,7 +392,6 @@ class DatabaseService {
       });
   }
 
-  // --- EXAMS ---
   async getExams(createdBy?: string): Promise<Exam[]> {
       let query = supabase.from('exams').select('*');
       if (createdBy) query = query.eq('created_by', createdBy);
@@ -382,83 +408,59 @@ class DatabaseService {
       }));
   }
 
+  // Fix: changed snake_case property access on camelCase 'data' object.
   async addExam(data: Omit<Exam, 'id'>) {
       await supabase.from('exams').insert({
-          title: data.title, grade_id: data.gradeId, subdivision_id: data.subdivisionId, subject: data.subject, exam_date: data.examDate, start_time: data.startTime, duration: data.duration, total_marks: data.totalMarks, questions: data.questions, created_by: data.createdBy
+          title: data.title, 
+          grade_id: data.gradeId, 
+          subdivision_id: data.subdivisionId, 
+          subject: data.subject, 
+          exam_date: data.examDate, 
+          start_time: data.startTime, 
+          duration: data.duration, 
+          total_marks: data.totalMarks, 
+          questions: data.questions, 
+          created_by: data.createdBy
       });
   }
 
   async getExamSubmissionStatus(examId: string, studentId: string): Promise<ExamSubmission | null> {
       const { data } = await supabase.from('exam_submissions').select('*').eq('exam_id', examId).eq('student_id', studentId).single();
       if (!data) return null;
-      return {
-          id: data.id, examId: data.exam_id, studentId: data.student_id, answers: data.answers, submittedAt: data.created_at, isLocked: data.is_locked
-      };
+      return { id: data.id, examId: data.exam_id, studentId: data.student_id, answers: data.answers, submittedAt: data.created_at, isLocked: data.is_locked };
   }
 
   async submitExamAnswers(examId: string, studentId: string, answers: Record<string, string>) {
-      await supabase.from('exam_submissions').insert({
-          exam_id: examId, student_id: studentId, answers: answers, is_locked: true
-      });
+      await supabase.from('exam_submissions').insert({ exam_id: examId, student_id: studentId, answers: answers, is_locked: true });
   }
 
-  async unlockExamForStudent(examId: string, studentId: string) {
-      await supabase.from('exam_submissions').delete().eq('exam_id', examId).eq('student_id', studentId);
-  }
-  
-  async getExamResults(examId: string): Promise<ExamResult[]> {
-      const { data } = await supabase.from('exam_results').select('*').eq('exam_id', examId);
-      return (data || []).map(r => ({
-          id: r.id, examId: r.exam_id, studentId: r.student_id, marksObtained: r.marks_obtained, percentage: r.percentage, status: r.status as any
-      }));
-  }
-
-  async addExamResult(data: Omit<ExamResult, 'id'>) {
-      await supabase.from('exam_results').insert({
-          exam_id: data.examId, student_id: data.studentId, marks_obtained: data.marksObtained, percentage: data.percentage, status: data.status
-      });
-  }
-
-  // --- QUERY SYSTEM ---
-  async addQuery(data: {studentId: string, studentName: string, subject: string, queryText: string}) {
-      await supabase.from('queries').insert({
-          student_id: data.studentId, student_name: data.studentName, subject: data.subject, query_text: data.queryText, status: 'Unanswered'
-      });
+  async addQuery(data: any) {
+      await supabase.from('queries').insert({ student_id: data.studentId, student_name: data.studentName, subject: data.subject, query_text: data.queryText, status: 'Unanswered' });
   }
 
   async getQueries(studentId?: string): Promise<StudentQuery[]> {
       let query = supabase.from('queries').select('*');
       if (studentId) query = query.eq('student_id', studentId);
       const { data } = await query;
-      return (data || []).map(q => ({
-          id: q.id, studentId: q.student_id, studentName: q.student_name, subject: q.subject, queryText: q.query_text, status: q.status as any, replyText: q.reply_text, createdAt: q.created_at
-      }));
+      return (data || []).map(q => ({ id: q.id, studentId: q.student_id, studentName: q.student_name, subject: q.subject, queryText: q.query_text, status: q.status as any, replyText: q.reply_text, createdAt: q.created_at }));
   }
 
   async answerQuery(queryId: string, replyText: string) {
       await supabase.from('queries').update({ status: 'Answered', reply_text: replyText }).eq('id', queryId);
   }
 
-  // --- ENQUIRY SYSTEM ---
-  async addEnquiry(data: Omit<Enquiry, 'id' | 'createdAt' | 'status'>) {
-      await supabase.from('enquiries').insert({
-          student_name: data.studentName, parent_name: data.parentName, relation: data.relation, grade: data.grade, school_name: data.schoolName, has_coaching: data.hasCoaching, reason: data.reason, mobile: data.mobile, connect_time: data.connectTime, status: 'New'
-      });
+  async addEnquiry(data: any) {
+      await supabase.from('enquiries').insert({ student_name: data.studentName, parent_name: data.parentName, relation: data.relation, grade: data.grade, school_name: data.schoolName, has_coaching: data.hasCoaching, reason: data.reason, mobile: data.mobile, connect_time: data.connectTime, status: 'New' });
   }
 
   async getEnquiries(): Promise<Enquiry[]> {
       const { data } = await supabase.from('enquiries').select('*').order('created_at', { ascending: false });
-      return (data || []).map(e => ({
-          id: e.id, studentName: e.student_name, parentName: e.parent_name, relation: e.relation, grade: e.grade, schoolName: e.school_name, hasCoaching: e.has_coaching, reason: e.reason, mobile: e.mobile, connectTime: e.connect_time, createdAt: e.created_at, status: e.status
-      }));
+      return (data || []).map(e => ({ id: e.id, studentName: e.student_name, parentName: e.parent_name, relation: e.relation, grade: e.grade, schoolName: e.school_name, hasCoaching: e.has_coaching, reason: e.reason, mobile: e.mobile, connectTime: e.connect_time, createdAt: e.created_at, status: e.status }));
   }
 
-  // --- SHOP MODULE ---
   async getProducts(): Promise<Product[]> {
       const { data } = await supabase.from('products').select('*');
-      return (data || []).map(p => ({
-          id: p.id, name: p.name, description: p.description, basePrice: p.base_price, imageUrl: p.image_url
-      }));
+      return (data || []).map(p => ({ id: p.id, name: p.name, description: p.description, basePrice: p.base_price, imageUrl: p.image_url }));
   }
 
   async addProduct(data: Omit<Product, 'id'>) {
@@ -469,19 +471,32 @@ class DatabaseService {
       await supabase.from('products').delete().eq('id', id);
   }
 
-  async createOrder(data: Omit<Order, 'id' | 'status' | 'createdAt'>) {
-      await supabase.from('shop_orders').insert({
-          student_id: data.studentId, student_name: data.studentName, product_id: data.productId, product_name: data.productName, product_image: data.productImage, custom_name: data.customName, change_request: data.changeRequest, status: 'Pending'
-      });
+  async createOrder(data: Omit<Order, 'id' | 'createdAt'>) {
+      const { data: res, error } = await supabase.from('shop_orders').insert({
+          student_id: data.studentId,
+          student_name: data.studentName,
+          product_id: data.productId,
+          product_name: data.productName,
+          product_image: data.productImage,
+          custom_name: data.customName,
+          change_request: data.changeRequest,
+          address: data.address,
+          pincode: data.pincode,
+          state: data.state,
+          mobile: data.mobile,
+          status: data.status,
+          final_price: data.finalPrice,
+          transaction_ref: data.transactionRef
+      }).select().single();
+      if (error) throw error;
+      return mapOrder(res);
   }
 
   async getOrders(studentId?: string): Promise<Order[]> {
       let query = supabase.from('shop_orders').select('*');
       if (studentId) query = query.eq('student_id', studentId);
       const { data } = await query.order('created_at', { ascending: false });
-      return (data || []).map(o => ({
-          id: o.id, studentId: o.student_id, studentName: o.student_name, productId: o.product_id, productName: o.product_name, productImage: o.product_image, customName: o.custom_name, changeRequest: o.change_request, status: o.status as any, finalPrice: o.final_price, transactionRef: o.transaction_ref, createdAt: o.created_at
-      }));
+      return (data || []).map(mapOrder);
   }
 
   async updateOrder(id: string, updates: Partial<Order>) {
@@ -490,6 +505,53 @@ class DatabaseService {
       if (updates.finalPrice) payload.final_price = updates.finalPrice;
       if (updates.transactionRef) payload.transaction_ref = updates.transactionRef;
       await supabase.from('shop_orders').update(payload).eq('id', id);
+  }
+
+  async getNotes(gradeId?: string, divisionId?: string): Promise<StudyNote[]> {
+    let query = supabase.from('study_notes').select('*');
+    if (gradeId) query = query.eq('grade_id', gradeId);
+    if (divisionId) query = query.eq('division_id', divisionId);
+    const { data } = await query.order('created_at', { ascending: false });
+    return (data || []).map(mapNote);
+  }
+
+  async addNote(data: Omit<StudyNote, 'id' | 'createdAt'>) {
+    await supabase.from('study_notes').insert({
+      grade_id: data.gradeId,
+      division_id: data.divisionId,
+      subject: data.subject,
+      title: data.title,
+      content: data.content,
+      file_url: data.fileUrl,
+      teacher_id: data.teacherId
+    });
+  }
+
+  async deleteNote(id: string) {
+    await supabase.from('study_notes').delete().eq('id', id);
+  }
+
+  async pushNotification(notif: Omit<StudentNotification, 'id' | 'createdAt'>) {
+      await supabase.from('app_notifications').insert({
+          target_type: notif.targetType,
+          target_id: notif.targetId,
+          type: notif.type,
+          title: notif.title,
+          message: notif.message
+      });
+  }
+
+  async getStudentNotifications(student: Student): Promise<StudentNotification[]> {
+      // Fetch notifications targeted at All, their Grade, their Division, or them personally
+      const { data } = await supabase.from('app_notifications')
+          .select('*')
+          .or(`target_type.eq.all,and(target_type.eq.grade,target_id.eq.${student.gradeId}),and(target_type.eq.division,target_id.eq.${student.subdivisionId}),and(target_type.eq.student,target_id.eq.${student.id})`)
+          .order('created_at', { ascending: false });
+      return (data || []).map(mapNotification);
+  }
+
+  async deleteNotification(id: string) {
+      await supabase.from('app_notifications').delete().eq('id', id);
   }
 }
 

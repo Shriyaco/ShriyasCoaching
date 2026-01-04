@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, ChevronDown, CreditCard, LogIn, Sun, Moon, ArrowRight, ShoppingBag } from 'lucide-react';
@@ -27,7 +28,8 @@ const Navbar: React.FC = () => {
             const user = JSON.parse(storedUser);
             if (user.role === 'student') {
                 const orders = await db.getOrders(user.id);
-                const count = orders.filter(o => o.status === 'Awaiting Payment').length;
+                // Fix: changed 'Awaiting Payment' to 'Payment Pending' to match Order status type
+                const count = orders.filter(o => o.status === 'Payment Pending').length;
                 setPendingPaymentCount(count);
             }
         } else {
