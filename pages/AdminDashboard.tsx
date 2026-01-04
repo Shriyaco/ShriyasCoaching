@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { db } from '../services/db';
-import { Student, TabView, Grade, Subdivision, Teacher, FeeSubmission, SystemSettings } from '../types';
-import { Users, Settings, LogOut, Plus, Edit2, Search, Briefcase, CreditCard, Save, Layers, UserPlus, Lock, ShieldAlert, Key, Power, X, Trash2, GraduationCap, TrendingUp, DollarSign, RefreshCw, Menu, Check } from 'lucide-react';
+import { Student, TabView, Grade, Subdivision, Teacher, FeeSubmission, SystemSettings, GatewayConfig } from '../types';
+import { Users, Settings, LogOut, Plus, Edit2, Search, Briefcase, CreditCard, Save, Layers, UserPlus, Lock, ShieldAlert, Key, Power, X, Trash2, GraduationCap, TrendingUp, DollarSign, RefreshCw, Menu, Check, Upload, Calendar } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -22,13 +22,13 @@ export default function AdminDashboard() {
   const [isStudentModalOpen, setIsStudentModalOpen] = useState(false);
   const [isTeacherModalOpen, setIsTeacherModalOpen] = useState(false);
   const [isGradeModalOpen, setIsGradeModalOpen] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Mobile Sidebar State
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
   // Editing State
   const [editingId, setEditingId] = useState<string | null>(null);
 
   const [formData, setFormData] = useState<any>({});
-  const [subdivisionInput, setSubdivisionInput] = useState(''); // comma separated
+  const [subdivisionInput, setSubdivisionInput] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [notification, setNotification] = useState('');
 
@@ -99,7 +99,7 @@ export default function AdminDashboard() {
       setTimeout(() => setNotification(''), 3000);
   };
 
-  // --- Handlers (Keep existing handlers same) ---
+  // --- Handlers ---
   const openStudentModal = (student?: Student) => {
       if (student) {
           setEditingId(student.id);
@@ -107,15 +107,34 @@ export default function AdminDashboard() {
               name: student.name,
               mobile: student.mobile,
               parentName: student.parentName,
-              subdivisionId: student.subdivisionId
+              subdivisionId: student.subdivisionId,
+              joiningDate: student.joiningDate,
+              monthlyFees: student.monthlyFees,
+              schoolName: student.schoolName,
+              address: student.address,
+              dob: student.dob,
+              imageUrl: student.imageUrl
           });
           setSelectedGradeId(student.gradeId);
       } else {
           setEditingId(null);
-          setFormData({});
+          setFormData({
+              joiningDate: new Date().toISOString().split('T')[0]
+          });
           setSelectedGradeId('');
       }
       setIsStudentModalOpen(true);
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (file) {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+              setFormData({ ...formData, imageUrl: reader.result as string });
+          };
+          reader.readAsDataURL(file);
+      }
   };
 
   const openTeacherModal = (teacher?: Teacher) => {
@@ -185,23 +204,25 @@ export default function AdminDashboard() {
   const handleStudentSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
       try {
+          const studentData = {
+              name: formData.name,
+              mobile: formData.mobile,
+              parentName: formData.parentName,
+              gradeId: selectedGradeId,
+              subdivisionId: formData.subdivisionId,
+              joiningDate: formData.joiningDate,
+              monthlyFees: formData.monthlyFees,
+              schoolName: formData.schoolName,
+              address: formData.address,
+              dob: formData.dob,
+              imageUrl: formData.imageUrl
+          };
+
           if (editingId) {
-              await db.updateStudent(editingId, {
-                  name: formData.name,
-                  mobile: formData.mobile,
-                  parentName: formData.parentName,
-                  gradeId: selectedGradeId,
-                  subdivisionId: formData.subdivisionId
-              });
+              await db.updateStudent(editingId, studentData);
               showNotification('Student record updated.');
           } else {
-              await db.addStudent({
-                  name: formData.name,
-                  mobile: formData.mobile,
-                  parentName: formData.parentName,
-                  gradeId: selectedGradeId,
-                  subdivisionId: formData.subdivisionId
-              });
+              await db.addStudent(studentData);
               showNotification('Student registered.');
           }
           setIsStudentModalOpen(false);
@@ -257,7 +278,6 @@ export default function AdminDashboard() {
       showNotification('Password reset to Mobile Number.');
   };
 
-  // --- Settings Handlers ---
   const handleSaveSettings = async (e: React.FormEvent) => {
       e.preventDefault();
       if(settings) {
@@ -270,11 +290,9 @@ export default function AdminDashboard() {
   const updateGateway = (key: string, field: string, value: any) => {
       if (!settings) return;
       const newGateways = { ...settings.gateways };
-      
       if (field === 'enabled') {
           newGateways[key] = { ...newGateways[key], enabled: value };
       } else {
-          // Credential Field
           newGateways[key] = { 
               ...newGateways[key], 
               credentials: { ...newGateways[key].credentials, [field]: value } 
@@ -326,6 +344,17 @@ export default function AdminDashboard() {
           <RefreshCw className="animate-spin text-indigo-600" size={32} />
       </div>
   );
+
+  // Calculate Revenue Stats
+  const collectedFees = fees.reduce((acc, curr) => acc + parseInt(curr.amount || '0'), 0);
+  const totalMonthlyPotential = students
+    .filter(s => s.status === 'Active')
+    .reduce((acc, s) => acc + (parseInt(s.monthlyFees || '0')), 0);
+  
+  // Pending Fees logic: In a real app this is complex (checking last payment date).
+  // For this SMS, we'll assume "Fees Needed" is the sum of pending status students, or simple potential.
+  // Prompt asks "fees needed to be collected". Let's show the Monthly Revenue Potential vs Collected.
+  const pendingFees = totalMonthlyPotential - collectedFees; // Simple approximation for the month
 
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden font-sans relative">
@@ -423,32 +452,32 @@ export default function AdminDashboard() {
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                     <StatCard 
-                        title="Total Students" 
-                        value={students.length} 
-                        icon={GraduationCap} 
-                        color="bg-indigo-500" 
-                        subtext="+12% from last month"
-                    />
-                    <StatCard 
-                        title="Faculty Members" 
+                        title="Total Teachers" 
                         value={teachers.length} 
                         icon={Briefcase} 
                         color="bg-purple-500" 
                         subtext="Active teaching staff"
                     />
                     <StatCard 
-                        title="Total Classes" 
-                        value={grades.length} 
-                        icon={Layers} 
-                        color="bg-pink-500" 
-                        subtext="Across all divisions"
+                        title="Fees To Collect" 
+                        value={`₹${totalMonthlyPotential.toLocaleString()}`} 
+                        icon={DollarSign} 
+                        color="bg-amber-500" 
+                        subtext="Est. Monthly Revenue"
                     />
                     <StatCard 
-                        title="Revenue (Est)" 
-                        value={`₹${fees.reduce((acc, curr) => acc + parseInt(curr.amount || '0'), 0).toLocaleString()}`} 
-                        icon={DollarSign} 
+                        title="Collected (Mo)" 
+                        value={`₹${collectedFees.toLocaleString()}`} 
+                        icon={Check} 
                         color="bg-emerald-500" 
-                        subtext="Pending Approvals: 2"
+                        subtext={`${fees.length} Transactions`}
+                    />
+                    <StatCard 
+                        title="Total Students" 
+                        value={students.length} 
+                        icon={GraduationCap} 
+                        color="bg-indigo-500" 
+                        subtext={`Across ${grades.length} Classes`}
                     />
                 </div>
             </motion.div>
@@ -531,9 +560,13 @@ export default function AdminDashboard() {
                                 <tr key={s.id} className="hover:bg-slate-50/80 transition-colors group">
                                     <td className="px-6 py-4">
                                         <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-sm shrink-0">
-                                                {s.name.charAt(0)}
-                                            </div>
+                                            {s.imageUrl ? (
+                                                <img src={s.imageUrl} alt={s.name} className="w-10 h-10 rounded-full object-cover border border-indigo-100" />
+                                            ) : (
+                                                <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-sm shrink-0">
+                                                    {s.name.charAt(0)}
+                                                </div>
+                                            )}
                                             <div>
                                                 <div className="font-bold text-slate-800">{s.name}</div>
                                                 <div className="text-xs font-mono text-indigo-500 bg-indigo-50 px-1.5 py-0.5 rounded w-fit mt-0.5">{s.studentCustomId}</div>
@@ -718,7 +751,7 @@ export default function AdminDashboard() {
                                 <h4 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2"><CreditCard size={18}/> Payment Gateways</h4>
                                 
                                 <div className="space-y-6">
-                                    {Object.entries(settings.gateways).map(([key, config]) => (
+                                    {Object.entries(settings.gateways).map(([key, config]: [string, GatewayConfig]) => (
                                         <div key={key} className={`border rounded-xl p-5 transition-all ${config.enabled ? 'border-indigo-500 bg-indigo-50/20' : 'border-slate-200 bg-slate-50'}`}>
                                             <div className="flex justify-between items-center mb-4">
                                                 <div className="flex items-center gap-3">
@@ -824,34 +857,72 @@ export default function AdminDashboard() {
       <AnimatePresence>
       {isStudentModalOpen && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
-              <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className="bg-white rounded-3xl shadow-2xl p-6 md:p-8 w-full max-w-lg relative overflow-hidden">
+              <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className="bg-white rounded-3xl shadow-2xl p-6 md:p-8 w-full max-w-lg relative overflow-hidden flex flex-col max-h-[90vh]">
                   <div className="absolute top-0 left-0 w-full h-2 bg-indigo-500" />
-                  <div className="flex justify-between items-center mb-6">
+                  <div className="flex justify-between items-center mb-6 shrink-0">
                       <h3 className="text-xl md:text-2xl font-bold text-slate-800 flex items-center gap-2">
                           <UserPlus className="text-indigo-500" size={24}/> {editingId ? 'Edit Student' : 'Register Student'}
                       </h3>
                       <button onClick={() => setIsStudentModalOpen(false)} className="p-2 hover:bg-slate-100 rounded-full transition-colors"><X size={20} className="text-slate-400" /></button>
                   </div>
-                  <form onSubmit={handleStudentSubmit} className="space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <input required placeholder="Student Name" className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" value={formData.name || ''} onChange={e => setFormData({...formData, name: e.target.value})} />
-                          <input required placeholder="Mobile Number" className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" value={formData.mobile || ''} onChange={e => setFormData({...formData, mobile: e.target.value})} />
-                      </div>
-                      <input required placeholder="Parent Name" className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" value={formData.parentName || ''} onChange={e => setFormData({...formData, parentName: e.target.value})} />
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <select required className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none bg-white" value={selectedGradeId} onChange={e => setSelectedGradeId(e.target.value)}>
-                              <option value="">Select Grade</option>
-                              {grades.map(g => <option key={g.id} value={g.id}>{g.gradeName}</option>)}
-                          </select>
-                          <select required className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none bg-white" value={formData.subdivisionId || ''} onChange={e => setFormData({...formData, subdivisionId: e.target.value})} disabled={availableSubdivisions.length === 0}>
-                              <option value="">Select Division</option>
-                              {availableSubdivisions.map(sd => <option key={sd.id} value={sd.id}>{sd.divisionName}</option>)}
-                          </select>
-                      </div>
-                      <button type="submit" className="w-full py-3.5 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition-all mt-2">
-                          {editingId ? 'Update Record' : 'Complete Registration'}
-                      </button>
-                  </form>
+                  
+                  <div className="overflow-y-auto pr-2 flex-1">
+                    <form onSubmit={handleStudentSubmit} className="space-y-4">
+                        <div className="flex justify-center mb-4">
+                            <div className="relative group">
+                                <div className="w-24 h-24 rounded-full bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center overflow-hidden">
+                                    {formData.imageUrl ? (
+                                        <img src={formData.imageUrl} alt="Preview" className="w-full h-full object-cover" />
+                                    ) : (
+                                        <Upload className="text-gray-400" size={24} />
+                                    )}
+                                </div>
+                                <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={handleImageUpload} />
+                                <div className="text-xs text-center text-gray-500 mt-2">Upload Photo (Optional)</div>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <input required placeholder="Student Name" className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" value={formData.name || ''} onChange={e => setFormData({...formData, name: e.target.value})} />
+                            <input required placeholder="Mobile Number" className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" value={formData.mobile || ''} onChange={e => setFormData({...formData, mobile: e.target.value})} />
+                        </div>
+                        <input required placeholder="Parent Name" className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" value={formData.parentName || ''} onChange={e => setFormData({...formData, parentName: e.target.value})} />
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-1">
+                                <label className="text-xs font-bold text-slate-500 uppercase ml-1 flex items-center gap-1"><Calendar size={12}/> Joining Date</label>
+                                <input type="date" required className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" value={formData.joiningDate || ''} onChange={e => setFormData({...formData, joiningDate: e.target.value})} />
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-xs font-bold text-slate-500 uppercase ml-1 flex items-center gap-1"><Calendar size={12}/> Date of Birth</label>
+                                <input type="date" required className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" value={formData.dob || ''} onChange={e => setFormData({...formData, dob: e.target.value})} />
+                            </div>
+                        </div>
+
+                        <div className="space-y-1">
+                            <label className="text-xs font-bold text-slate-500 uppercase ml-1">Monthly Fees (₹)</label>
+                            <input type="number" required placeholder="e.g. 5000" className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" value={formData.monthlyFees || ''} onChange={e => setFormData({...formData, monthlyFees: e.target.value})} />
+                        </div>
+                        
+                        <input placeholder="School Name" className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none" value={formData.schoolName || ''} onChange={e => setFormData({...formData, schoolName: e.target.value})} />
+                        
+                        <textarea placeholder="Residential Address" className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none h-20 resize-none" value={formData.address || ''} onChange={e => setFormData({...formData, address: e.target.value})} />
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <select required className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none bg-white" value={selectedGradeId} onChange={e => setSelectedGradeId(e.target.value)}>
+                                <option value="">Select Grade</option>
+                                {grades.map(g => <option key={g.id} value={g.id}>{g.gradeName}</option>)}
+                            </select>
+                            <select required className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none bg-white" value={formData.subdivisionId || ''} onChange={e => setFormData({...formData, subdivisionId: e.target.value})} disabled={availableSubdivisions.length === 0}>
+                                <option value="">Select Division</option>
+                                {availableSubdivisions.map(sd => <option key={sd.id} value={sd.id}>{sd.divisionName}</option>)}
+                            </select>
+                        </div>
+                        <button type="submit" className="w-full py-3.5 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition-all mt-2">
+                            {editingId ? 'Update Record' : 'Complete Registration'}
+                        </button>
+                    </form>
+                  </div>
               </motion.div>
           </motion.div>
       )}

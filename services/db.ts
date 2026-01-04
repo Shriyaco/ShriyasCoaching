@@ -12,7 +12,12 @@ const mapStudent = (s: any): Student => ({
     gradeId: s.grade_id,
     subdivisionId: s.subdivision_id,
     joiningDate: s.joining_date,
+    dob: s.dob,
+    imageUrl: s.image_url,
     totalFees: s.total_fees,
+    monthlyFees: s.monthly_fees,
+    schoolName: s.school_name,
+    address: s.address,
     feesStatus: s.fees_status as any,
     status: s.status as any,
     password: s.password,
@@ -63,7 +68,7 @@ class DatabaseService {
     if (students && students.length > 0) {
         const s = students.find(student => student.password === password || student.mobile === password);
         if (s && s.status === 'Active') {
-            return { id: s.id, username: s.name, role: 'student', divisionId: s.subdivision_id, status: 'Active' };
+            return { id: s.id, username: s.name, role: 'student', divisionId: s.subdivision_id, status: 'Active', imageUrl: s.image_url };
         }
     }
     
@@ -137,7 +142,7 @@ class DatabaseService {
       return (data || []).map(mapStudent);
   }
 
-  async addStudent(data: { name: string, mobile: string, parentName: string, gradeId: string, subdivisionId: string }) {
+  async addStudent(data: { name: string, mobile: string, parentName: string, gradeId: string, subdivisionId: string, joiningDate: string, monthlyFees: string, schoolName: string, address: string, dob?: string, imageUrl?: string }) {
       const cleanName = (data.name || '').trim().replace(/\s+/g, '');
       const cleanMobile = (data.mobile || '').trim().replace(/\s+/g, '');
       
@@ -154,6 +159,12 @@ class DatabaseService {
           parent_name: data.parentName,
           grade_id: data.gradeId,
           subdivision_id: data.subdivisionId,
+          joining_date: data.joiningDate,
+          monthly_fees: data.monthlyFees,
+          school_name: data.schoolName,
+          address: data.address,
+          dob: data.dob,
+          image_url: data.imageUrl,
           password: password,
           email: `${customId.toLowerCase()}@sc.com`
       });
@@ -173,6 +184,12 @@ class DatabaseService {
       if(data.parentName) payload.parent_name = data.parentName;
       if(data.gradeId) payload.grade_id = data.gradeId;
       if(data.subdivisionId) payload.subdivision_id = data.subdivisionId;
+      if(data.joiningDate) payload.joining_date = data.joiningDate;
+      if(data.monthlyFees) payload.monthly_fees = data.monthlyFees;
+      if(data.schoolName) payload.school_name = data.schoolName;
+      if(data.address) payload.address = data.address;
+      if(data.dob) payload.dob = data.dob;
+      if(data.imageUrl) payload.image_url = data.imageUrl;
       
       await supabase.from('students').update(payload).eq('id', id);
   }
@@ -316,7 +333,6 @@ class DatabaseService {
   async getSettings(): Promise<SystemSettings> { 
       const { data } = await supabase.from('system_settings').select('*').single();
       
-      // Default / Fallback Structure
       const defaultGateways: any = {
           manual: { name: 'Manual UPI', enabled: true, credentials: { upiId: '' } },
           phonepe: { name: 'PhonePe', enabled: false, credentials: { merchantId: '', saltKey: '', saltIndex: '1' } },
@@ -326,13 +342,10 @@ class DatabaseService {
 
       if (!data) return { googleSiteKey: '', gateways: defaultGateways };
 
-      // Check if DB has modern config, if not, map old columns to new structure
       let gateways = defaultGateways;
       if (data.payment_config) {
-          // Merge with defaults to ensure all keys exist
           gateways = { ...defaultGateways, ...data.payment_config };
       } else {
-          // Backward Compatibility: Map legacy columns to new structure
           gateways.manual.credentials.upiId = data.admin_upi_id || '';
           gateways.manual.enabled = data.payment_mode === 'manual';
           gateways.phonepe.credentials.merchantId = data.phone_pe_merchant_id || '';
@@ -347,8 +360,6 @@ class DatabaseService {
   }
 
   async updateSettings(s: SystemSettings) { 
-      // Save all as JSON in payment_config
-      // For legacy support, also update old columns if possible, but mainly rely on JSON now
       await supabase.from('system_settings').update({
           google_site_key: s.googleSiteKey,
           payment_config: s.gateways
@@ -430,10 +441,13 @@ class DatabaseService {
       const { data } = await query;
       return (data || []).map(e => ({
           id: e.id,
+          title: e.title,
           gradeId: e.grade_id,
           subdivisionId: e.subdivision_id,
           subject: e.subject,
           examDate: e.exam_date,
+          startTime: e.start_time,
+          duration: e.duration,
           totalMarks: e.total_marks,
           questions: e.questions,
           createdBy: e.created_by
@@ -444,10 +458,13 @@ class DatabaseService {
       const { data } = await supabase.from('exams').select('*').eq('grade_id', gradeId).eq('subdivision_id', subdivisionId);
       return (data || []).map(e => ({
           id: e.id,
+          title: e.title,
           gradeId: e.grade_id,
           subdivisionId: e.subdivision_id,
           subject: e.subject,
           examDate: e.exam_date,
+          startTime: e.start_time,
+          duration: e.duration,
           totalMarks: e.total_marks,
           questions: e.questions,
           createdBy: e.created_by
@@ -456,27 +473,46 @@ class DatabaseService {
 
   async addExam(data: Omit<Exam, 'id'>) {
       await supabase.from('exams').insert({
+          title: data.title,
           grade_id: data.gradeId,
           subdivision_id: data.subdivisionId,
           subject: data.subject,
           exam_date: data.examDate,
+          start_time: data.startTime,
+          duration: data.duration,
           total_marks: data.totalMarks,
           questions: data.questions,
           created_by: data.createdBy
       });
   }
 
-  async isExamSubmitted(examId: string, studentId: string): Promise<boolean> {
-      const { data } = await supabase.from('exam_submissions').select('id').eq('exam_id', examId).eq('student_id', studentId);
-      return (data && data.length > 0) || false;
+  // Updated to return the lock status
+  async getExamSubmissionStatus(examId: string, studentId: string): Promise<ExamSubmission | null> {
+      const { data } = await supabase.from('exam_submissions').select('*').eq('exam_id', examId).eq('student_id', studentId).single();
+      if (!data) return null;
+      return {
+          id: data.id,
+          examId: data.exam_id,
+          studentId: data.student_id,
+          answers: data.answers,
+          submittedAt: data.created_at,
+          isLocked: data.is_locked
+      };
   }
 
   async submitExamAnswers(examId: string, studentId: string, answers: Record<string, string>) {
       await supabase.from('exam_submissions').insert({
           exam_id: examId,
           student_id: studentId,
-          answers: answers
+          answers: answers,
+          is_locked: true // Lock immediately upon submission
       });
+  }
+
+  async unlockExamForStudent(examId: string, studentId: string) {
+      await supabase.from('exam_submissions').delete().eq('exam_id', examId).eq('student_id', studentId);
+      // Alternatively, set is_locked to false if we want to keep previous attempts, but deleting allows fresh start.
+      // For this requirement "allow reopen", we'll delete the submission so they can take it again.
   }
   
   async getExamResults(examId: string): Promise<ExamResult[]> {

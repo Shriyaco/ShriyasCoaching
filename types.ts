@@ -21,7 +21,12 @@ export interface Student {
   gradeId: string;
   subdivisionId: string;
   joiningDate: string;
-  totalFees: string;
+  dob?: string; // New field
+  imageUrl?: string; // New field (Base64)
+  totalFees: string; // Kept for legacy/total calculation
+  monthlyFees: string; 
+  schoolName: string; 
+  address: string; 
   feesStatus: 'Paid' | 'Pending' | 'Overdue';
   status: 'Active' | 'Suspended';
   password?: string; // In real app, this is hashed
@@ -55,6 +60,7 @@ export interface User {
   role: 'admin' | 'student' | 'teacher';
   divisionId?: string; 
   status?: 'Active' | 'Suspended';
+  imageUrl?: string;
 }
 
 export interface FeeSubmission {
@@ -135,10 +141,13 @@ export interface Question {
 
 export interface Exam {
     id: string;
+    title: string; // New: Exam Name
     gradeId: string;
     subdivisionId: string;
     subject: string;
     examDate: string;
+    startTime: string; // New: HH:mm
+    duration: number; // New: Minutes
     totalMarks: number;
     questions: Question[];
     createdBy: string;
@@ -150,6 +159,7 @@ export interface ExamSubmission {
     studentId: string;
     answers: Record<string, string>; // questionId -> answer text
     submittedAt: string;
+    isLocked: boolean; // Prevent reopening
 }
 
 export interface ExamResult {

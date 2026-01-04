@@ -200,8 +200,8 @@ export default function PayFees() {
                             {/* Payment Method Tabs */}
                             <div className="mb-6 flex space-x-2 overflow-x-auto pb-2 scrollbar-hide">
                                 {Object.entries(settings.gateways)
-                                    .filter(([_, conf]) => conf.enabled)
-                                    .map(([key, conf]) => (
+                                    .filter(([_, conf]: [string, GatewayConfig]) => conf.enabled)
+                                    .map(([key, conf]: [string, GatewayConfig]) => (
                                     <button
                                         key={key}
                                         onClick={() => setSelectedGatewayKey(key)}
@@ -215,7 +215,7 @@ export default function PayFees() {
                                         {conf.name}
                                     </button>
                                 ))}
-                                {Object.values(settings.gateways).every(g => !g.enabled) && (
+                                {Object.values(settings.gateways).every((g: GatewayConfig) => !g.enabled) && (
                                     <p className="text-sm text-gray-400 italic w-full text-center">No payment methods enabled.</p>
                                 )}
                             </div>
