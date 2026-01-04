@@ -197,4 +197,29 @@ export interface Enquiry {
     status: 'New' | 'Contacted';
 }
 
-export type TabView = 'dashboard' | 'students' | 'notices' | 'timetable' | 'grades' | 'teachers' | 'fees' | 'settings' | 'enquiries';
+// --- Shop Module ---
+
+export interface Product {
+    id: string;
+    name: string;
+    description: string;
+    basePrice: string;
+    imageUrl?: string;
+}
+
+export interface Order {
+    id: string;
+    studentId: string;
+    studentName: string;
+    productId: string;
+    productName: string;
+    productImage?: string;
+    customName: string; // Customization text
+    changeRequest: string; // Other changes
+    status: 'Pending' | 'Awaiting Payment' | 'Paid' | 'Completed';
+    finalPrice?: string; // Set by admin
+    transactionRef?: string; // Set after payment
+    createdAt: string;
+}
+
+export type TabView = 'dashboard' | 'students' | 'notices' | 'timetable' | 'grades' | 'teachers' | 'fees' | 'settings' | 'enquiries' | 'shop';

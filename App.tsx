@@ -8,19 +8,28 @@ import TeacherDashboard from './pages/TeacherDashboard';
 import Login from './pages/Login';
 import PayFees from './pages/PayFees';
 import ContactUs from './pages/ContactUs';
+import Shop from './pages/Shop';
 import { AlertCircle } from 'lucide-react';
 
 // --- Error Boundary ---
-class ErrorBoundary extends Component<{ children?: React.ReactNode }, { hasError: boolean }> {
-  public state = { hasError: false };
-  public readonly props: Readonly<{ children?: React.ReactNode }>;
+interface ErrorBoundaryProps {
+  children?: React.ReactNode;
+}
 
-  constructor(props: { children?: React.ReactNode }) {
+interface ErrorBoundaryState {
+  hasError: boolean;
+}
+
+class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  public state: ErrorBoundaryState = { hasError: false };
+  public readonly props: Readonly<ErrorBoundaryProps>;
+
+  constructor(props: ErrorBoundaryProps) {
     super(props);
     this.props = props;
   }
 
-  static getDerivedStateFromError(_: Error) {
+  static getDerivedStateFromError(_: Error): ErrorBoundaryState {
     return { hasError: true };
   }
 
@@ -93,6 +102,7 @@ export default function App() {
           <Routes>
             <Route path="/" element={<PublicHome />} />
             <Route path="/contact" element={<ContactUs />} />
+            <Route path="/shop" element={<Shop />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/pay-fees" element={<PayFees />} />
             <Route path="/admin" element={<AdminDashboard />} />

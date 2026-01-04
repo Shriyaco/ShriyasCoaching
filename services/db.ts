@@ -1,6 +1,6 @@
 import { supabase } from './supabase';
 import { RealtimeChannel } from '@supabase/supabase-js';
-import { Student, Grade, Subdivision, Notice, User, Teacher, TimetableEntry, LiveClass, FeeSubmission, SystemSettings, AttendanceRecord, Homework, Exam, ExamResult, HomeworkSubmission, ExamSubmission, StudentQuery, Enquiry } from '../types';
+import { Student, Grade, Subdivision, Notice, User, Teacher, TimetableEntry, LiveClass, FeeSubmission, SystemSettings, AttendanceRecord, Homework, Exam, ExamResult, HomeworkSubmission, ExamSubmission, StudentQuery, Enquiry, Product, Order } from '../types';
 
 // Helper to map snake_case (DB) to camelCase (Frontend)
 const mapStudent = (s: any): Student => ({
@@ -600,6 +600,77 @@ class DatabaseService {
           createdAt: e.created_at,
           status: e.status
       }));
+  }
+
+  // --- SHOP MODULE ---
+
+  // Products
+  async getProducts(): Promise<Product[]> {
+      const { data } = await supabase.from('products').select('*');
+      return (data || []).map(p => ({
+          id: p.id,
+          name: p.name,
+          description: p.description,
+          basePrice: p.base_price,
+          imageUrl: p.image_url
+      }));
+  }
+
+  async addProduct(data: Omit<Product, 'id'>) {
+      await supabase.from('products').insert({
+          name: data.name,
+          description: data.description,
+          base_price: data.basePrice,
+          image_url: data.imageUrl
+      });
+  }
+
+  async deleteProduct(id: string) {
+      await supabase.from('products').delete().eq('id', id);
+  }
+
+  // Orders
+  async createOrder(data: Omit<Order, 'id' | 'status' | 'createdAt'>) {
+      await supabase.from('shop_orders').insert({
+          student_id: data.studentId,
+          student_name: data.studentName,
+          product_id: data.productId,
+          product_name: data.productName,
+          product_image: data.productImage,
+          custom_name: data.customName,
+          change_request: data.changeRequest,
+          status: 'Pending'
+      });
+  }
+
+  async getOrders(studentId?: string): Promise<Order[]> {
+      let query = supabase.from('shop_orders').select('*');
+      if (studentId) query = query.eq('student_id', studentId);
+      
+      const { data } = await query.order('created_at', { ascending: false });
+      return (data || []).map(o => ({
+          id: o.id,
+          studentId: o.student_id,
+          studentName: o.student_name,
+          productId: o.product_id,
+          productName: o.product_name,
+          productImage: o.product_image,
+          customName: o.custom_name,
+          changeRequest: o.change_request,
+          status: o.status as any,
+          finalPrice: o.final_price,
+          transactionRef: o.transaction_ref,
+          createdAt: o.created_at
+      }));
+  }
+
+  async updateOrder(id: string, updates: Partial<Order>) {
+      const payload: any = {};
+      if (updates.status) payload.status = updates.status;
+      if (updates.finalPrice) payload.final_price = updates.finalPrice;
+      if (updates.transactionRef) payload.transaction_ref = updates.transactionRef;
+
+      await supabase.from('shop_orders').update(payload).eq('id', id);
   }
 }
 

@@ -1,19 +1,45 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, ChevronDown, CreditCard, LogIn, Sun, Moon, ArrowRight } from 'lucide-react';
+import { Menu, X, ChevronDown, CreditCard, LogIn, Sun, Moon, ArrowRight, ShoppingBag } from 'lucide-react';
 import { motion, AnimatePresence, Variants } from 'framer-motion';
 import { useTheme } from '../App';
+import { db } from '../services/db';
 
 const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [hoveredLink, setHoveredLink] = useState<string | null>(null);
   
+  // Badge State
+  const [pendingPaymentCount, setPendingPaymentCount] = useState(0);
+  
   const { theme, toggleTheme } = useTheme();
   
   const location = useLocation();
   const isDashboard = location.pathname.startsWith('/admin') || location.pathname.startsWith('/student') || location.pathname.startsWith('/teacher');
   const isLoginPage = location.pathname === '/login';
+
+  // Check for student login and updates
+  useEffect(() => {
+    const checkBadge = async () => {
+        const storedUser = sessionStorage.getItem('sc_user');
+        if (storedUser) {
+            const user = JSON.parse(storedUser);
+            if (user.role === 'student') {
+                const orders = await db.getOrders(user.id);
+                const count = orders.filter(o => o.status === 'Awaiting Payment').length;
+                setPendingPaymentCount(count);
+            }
+        } else {
+            setPendingPaymentCount(0);
+        }
+    };
+
+    checkBadge();
+    // Re-check periodically or on specific events
+    const interval = setInterval(checkBadge, 10000);
+    return () => clearInterval(interval);
+  }, [location.pathname]); // Re-check when route changes
 
   // Prevent scrolling when mobile menu is open
   useEffect(() => {
@@ -152,6 +178,19 @@ const Navbar: React.FC = () => {
                 )}
               </div>
             ))}
+            
+            {/* Shop Link with Badge */}
+            <Link 
+                to="/shop"
+                className="flex items-center text-slate-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 px-3 py-2 text-sm font-medium transition-colors font-[Poppins] relative"
+            >
+                <ShoppingBag size={18} className="mr-1"/> Shop
+                {pendingPaymentCount > 0 && (
+                    <span className="absolute top-0 right-0 h-4 w-4 rounded-full bg-red-500 text-white text-[9px] flex items-center justify-center font-bold animate-pulse">
+                        {pendingPaymentCount}
+                    </span>
+                )}
+            </Link>
           </div>
 
           {/* Desktop Action Buttons */}
@@ -247,6 +286,24 @@ const Navbar: React.FC = () => {
                   )}
                 </motion.div>
               ))}
+
+              <motion.div variants={menuItemVariants}>
+                  <Link 
+                    to="/shop"
+                    onClick={() => setIsOpen(false)}
+                    className="group flex items-center justify-between py-4 text-2xl font-bold text-purple-600 dark:text-purple-400 border-b border-slate-100 dark:border-white/5 hover:text-[#00E5FF] transition-colors font-[Poppins]"
+                  >
+                    <span className="flex items-center gap-2">
+                         <ShoppingBag size={24}/> Shop
+                         {pendingPaymentCount > 0 && (
+                            <span className="h-5 w-5 rounded-full bg-red-500 text-white text-[10px] flex items-center justify-center font-bold">
+                                {pendingPaymentCount}
+                            </span>
+                        )}
+                    </span>
+                    <ArrowRight size={20} className="opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all text-[#00E5FF]"/>
+                  </Link>
+              </motion.div>
 
               <motion.div variants={menuItemVariants} className="pt-8 space-y-4">
                  <Link 

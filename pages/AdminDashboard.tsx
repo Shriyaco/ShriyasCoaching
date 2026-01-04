@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { db } from '../services/db';
-import { Student, TabView, Grade, Subdivision, Teacher, FeeSubmission, SystemSettings, GatewayConfig, Enquiry } from '../types';
-import { Users, Settings, LogOut, Plus, Edit2, Search, Briefcase, CreditCard, Save, Layers, UserPlus, Lock, ShieldAlert, Key, Power, X, Trash2, GraduationCap, TrendingUp, DollarSign, RefreshCw, Menu, Check, Upload, Calendar, MessageCircle, Phone, Clock } from 'lucide-react';
+import { Student, TabView, Grade, Subdivision, Teacher, FeeSubmission, SystemSettings, GatewayConfig, Enquiry, Product, Order } from '../types';
+import { Users, Settings, LogOut, Plus, Edit2, Search, Briefcase, CreditCard, Save, Layers, UserPlus, Lock, ShieldAlert, Key, Power, X, Trash2, GraduationCap, TrendingUp, DollarSign, RefreshCw, Menu, Check, Upload, Calendar, MessageCircle, Phone, Clock, ShoppingBag, Send } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -17,6 +17,8 @@ export default function AdminDashboard() {
   const [fees, setFees] = useState<FeeSubmission[]>([]);
   const [enquiries, setEnquiries] = useState<Enquiry[]>([]);
   const [settings, setSettings] = useState<SystemSettings | null>(null);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   
   // UI State
@@ -24,6 +26,10 @@ export default function AdminDashboard() {
   const [isTeacherModalOpen, setIsTeacherModalOpen] = useState(false);
   const [isGradeModalOpen, setIsGradeModalOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  
+  // Shop State
+  const [newProduct, setNewProduct] = useState({ name: '', description: '', basePrice: '', imageUrl: '' });
+  const [priceInput, setPriceInput] = useState<Record<string, string>>({}); // OrderID -> Price
   
   // Editing State
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -39,14 +45,16 @@ export default function AdminDashboard() {
 
   const refreshData = useCallback(async () => {
     try {
-        const [s, g, sd, t, f, set, enq] = await Promise.all([
+        const [s, g, sd, t, f, set, enq, p, o] = await Promise.all([
             db.getStudents(),
             db.getGrades(),
             db.getSubdivisions(),
             db.getTeachers(),
             db.getFeeSubmissions(),
             db.getSettings(),
-            db.getEnquiries()
+            db.getEnquiries(),
+            db.getProducts(),
+            db.getOrders()
         ]);
         setStudents(s);
         setGrades(g);
@@ -55,6 +63,8 @@ export default function AdminDashboard() {
         setFees(f);
         setSettings(set);
         setEnquiries(enq);
+        setProducts(p);
+        setOrders(o);
     } catch(e) {
         console.error(e);
     }
@@ -73,7 +83,9 @@ export default function AdminDashboard() {
         db.subscribe('grades', refreshData),
         db.subscribe('subdivisions', refreshData),
         db.subscribe('fee_submissions', refreshData),
-        db.subscribe('enquiries', refreshData)
+        db.subscribe('enquiries', refreshData),
+        db.subscribe('shop_orders', refreshData),
+        db.subscribe('products', refreshData)
     ];
 
     return () => {
@@ -304,6 +316,33 @@ export default function AdminDashboard() {
       }
       setSettings({ ...settings, gateways: newGateways });
   };
+  
+  // --- Shop Handlers ---
+  const handleAddProduct = async (e: React.FormEvent) => {
+      e.preventDefault();
+      await db.addProduct(newProduct);
+      setNewProduct({ name: '', description: '', basePrice: '', imageUrl: '' });
+      showNotification("Product Added");
+      await refreshData();
+  };
+  
+  const handleDeleteProduct = async (id: string) => {
+      if(!window.confirm("Delete Product?")) return;
+      await db.deleteProduct(id);
+      await refreshData();
+  };
+
+  const handleSendQuote = async (orderId: string) => {
+      const price = priceInput[orderId];
+      if (!price) { alert("Enter a final price"); return; }
+      
+      await db.updateOrder(orderId, {
+          status: 'Awaiting Payment',
+          finalPrice: price
+      });
+      showNotification("Quote sent to student");
+      await refreshData();
+  };
 
   const SidebarItem = ({ tab, icon: Icon, label }: { tab: TabView; icon: any; label: string }) => (
     <button
@@ -413,6 +452,7 @@ export default function AdminDashboard() {
           <div className="px-6 mt-8 mb-2 text-xs font-bold text-slate-500 uppercase tracking-widest">Academic</div>
           <SidebarItem tab="grades" icon={Layers} label="Classes & Divs" />
           <SidebarItem tab="fees" icon={CreditCard} label="Transactions" />
+          <SidebarItem tab="shop" icon={ShoppingBag} label="Shop Orders" />
           
           <div className="px-6 mt-8 mb-2 text-xs font-bold text-slate-500 uppercase tracking-widest">Configuration</div>
           <SidebarItem tab="settings" icon={Settings} label="System Settings" />
@@ -454,6 +494,13 @@ export default function AdminDashboard() {
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                     <StatCard 
+                        title="Pending Orders" 
+                        value={orders.filter(o => o.status === 'Pending').length} 
+                        icon={ShoppingBag} 
+                        color="bg-pink-500" 
+                        subtext="Quotes to review"
+                    />
+                    <StatCard 
                         title="New Enquiries" 
                         value={enquiries.length} 
                         icon={MessageCircle} 
@@ -474,15 +521,107 @@ export default function AdminDashboard() {
                         color="bg-amber-500" 
                         subtext="Est. Monthly Revenue"
                     />
-                    <StatCard 
-                        title="Total Students" 
-                        value={students.length} 
-                        icon={GraduationCap} 
-                        color="bg-indigo-500" 
-                        subtext={`Across ${grades.length} Classes`}
-                    />
                 </div>
             </motion.div>
+          )}
+          
+          {/* Shop Management */}
+          {activeTab === 'shop' && (
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">
+                  
+                  {/* Product Manager */}
+                  <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                      <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2"><Plus size={18}/> Add New Product</h3>
+                      <form onSubmit={handleAddProduct} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                          <input 
+                            required
+                            placeholder="Product Name"
+                            className="px-4 py-2 border rounded-xl w-full"
+                            value={newProduct.name}
+                            onChange={e => setNewProduct({...newProduct, name: e.target.value})}
+                          />
+                          <input 
+                            required
+                            placeholder="Base Price (₹)"
+                            className="px-4 py-2 border rounded-xl w-full"
+                            value={newProduct.basePrice}
+                            onChange={e => setNewProduct({...newProduct, basePrice: e.target.value})}
+                          />
+                          <input 
+                            placeholder="Image URL"
+                            className="px-4 py-2 border rounded-xl w-full"
+                            value={newProduct.imageUrl}
+                            onChange={e => setNewProduct({...newProduct, imageUrl: e.target.value})}
+                          />
+                          <button type="submit" className="bg-pink-600 text-white px-4 py-2.5 rounded-xl font-bold hover:bg-pink-700">Add Product</button>
+                      </form>
+                      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mt-6">
+                          {products.map(p => (
+                              <div key={p.id} className="relative group border rounded-xl overflow-hidden">
+                                  <div className="h-24 bg-slate-100 relative">
+                                       {p.imageUrl && <img src={p.imageUrl} className="w-full h-full object-cover"/>}
+                                       <button onClick={() => handleDeleteProduct(p.id)} className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"><X size={12}/></button>
+                                  </div>
+                                  <div className="p-2">
+                                      <p className="font-bold text-xs truncate">{p.name}</p>
+                                      <p className="text-xs text-slate-500">₹{p.basePrice}</p>
+                                  </div>
+                              </div>
+                          ))}
+                      </div>
+                  </div>
+
+                  {/* Order Manager */}
+                  <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                      <div className="p-6 border-b border-slate-100">
+                          <h3 className="text-lg font-bold text-slate-800">Pending Quote Requests</h3>
+                      </div>
+                      <div className="overflow-x-auto">
+                          <table className="w-full text-left">
+                              <thead className="bg-slate-50 text-slate-500 font-bold text-xs uppercase">
+                                  <tr>
+                                      <th className="p-4">Student</th>
+                                      <th className="p-4">Product</th>
+                                      <th className="p-4">Customization</th>
+                                      <th className="p-4">Set Price</th>
+                                      <th className="p-4">Action</th>
+                                  </tr>
+                              </thead>
+                              <tbody className="divide-y divide-slate-100">
+                                  {orders.filter(o => o.status === 'Pending').map(order => (
+                                      <tr key={order.id}>
+                                          <td className="p-4 font-bold">{order.studentName}</td>
+                                          <td className="p-4 text-sm">{order.productName}</td>
+                                          <td className="p-4 text-sm text-slate-600 max-w-xs">
+                                              <p><span className="font-bold">Name:</span> {order.customName}</p>
+                                              <p className="truncate"><span className="font-bold">Change:</span> {order.changeRequest}</p>
+                                          </td>
+                                          <td className="p-4">
+                                              <input 
+                                                className="w-24 px-2 py-1 border rounded"
+                                                placeholder="₹ Price"
+                                                value={priceInput[order.id] || ''}
+                                                onChange={e => setPriceInput({...priceInput, [order.id]: e.target.value})}
+                                              />
+                                          </td>
+                                          <td className="p-4">
+                                              <button 
+                                                onClick={() => handleSendQuote(order.id)}
+                                                className="bg-indigo-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 hover:bg-indigo-700"
+                                              >
+                                                  Send Quote <Send size={12}/>
+                                              </button>
+                                          </td>
+                                      </tr>
+                                  ))}
+                                  {orders.filter(o => o.status === 'Pending').length === 0 && (
+                                      <tr><td colSpan={5} className="p-8 text-center text-slate-400">No pending quotes.</td></tr>
+                                  )}
+                              </tbody>
+                          </table>
+                      </div>
+                  </div>
+              </motion.div>
           )}
 
           {activeTab === 'enquiries' && (
