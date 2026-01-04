@@ -2,7 +2,7 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../services/db';
-import { ArrowRight, User as UserIcon, Lock, BookOpen, GraduationCap, Sparkles, AlertCircle } from 'lucide-react';
+import { ArrowRight, User as UserIcon, Lock, BookOpen, Sparkles, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Float, Environment, ContactShadows, Sphere, Box, Cylinder, Torus, Cone, Icosahedron } from '@react-three/drei';
@@ -182,33 +182,33 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex overflow-hidden font-sans">
+    <div className="min-h-screen bg-[#020617] flex overflow-hidden font-sans text-white">
       
       {/* LEFT SIDE: 3D Animation */}
-      <div className="hidden lg:flex w-1/2 relative flex-col items-center justify-center bg-[#f0f9ff]/50">
-        <div className="absolute inset-0 z-0">
+      <div className="hidden lg:flex w-1/2 relative flex-col items-center justify-center bg-[#020617] border-r border-white/5">
+        <div className="absolute inset-0 z-0 opacity-80">
              <Canvas camera={{ position: [0, 0, 6], fov: 45 }}>
                 <EducationScene />
              </Canvas>
         </div>
         
         {/* Overlay Text */}
-        <div className="absolute bottom-12 left-12 right-12 bg-white/80 backdrop-blur-md p-6 rounded-2xl border border-white/50 shadow-sm z-10">
-            <h2 className="text-2xl font-bold text-slate-800 mb-2 font-[Poppins]">Empowering Young Minds</h2>
-            <p className="text-slate-600 leading-relaxed">
+        <div className="absolute bottom-12 left-12 right-12 bg-black/60 backdrop-blur-md p-6 rounded-2xl border border-white/10 shadow-lg z-10">
+            <h2 className="text-2xl font-bold text-white mb-2 font-[Poppins]">Empowering Young Minds</h2>
+            <p className="text-slate-400 leading-relaxed">
                 "Education is not the learning of facts, but the training of the mind to think." 
-                <span className="block mt-2 text-sm font-bold text-indigo-600">- Albert Einstein</span>
+                <span className="block mt-2 text-sm font-bold text-indigo-400">- Albert Einstein</span>
             </p>
         </div>
       </div>
 
       {/* RIGHT SIDE: Login Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 relative">
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 relative bg-[#020617]">
           
           {/* Mobile Background Blob */}
           <div className="lg:hidden absolute inset-0 overflow-hidden z-0">
-              <div className="absolute -top-20 -right-20 w-80 h-80 bg-purple-200 rounded-full blur-[80px] opacity-60" />
-              <div className="absolute top-40 -left-20 w-60 h-60 bg-blue-200 rounded-full blur-[60px] opacity-60" />
+              <div className="absolute -top-20 -right-20 w-80 h-80 bg-purple-900/20 rounded-full blur-[80px] opacity-40" />
+              <div className="absolute top-40 -left-20 w-60 h-60 bg-blue-900/20 rounded-full blur-[60px] opacity-40" />
           </div>
 
           <motion.div 
@@ -218,25 +218,22 @@ const Login: React.FC = () => {
             className="w-full max-w-md relative z-10"
           >
               <div className="text-center mb-10">
-                  <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-tr from-indigo-500 to-purple-600 rounded-2xl shadow-lg shadow-indigo-200 mb-6 transform rotate-3">
-                      <GraduationCap size={32} className="text-white" />
-                  </div>
-                  <h1 className="text-3xl font-extrabold text-slate-900 font-[Poppins]">Student Portal</h1>
-                  <p className="text-slate-500 mt-2">Welcome back! Let's continue learning.</p>
+                  <h1 className="text-4xl font-black text-white font-[Poppins] tracking-tight">Login</h1>
+                  <p className="text-slate-500 mt-2 text-sm">Access your dashboard</p>
               </div>
 
-              <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.05)] border border-white p-8">
+              <div className="bg-slate-900/60 backdrop-blur-xl rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] border border-white/10 p-8">
                   <form onSubmit={handleLogin} className="space-y-6">
                       
                       {/* Username */}
                       <div className="space-y-2">
-                          <label className="text-sm font-bold text-slate-600 ml-1">Student ID / Username</label>
-                          <div className={`flex items-center bg-white border-2 rounded-xl px-4 py-3 transition-all duration-300 ${focused === 'user' ? 'border-indigo-500 shadow-[0_0_0_4px_rgba(99,102,241,0.1)]' : 'border-slate-100 hover:border-slate-300'}`}>
-                              <UserIcon size={20} className={`mr-3 ${focused === 'user' ? 'text-indigo-500' : 'text-slate-400'}`} />
+                          <label className="text-xs font-bold text-slate-400 ml-1 uppercase tracking-wide">Student ID / Username</label>
+                          <div className={`flex items-center bg-slate-950/50 border-2 rounded-xl px-4 py-3 transition-all duration-300 ${focused === 'user' ? 'border-indigo-500 shadow-[0_0_20px_rgba(99,102,241,0.2)]' : 'border-slate-800 hover:border-slate-700'}`}>
+                              <UserIcon size={20} className={`mr-3 ${focused === 'user' ? 'text-indigo-500' : 'text-slate-500'}`} />
                               <input 
                                 type="text" 
-                                placeholder="Enter your ID"
-                                className="w-full bg-transparent outline-none text-slate-800 font-medium placeholder-slate-400"
+                                placeholder="Enter ID"
+                                className="w-full bg-transparent outline-none text-white font-medium placeholder-slate-600"
                                 value={username}
                                 onChange={(e) => setUsername(e.target.value)}
                                 onFocus={() => setFocused('user')}
@@ -248,14 +245,14 @@ const Login: React.FC = () => {
                       {/* Password */}
                       <div className="space-y-2">
                           <div className="flex justify-between ml-1">
-                             <label className="text-sm font-bold text-slate-600">Password</label>
+                             <label className="text-xs font-bold text-slate-400 uppercase tracking-wide">Password</label>
                           </div>
-                          <div className={`flex items-center bg-white border-2 rounded-xl px-4 py-3 transition-all duration-300 ${focused === 'pass' ? 'border-indigo-500 shadow-[0_0_0_4px_rgba(99,102,241,0.1)]' : 'border-slate-100 hover:border-slate-300'}`}>
-                              <Lock size={20} className={`mr-3 ${focused === 'pass' ? 'text-indigo-500' : 'text-slate-400'}`} />
+                          <div className={`flex items-center bg-slate-950/50 border-2 rounded-xl px-4 py-3 transition-all duration-300 ${focused === 'pass' ? 'border-indigo-500 shadow-[0_0_20px_rgba(99,102,241,0.2)]' : 'border-slate-800 hover:border-slate-700'}`}>
+                              <Lock size={20} className={`mr-3 ${focused === 'pass' ? 'text-indigo-500' : 'text-slate-500'}`} />
                               <input 
                                 type="password" 
                                 placeholder="••••••••"
-                                className="w-full bg-transparent outline-none text-slate-800 font-medium placeholder-slate-400"
+                                className="w-full bg-transparent outline-none text-white font-medium placeholder-slate-600"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 onFocus={() => setFocused('pass')}
@@ -270,7 +267,7 @@ const Login: React.FC = () => {
                                 initial={{ height: 0, opacity: 0 }}
                                 animate={{ height: 'auto', opacity: 1 }}
                                 exit={{ height: 0, opacity: 0 }}
-                                className="bg-red-50 text-red-600 text-sm p-3 rounded-lg flex items-center gap-2 border border-red-100"
+                                className="bg-red-500/10 text-red-400 text-sm p-3 rounded-lg flex items-center gap-2 border border-red-500/20"
                               >
                                   <AlertCircle size={16} /> {error}
                               </motion.div>
@@ -280,24 +277,24 @@ const Login: React.FC = () => {
                       <button 
                         type="submit" 
                         disabled={loading}
-                        className="w-full bg-indigo-600 text-white font-bold py-4 rounded-xl shadow-lg shadow-indigo-200 hover:bg-indigo-700 hover:scale-[1.01] active:scale-[0.98] transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                        className="w-full bg-indigo-600 text-white font-bold py-4 rounded-xl shadow-lg shadow-indigo-900/50 hover:bg-indigo-500 hover:scale-[1.01] active:scale-[0.98] transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                       >
                           {loading ? (
                               <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                           ) : (
-                              <>Unlock Knowledge <ArrowRight size={20} /></>
+                              <>Sign In <ArrowRight size={20} /></>
                           )}
                       </button>
 
                       <div className="text-center">
-                          <a href="#" className="text-sm font-medium text-slate-400 hover:text-indigo-600 transition-colors">Forgot Password?</a>
+                          <a href="#" className="text-sm font-medium text-slate-500 hover:text-indigo-400 transition-colors">Forgot Password?</a>
                       </div>
                   </form>
               </div>
               
-              <div className="mt-8 flex items-center justify-center gap-2 opacity-70 hover:opacity-100 transition-opacity">
-                  <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Powered by</span>
-                  <img src="https://advedasolutions.in/logo.png" alt="Adveda Solutions" className="h-5 w-auto grayscale hover:grayscale-0 transition-all" />
+              <div className="mt-8 flex items-center justify-center gap-3 opacity-60 hover:opacity-100 transition-opacity">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Powered by</span>
+                  <img src="https://advedasolutions.in/logo.png" alt="Adveda Solutions" className="h-6 w-auto" />
               </div>
           </motion.div>
       </div>
