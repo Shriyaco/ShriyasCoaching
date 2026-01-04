@@ -34,7 +34,7 @@ const StudentDashboard: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 relative overflow-hidden font-sans">
-      <ThreeOrb className="absolute top-0 right-0 w-[500px] h-[500px] opacity-20 pointer-events-none translate-x-1/3 -translate-y-1/3" color="#6366f1" />
+      <ThreeOrb className="absolute top-0 right-0 w-[200px] h-[200px] md:w-[500px] md:h-[500px] opacity-20 pointer-events-none translate-x-1/3 -translate-y-1/3" color="#6366f1" />
       
       {/* Header */}
       <header className="bg-white/80 backdrop-blur-md sticky top-0 z-20 border-b border-gray-200 px-4 md:px-6 py-4 flex justify-between items-center shadow-sm">
@@ -90,13 +90,11 @@ const StudentDashboard: React.FC = () => {
 
 // --- TAB 1: DASHBOARD ---
 const DashboardOverview = ({ student }: { student: Student }) => {
-    // ... (Existing dashboard code is fine, omitted for brevity) ...
     return <div className="text-center py-10 text-gray-500">Dashboard Loaded</div>;
 };
 
 // --- TAB 2: HOMEWORK ---
 const HomeworkSection = ({ student }: { student: Student }) => {
-    // ... (Existing homework code is fine, omitted for brevity) ...
     return <div className="text-center py-10 text-gray-500">Homework Loaded</div>;
 };
 
@@ -153,9 +151,6 @@ const ExamSection = ({ student }: { student: Student }) => {
             alert(`Exam starts at ${exam.startTime} on ${exam.examDate}`);
             return;
         }
-        
-        // Allow strict start time window? (Optional: e.g. within 15 mins)
-        // For now, allow anytime after start, but strictly enforce duration.
         
         setActiveExam(exam);
         setTimeLeft(exam.duration * 60); // Set timer in seconds
@@ -294,7 +289,6 @@ const ExamSection = ({ student }: { student: Student }) => {
 
 // --- TAB 4: QUERIES ---
 const QuerySection = ({ student }: { student: Student }) => {
-    // ... (Existing Queries Code omitted) ...
     return <div className="text-center py-10 text-gray-500">Queries Loaded</div>;
 };
 

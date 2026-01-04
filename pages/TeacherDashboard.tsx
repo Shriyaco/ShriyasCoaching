@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../services/db';
-import { Subdivision, Student, User, Grade, Homework, Exam, Question, StudentQuery, ExamSubmission } from '../types';
+import { Subdivision, Student, User, Grade, Homework, Exam, Question, StudentQuery, ExamSubmission, AttendanceRecord } from '../types';
 import ThreeOrb from '../components/ThreeOrb';
-import { LogOut, Calendar, BookOpen, PenTool, CheckCircle, ChevronLeft, ChevronRight, Plus, Trash2, Award, ClipboardCheck, X, Save, MessageSquare, Clock, Unlock } from 'lucide-react';
+import { LogOut, Calendar, BookOpen, PenTool, CheckCircle, ChevronLeft, ChevronRight, Plus, Trash2, Award, ClipboardCheck, X, Save, MessageSquare, Clock, Unlock, UserCheck, UserX, AlertCircle } from 'lucide-react';
 
 const TeacherDashboard: React.FC = () => {
     const navigate = useNavigate();
@@ -56,7 +56,7 @@ const TeacherDashboard: React.FC = () => {
 
     return (
         <div className="min-h-screen bg-slate-50 relative font-sans flex flex-col">
-            <ThreeOrb className="absolute top-0 right-0 w-[400px] h-[400px] opacity-10 pointer-events-none" color="#f472b6" />
+            <ThreeOrb className="absolute top-0 right-0 w-[200px] h-[200px] md:w-[400px] md:h-[400px] opacity-10 pointer-events-none" color="#f472b6" />
 
             {/* Navbar */}
             <header className="bg-white border-b border-gray-200 px-4 md:px-6 py-4 flex flex-col md:flex-row justify-between items-center gap-4 relative z-20 shadow-sm">
@@ -119,17 +119,294 @@ const TeacherDashboard: React.FC = () => {
     );
 };
 
-// ... (AttendanceModule and HomeworkModule remain unchanged, just omitted for brevity in this specific patch to stay within limits, but in real file they exist) ...
 // --- MODULE 1: ATTENDANCE (CALENDAR) ---
 const AttendanceModule = ({ gradeId, divisionId }: { gradeId: string, divisionId: string }) => {
-    // ... (Existing Attendance Code) ...
-    return <div className="text-center text-gray-500 p-10">Attendance Module Loaded</div>; 
+    const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+    const [students, setStudents] = useState<Student[]>([]);
+    const [attendanceMap, setAttendanceMap] = useState<Record<string, 'Present' | 'Absent'>>({});
+    const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        if (!gradeId || !divisionId) return;
+        
+        const load = async () => {
+            setLoading(true);
+            try {
+                // 1. Get Students
+                const st = await db.getStudents(gradeId, divisionId);
+                setStudents(st);
+
+                // 2. Get Existing Attendance
+                const records = await db.getAttendance(undefined, date);
+                const map: Record<string, 'Present' | 'Absent'> = {};
+                
+                // Initialize all as Present by default if no record exists
+                st.forEach(s => map[s.id] = 'Present');
+                
+                // Overwrite with existing records
+                records.forEach(r => {
+                    if (r.divisionId === divisionId) { // extra safety check
+                        map[r.studentId] = r.status;
+                    }
+                });
+                
+                setAttendanceMap(map);
+            } catch (error) {
+                console.error("Error loading attendance:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        load();
+    }, [gradeId, divisionId, date]);
+
+    const toggleStatus = (studentId: string) => {
+        setAttendanceMap(prev => ({
+            ...prev,
+            [studentId]: prev[studentId] === 'Present' ? 'Absent' : 'Present'
+        }));
+    };
+
+    const saveAttendance = async () => {
+        try {
+            const records = students.map(s => ({
+                studentId: s.id,
+                divisionId,
+                date,
+                status: attendanceMap[s.id]
+            }));
+            await db.markAttendance(records);
+            alert('Attendance Saved Successfully');
+        } catch (error) {
+            console.error(error);
+            alert('Failed to save attendance');
+        }
+    };
+
+    const stats = {
+        total: students.length,
+        present: Object.values(attendanceMap).filter(s => s === 'Present').length,
+        absent: Object.values(attendanceMap).filter(s => s === 'Absent').length
+    };
+
+    if (!gradeId) return <div className="text-center text-gray-400 p-10">Please select a Grade and Division first.</div>;
+
+    return (
+        <div className="max-w-4xl mx-auto space-y-6">
+            {/* Header & Controls */}
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col md:flex-row justify-between items-center gap-4">
+                <div className="flex items-center gap-3">
+                    <div className="p-3 bg-purple-100 text-purple-600 rounded-lg"><Calendar size={24}/></div>
+                    <div>
+                        <h3 className="font-bold text-gray-800 text-lg">Mark Attendance</h3>
+                        <p className="text-sm text-gray-500">For {date === new Date().toISOString().split('T')[0] ? 'Today' : date}</p>
+                    </div>
+                </div>
+                <div className="flex items-center gap-4">
+                    <input 
+                        type="date" 
+                        value={date} 
+                        onChange={e => setDate(e.target.value)}
+                        className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-purple-500"
+                    />
+                    <button onClick={saveAttendance} className="bg-purple-600 text-white px-6 py-2 rounded-lg font-bold shadow-lg hover:bg-purple-700 transition-colors flex items-center gap-2">
+                        <Save size={18}/> Save
+                    </button>
+                </div>
+            </div>
+
+            {/* Stats */}
+            <div className="grid grid-cols-3 gap-4">
+                <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 text-center">
+                    <p className="text-xs text-blue-500 font-bold uppercase">Total Students</p>
+                    <p className="text-2xl font-black text-blue-700">{stats.total}</p>
+                </div>
+                <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-100 text-center">
+                    <p className="text-xs text-emerald-500 font-bold uppercase">Present</p>
+                    <p className="text-2xl font-black text-emerald-700">{stats.present}</p>
+                </div>
+                <div className="bg-rose-50 p-4 rounded-xl border border-rose-100 text-center">
+                    <p className="text-xs text-rose-500 font-bold uppercase">Absent</p>
+                    <p className="text-2xl font-black text-rose-700">{stats.absent}</p>
+                </div>
+            </div>
+
+            {/* List */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                {loading ? (
+                    <div className="p-10 text-center text-gray-400">Loading students...</div>
+                ) : students.length === 0 ? (
+                    <div className="p-10 text-center text-gray-400">No students found in this class.</div>
+                ) : (
+                    <table className="w-full text-left">
+                        <thead className="bg-gray-50 text-gray-500 font-bold text-xs uppercase border-b border-gray-100">
+                            <tr>
+                                <th className="p-4">Student Name</th>
+                                <th className="p-4">Roll ID</th>
+                                <th className="p-4 text-center">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-50">
+                            {students.map(s => (
+                                <tr key={s.id} className={`hover:bg-gray-50 transition-colors ${attendanceMap[s.id] === 'Absent' ? 'bg-rose-50/30' : ''}`}>
+                                    <td className="p-4 font-medium text-gray-800">{s.name}</td>
+                                    <td className="p-4 text-sm text-gray-500 font-mono">{s.studentCustomId}</td>
+                                    <td className="p-4 flex justify-center">
+                                        <button 
+                                            onClick={() => toggleStatus(s.id)}
+                                            className={`px-4 py-1.5 rounded-full text-sm font-bold flex items-center gap-2 transition-all w-32 justify-center ${
+                                                attendanceMap[s.id] === 'Present' 
+                                                ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200' 
+                                                : 'bg-rose-100 text-rose-700 hover:bg-rose-200'
+                                            }`}
+                                        >
+                                            {attendanceMap[s.id] === 'Present' ? <><UserCheck size={16}/> Present</> : <><UserX size={16}/> Absent</>}
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                )}
+            </div>
+        </div>
+    );
 };
 
 // --- MODULE 2: HOMEWORK ---
 const HomeworkModule = ({ gradeId, divisionId, teacherId }: { gradeId: string, divisionId: string, teacherId: string }) => {
-    // ... (Existing Homework Code) ...
-    return <div className="text-center text-gray-500 p-10">Homework Module Loaded</div>;
+    const [homeworkList, setHomeworkList] = useState<Homework[]>([]);
+    const [newHomework, setNewHomework] = useState({ subject: '', task: '', dueDate: '' });
+    const [loading, setLoading] = useState(false);
+
+    const loadHomework = useCallback(async () => {
+        if(!gradeId || !divisionId) return;
+        setLoading(true);
+        try {
+            const hw = await db.getHomeworkForStudent(gradeId, divisionId);
+            // Sort by due date desc
+            hw.sort((a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime());
+            setHomeworkList(hw);
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setLoading(false);
+        }
+    }, [gradeId, divisionId]);
+
+    useEffect(() => {
+        loadHomework();
+    }, [loadHomework]);
+
+    const handleAssign = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if(!gradeId || !divisionId) {
+            alert('Please select a Grade and Division');
+            return;
+        }
+        try {
+            await db.addHomework({
+                gradeId,
+                subdivisionId: divisionId,
+                subject: newHomework.subject,
+                task: newHomework.task,
+                dueDate: newHomework.dueDate,
+                assignedBy: teacherId
+            });
+            alert('Homework Assigned');
+            setNewHomework({ subject: '', task: '', dueDate: '' });
+            loadHomework();
+        } catch (error) {
+            console.error(error);
+            alert('Failed to assign homework');
+        }
+    };
+
+    if (!gradeId) return <div className="text-center text-gray-400 p-10">Please select a Grade and Division first.</div>;
+
+    return (
+        <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Create Form */}
+            <div className="lg:col-span-1">
+                <div className="bg-white p-6 rounded-xl shadow-lg border border-purple-100 sticky top-4">
+                    <h3 className="font-bold text-xl text-gray-800 mb-6 flex items-center gap-2">
+                        <Plus className="bg-purple-100 text-purple-600 rounded p-1" size={28}/> Assign Homework
+                    </h3>
+                    <form onSubmit={handleAssign} className="space-y-4">
+                        <div>
+                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Subject</label>
+                            <input 
+                                required
+                                placeholder="e.g. Mathematics"
+                                className="w-full border border-gray-200 rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-500 outline-none"
+                                value={newHomework.subject}
+                                onChange={e => setNewHomework({...newHomework, subject: e.target.value})}
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Description / Task</label>
+                            <textarea 
+                                required
+                                placeholder="Details about the assignment..."
+                                className="w-full border border-gray-200 rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-500 outline-none h-32 resize-none"
+                                value={newHomework.task}
+                                onChange={e => setNewHomework({...newHomework, task: e.target.value})}
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Due Date</label>
+                            <input 
+                                required
+                                type="date"
+                                className="w-full border border-gray-200 rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-500 outline-none"
+                                value={newHomework.dueDate}
+                                onChange={e => setNewHomework({...newHomework, dueDate: e.target.value})}
+                            />
+                        </div>
+                        <button type="submit" className="w-full bg-purple-600 text-white py-3 rounded-lg font-bold hover:bg-purple-700 transition-colors shadow-md">
+                            Assign to Class
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            {/* List */}
+            <div className="lg:col-span-2 space-y-6">
+                <h3 className="font-bold text-lg text-gray-700 flex items-center gap-2">
+                    <BookOpen size={20} className="text-gray-400"/> Class Homework History
+                </h3>
+                
+                {loading ? <div className="text-center py-10 text-gray-400">Loading...</div> : homeworkList.length === 0 ? (
+                    <div className="bg-gray-50 border-2 border-dashed border-gray-200 rounded-xl p-10 text-center text-gray-400">
+                        No homework assigned yet for this class.
+                    </div>
+                ) : (
+                    <div className="grid gap-4">
+                        {homeworkList.map(hw => (
+                            <div key={hw.id} className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow flex flex-col md:flex-row gap-4 justify-between">
+                                <div className="flex-1">
+                                    <div className="flex justify-between items-start mb-2">
+                                        <h4 className="font-bold text-gray-800 text-lg">{hw.subject}</h4>
+                                        <span className={`text-xs px-2 py-1 rounded font-bold ${new Date(hw.dueDate) < new Date() ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}`}>
+                                            Due: {hw.dueDate}
+                                        </span>
+                                    </div>
+                                    <p className="text-gray-600 text-sm whitespace-pre-wrap">{hw.task}</p>
+                                </div>
+                                <div className="flex items-center gap-4 text-sm text-gray-400 border-t md:border-t-0 md:border-l border-gray-100 pt-4 md:pt-0 md:pl-4 md:w-48 shrink-0">
+                                    <div className="flex flex-col gap-1 w-full">
+                                        <button className="text-purple-600 font-bold hover:bg-purple-50 px-3 py-2 rounded text-left transition-colors flex items-center gap-2">
+                                            <ClipboardCheck size={16}/> View Submissions
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+        </div>
+    );
 };
 
 
@@ -478,7 +755,6 @@ const GradingModule = ({ teacherId }: { teacherId: string }) => {
 
 // --- MODULE 5: QUERIES ---
 const QueriesModule = () => {
-    // ... (Existing Queries Code) ...
     return <div className="text-center text-gray-500 p-10">Queries Module Loaded</div>;
 };
 

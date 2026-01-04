@@ -57,8 +57,8 @@ const ContactUs: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#020617] text-slate-900 dark:text-white font-sans selection:bg-[#00E5FF] selection:text-[#020617] overflow-x-hidden pt-20 transition-colors duration-300">
-      <ThreeOrb className="absolute top-0 right-0 w-[800px] h-[800px] opacity-20 pointer-events-none translate-x-1/3 -translate-y-1/4" color="#00E5FF" />
-      <ThreeOrb className="absolute bottom-0 left-0 w-[600px] h-[600px] opacity-10 pointer-events-none -translate-x-1/3 translate-y-1/4" color="#a855f7" />
+      <ThreeOrb className="absolute top-0 right-0 w-[300px] h-[300px] md:w-[800px] md:h-[800px] opacity-20 pointer-events-none translate-x-1/3 -translate-y-1/4" color="#00E5FF" />
+      <ThreeOrb className="absolute bottom-0 left-0 w-[250px] h-[250px] md:w-[600px] md:h-[600px] opacity-10 pointer-events-none -translate-x-1/3 translate-y-1/4" color="#a855f7" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-10">
         
