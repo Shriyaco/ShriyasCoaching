@@ -194,7 +194,7 @@ class DatabaseService {
           student_custom_id: customId,
           name: data.name,
           mobile: data.mobile,
-          parent_name: data.parent_name,
+          parent_name: data.parentName,
           grade_id: data.gradeId,
           subdivision_id: data.subdivisionId,
           joining_date: data.joiningDate,
@@ -230,6 +230,10 @@ class DatabaseService {
       await supabase.from('students').update({ status }).eq('id', id);
   }
 
+  async deleteStudent(id: string) {
+      await supabase.from('students').delete().eq('id', id);
+  }
+
   async getTeachers(): Promise<Teacher[]> { 
       const { data } = await supabase.from('teachers').select('*');
       return (data || []).map(mapTeacher);
@@ -247,9 +251,10 @@ class DatabaseService {
           teacher_custom_id: customId,
           name: data.name,
           mobile: data.mobile,
-          grade_id: data.grade_id,
-          subdivision_id: data.subdivision_id,
+          grade_id: data.gradeId,
+          subdivision_id: data.subdivisionId,
           specialization: data.specialization,
+          joining_date: new Date().toISOString().split('T')[0],
           password: password
       });
       if (error) throw error;
@@ -269,6 +274,10 @@ class DatabaseService {
       await supabase.from('teachers').update({ status }).eq('id', id);
   }
 
+  async deleteTeacher(id: string) {
+      await supabase.from('teachers').delete().eq('id', id);
+  }
+
   async resetUserPassword(type: 'student' | 'teacher', id: string, newPassword?: string) {
       const table = type === 'student' ? 'students' : 'teachers';
       if (!newPassword) {
@@ -279,14 +288,27 @@ class DatabaseService {
   }
 
   async getNotices(): Promise<Notice[]> { 
-      const { data } = await supabase.from('notices').select('*');
+      const { data } = await supabase.from('notices').select('*').order('date', { ascending: false });
       return data || [];
+  }
+
+  async addNotice(notice: Omit<Notice, 'id'>) {
+      await supabase.from('notices').insert({
+          title: notice.title,
+          content: notice.content,
+          date: notice.date,
+          important: notice.important
+      });
+  }
+
+  async deleteNotice(id: string) {
+      await supabase.from('notices').delete().eq('id', id);
   }
   
   async getTimetable(divisionId?: string): Promise<TimetableEntry[]> { 
       let query = supabase.from('timetable').select('*');
       if(divisionId) query = query.eq('division_id', divisionId);
-      const { data } = await query;
+      const { data } = await query.order('start_time');
       return (data || []).map(t => ({
           id: t.id,
           divisionId: t.division_id,
@@ -297,9 +319,24 @@ class DatabaseService {
           teacherName: t.teacher_name
       }));
   }
+
+  async addTimetableEntry(entry: Omit<TimetableEntry, 'id'>) {
+      await supabase.from('timetable').insert({
+          division_id: entry.divisionId,
+          day: entry.day,
+          start_time: entry.startTime,
+          end_time: entry.endTime,
+          subject: entry.subject,
+          teacher_name: entry.teacherName
+      });
+  }
+
+  async deleteTimetableEntry(id: string) {
+      await supabase.from('timetable').delete().eq('id', id);
+  }
   
   async getFeeSubmissions(): Promise<FeeSubmission[]> { 
-      const { data } = await supabase.from('fee_submissions').select('*');
+      const { data } = await supabase.from('fee_submissions').select('*').order('date', { ascending: false });
       return (data || []).map(f => ({
           id: f.id,
           studentId: f.student_id,
@@ -312,13 +349,22 @@ class DatabaseService {
       }));
   }
 
+  async updateFeeSubmissionStatus(id: string, status: 'Approved' | 'Rejected', studentId: string) {
+      await supabase.from('fee_submissions').update({ status }).eq('id', id);
+      if (status === 'Approved') {
+          await supabase.from('students').update({ fees_status: 'Paid' }).eq('id', studentId);
+      } else {
+          await supabase.from('students').update({ fees_status: 'Pending' }).eq('id', studentId);
+      }
+  }
+
   async addFeeSubmission(submission: any) {
       await supabase.from('fee_submissions').insert({
           student_id: submission.studentId,
           student_name: submission.studentName,
           amount: submission.amount,
-          transaction_ref: submission.transaction_ref,
-          payment_method: submission.payment_method,
+          transaction_ref: submission.transactionRef,
+          payment_method: submission.paymentMethod,
           status: 'Pending',
           date: new Date().toISOString().split('T')[0]
       });
@@ -408,7 +454,6 @@ class DatabaseService {
       }));
   }
 
-  // Fix: changed snake_case property access on camelCase 'data' object.
   async addExam(data: Omit<Exam, 'id'>) {
       await supabase.from('exams').insert({
           title: data.title, 
