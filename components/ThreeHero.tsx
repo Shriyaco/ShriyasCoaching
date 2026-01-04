@@ -3,8 +3,9 @@ import React, { useRef } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Float, Sphere, Stars, Sparkles, MeshDistortMaterial, Torus, Tetrahedron, Box, Octahedron, Icosahedron } from '@react-three/drei';
 import * as THREE from 'three';
+import { useTheme } from '../App';
 
-const EducationalScene = () => {
+const EducationalScene = ({ isDark }) => {
   const { viewport, mouse } = useThree();
   const groupRef = useRef<THREE.Group>(null!);
   
@@ -102,7 +103,7 @@ const EducationalScene = () => {
                 <Sphere ref={globeRef} args={[1, 24, 24]}>
                     {/* @ts-ignore */}
                     <meshStandardMaterial 
-                        color="#00E5FF" 
+                        color={isDark ? "#00E5FF" : "#3b82f6"} 
                         wireframe 
                         transparent 
                         opacity={0.15} 
@@ -112,8 +113,8 @@ const EducationalScene = () => {
                 {/* Inner Energy Source */}
                 <Sphere args={[0.8, 32, 32]}>
                      <MeshDistortMaterial 
-                        color="#020617" 
-                        emissive="#0044ff"
+                        color={isDark ? "#020617" : "#ffffff"} 
+                        emissive={isDark ? "#0044ff" : "#60a5fa"}
                         emissiveIntensity={1.5}
                         distort={0.4}
                         speed={3}
@@ -126,11 +127,11 @@ const EducationalScene = () => {
             {/* SCIENCE: Atom-like Orbital Rings */}
             <Torus ref={atomRingRef} args={[1.7, 0.02, 64, 100]} rotation={[1.5, 0, 0]}>
                 {/* @ts-ignore */}
-                <meshStandardMaterial color="#00E5FF" emissive="#00E5FF" emissiveIntensity={2} toneMapped={false} />
+                <meshStandardMaterial color={isDark ? "#00E5FF" : "#3b82f6"} emissive={isDark ? "#00E5FF" : "#3b82f6"} emissiveIntensity={2} toneMapped={false} />
             </Torus>
              <Torus args={[2.1, 0.02, 64, 100]} rotation={[0, 1.5, 0.5]}>
                 {/* @ts-ignore */}
-                <meshStandardMaterial color="#8b5cf6" emissive="#8b5cf6" emissiveIntensity={2} toneMapped={false} />
+                <meshStandardMaterial color={isDark ? "#8b5cf6" : "#a855f7"} emissive={isDark ? "#8b5cf6" : "#a855f7"} emissiveIntensity={2} toneMapped={false} />
             </Torus>
 
             {/* MATH: Orbiting Platonic Solids */}
@@ -170,33 +171,45 @@ const EducationalScene = () => {
             </group>
 
             {/* Knowledge Particles */}
-            <Sparkles count={150} scale={6} size={4} speed={0.4} opacity={0.6} color="#00E5FF" />
+            <Sparkles count={150} scale={6} size={4} speed={0.4} opacity={0.6} color={isDark ? "#00E5FF" : "#3b82f6"} />
         </Float>
     </group>
   );
 };
 
 const ThreeHero: React.FC = () => {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
+
   return (
-    <div className="absolute inset-0 z-0 bg-[#020617]">
+    <div className={`absolute inset-0 z-0 ${isDark ? 'bg-[#020617]' : 'bg-slate-50'}`}>
         {/* Complex Gradient Background Layer */}
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-[#00E5FF]/10 via-[#020617] to-[#020617] pointer-events-none" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,_var(--tw-gradient-stops))] from-[#6366f1]/10 via-transparent to-transparent pointer-events-none" />
+        {isDark ? (
+            <>
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-[#00E5FF]/10 via-[#020617] to-[#020617] pointer-events-none" />
+                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,_var(--tw-gradient-stops))] from-[#6366f1]/10 via-transparent to-transparent pointer-events-none" />
+            </>
+        ) : (
+             <>
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-blue-100 via-slate-50 to-slate-50 pointer-events-none opacity-50" />
+                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,_var(--tw-gradient-stops))] from-indigo-100 via-transparent to-transparent pointer-events-none opacity-50" />
+             </>
+        )}
         
       <Canvas camera={{ position: [0, 0, 8], fov: 45 }} dpr={[1, 2]}>
         {/* @ts-ignore */}
-        <fog attach="fog" args={['#020617', 5, 25]} />
+        <fog attach="fog" args={[isDark ? '#020617' : '#f8fafc', 5, 25]} />
         {/* @ts-ignore */}
         <ambientLight intensity={0.5} />
         {/* @ts-ignore */}
-        <pointLight position={[10, 10, 10]} intensity={1.5} color="#00E5FF" />
+        <pointLight position={[10, 10, 10]} intensity={1.5} color={isDark ? "#00E5FF" : "#3b82f6"} />
         {/* @ts-ignore */}
         <pointLight position={[-10, -10, -10]} intensity={1} color="#c084fc" />
         {/* @ts-ignore */}
         <spotLight position={[0, 10, 0]} intensity={0.8} angle={0.5} penumbra={1} color="#ffffff" />
         
-        <EducationalScene />
-        <Stars radius={100} depth={50} count={3000} factor={4} saturation={0} fade speed={1} />
+        <EducationalScene isDark={isDark} />
+        {isDark && <Stars radius={100} depth={50} count={3000} factor={4} saturation={0} fade speed={1} />}
       </Canvas>
     </div>
   );

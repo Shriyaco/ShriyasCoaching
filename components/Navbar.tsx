@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, ChevronDown, CreditCard, LogIn, Sparkles } from 'lucide-react';
+import { Menu, X, ChevronDown, CreditCard, LogIn, Sparkles, Sun, Moon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTheme } from '../App';
 
 const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [hoveredLink, setHoveredLink] = useState<string | null>(null);
+  
+  const { theme, toggleTheme } = useTheme();
   
   const location = useLocation();
   const isDashboard = location.pathname.startsWith('/admin') || location.pathname.startsWith('/student') || location.pathname.startsWith('/teacher');
@@ -25,12 +28,12 @@ const Navbar: React.FC = () => {
   const navLinks = [
     { 
       name: 'Boards', 
-      path: '#about', 
+      path: '/#about', 
       dropdown: ['ICSE', 'CBSE', 'State Board'] 
     },
     { 
       name: 'About Us', 
-      path: '#about',
+      path: '/#about',
       dropdown: ['Why Us', 'Our Vision'] 
     },
     { name: 'Contact Us', path: '/contact' }
@@ -40,7 +43,7 @@ const Navbar: React.FC = () => {
     <nav
       className={`fixed w-full z-50 transition-all duration-500 ${
         scrolled || isOpen
-          ? 'bg-[#020617]/90 backdrop-blur-xl border-b border-[#00E5FF]/20 shadow-[0_4px_30px_rgba(0,0,0,0.5)] py-3'
+          ? 'bg-white/90 dark:bg-[#020617]/90 backdrop-blur-xl border-b border-slate-200 dark:border-[#00E5FF]/20 shadow-[0_4px_30px_rgba(0,0,0,0.1)] dark:shadow-[0_4px_30px_rgba(0,0,0,0.5)] py-3'
           : 'bg-transparent py-6'
       } ${isLoginPage ? 'lg:hidden' : ''}`}
     >
@@ -72,7 +75,7 @@ const Navbar: React.FC = () => {
               >
                 <Link 
                   to={link.path} 
-                  className="flex items-center text-gray-300 hover:text-white px-3 py-2 text-sm font-medium transition-colors font-[Poppins] relative overflow-hidden"
+                  className="flex items-center text-slate-700 dark:text-gray-300 hover:text-black dark:hover:text-white px-3 py-2 text-sm font-medium transition-colors font-[Poppins] relative overflow-hidden"
                 >
                   <span className="relative z-10">{link.name}</span>
                   <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-[#00E5FF] transition-all duration-300 group-hover:w-full box-border shadow-[0_0_10px_#00E5FF]" />
@@ -87,13 +90,13 @@ const Navbar: React.FC = () => {
                         initial={{ opacity: 0, y: 15, scale: 0.95 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 15, scale: 0.95 }}
-                        className="absolute top-full left-0 w-56 bg-[#0B1120]/95 backdrop-blur-xl border border-[#00E5FF]/20 rounded-xl shadow-[0_0_30px_rgba(0,229,255,0.1)] overflow-hidden pt-2 p-2 mt-2"
+                        className="absolute top-full left-0 w-56 bg-white/95 dark:bg-[#0B1120]/95 backdrop-blur-xl border border-slate-200 dark:border-[#00E5FF]/20 rounded-xl shadow-xl dark:shadow-[0_0_30px_rgba(0,229,255,0.1)] overflow-hidden pt-2 p-2 mt-2"
                       >
                         {link.dropdown.map((item) => (
                           <a 
                             key={item} 
                             href={link.path} 
-                            className="block px-4 py-3 text-sm text-gray-300 hover:bg-[#00E5FF]/10 hover:text-[#00E5FF] rounded-lg transition-all"
+                            className="block px-4 py-3 text-sm text-slate-600 dark:text-gray-300 hover:bg-slate-50 dark:hover:bg-[#00E5FF]/10 hover:text-[#00E5FF] dark:hover:text-[#00E5FF] rounded-lg transition-all"
                           >
                             {item}
                           </a>
@@ -108,6 +111,15 @@ const Navbar: React.FC = () => {
 
           {/* Action Buttons */}
           <div className="hidden md:flex items-center space-x-4">
+            {/* Theme Toggle */}
+            <button 
+                onClick={toggleTheme}
+                className="p-2 rounded-full border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-slate-600 dark:text-gray-300 hover:text-[#00E5FF] dark:hover:text-[#00E5FF] transition-colors"
+                title="Toggle Theme"
+            >
+                {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+            </button>
+
             <Link 
               to="/pay-fees" 
               className="px-5 py-2 rounded-full border border-[#00E5FF]/30 text-[#00E5FF] font-medium hover:bg-[#00E5FF]/10 transition-colors flex items-center space-x-2 text-sm hover:shadow-[0_0_15px_rgba(0,229,255,0.2)]"
@@ -126,10 +138,16 @@ const Navbar: React.FC = () => {
           </div>
 
           {/* Mobile Menu Button */}
-          <div className="md:hidden">
+          <div className="md:hidden flex items-center gap-4">
+            <button 
+                onClick={toggleTheme}
+                className="p-2 rounded-full border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-slate-600 dark:text-gray-300 hover:text-[#00E5FF]"
+            >
+                {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+            </button>
             <button
               onClick={() => setIsOpen(!isOpen)}
-              className="text-white hover:text-[#00E5FF] transition-colors p-2"
+              className="text-slate-700 dark:text-white hover:text-[#00E5FF] transition-colors p-2"
             >
               {isOpen ? <X size={28} /> : <Menu size={28} />}
             </button>
@@ -144,7 +162,7 @@ const Navbar: React.FC = () => {
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            className="md:hidden bg-[#020617]/95 backdrop-blur-xl border-b border-[#00E5FF]/20 overflow-hidden"
+            className="md:hidden bg-white/95 dark:bg-[#020617]/95 backdrop-blur-xl border-b border-slate-200 dark:border-[#00E5FF]/20 overflow-hidden"
           >
             <div className="px-4 pt-2 pb-6 space-y-2">
               {navLinks.map((link) => (
@@ -152,14 +170,14 @@ const Navbar: React.FC = () => {
                   <Link 
                     to={link.path}
                     onClick={() => setIsOpen(false)}
-                    className="block px-3 py-3 text-base font-medium text-white hover:text-[#00E5FF] border-b border-white/5"
+                    className="block px-3 py-3 text-base font-medium text-slate-800 dark:text-white hover:text-[#00E5FF] border-b border-slate-100 dark:border-white/5"
                   >
                     {link.name}
                   </Link>
                   {link.dropdown && (
-                    <div className="pl-6 space-y-1 mt-1 bg-white/5 rounded-lg my-1">
+                    <div className="pl-6 space-y-1 mt-1 bg-slate-50 dark:bg-white/5 rounded-lg my-1">
                       {link.dropdown.map(item => (
-                         <div key={item} className="text-gray-400 text-sm py-2 px-3 border-b border-white/5 last:border-0">{item}</div>
+                         <div key={item} className="text-slate-500 dark:text-gray-400 text-sm py-2 px-3 border-b border-slate-100 dark:border-white/5 last:border-0">{item}</div>
                       ))}
                     </div>
                   )}

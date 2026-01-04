@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Float, Environment, ContactShadows, Sphere, Box, Cylinder, Torus, Cone, Icosahedron } from '@react-three/drei';
 import * as THREE from 'three';
+import { useTheme } from '../App';
 
 // --- 3D Educational Asset Components ---
 
@@ -157,6 +158,8 @@ const Login: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [focused, setFocused] = useState<'user' | 'pass' | null>(null);
 
+  const { theme } = useTheme();
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -182,18 +185,18 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#020617] flex overflow-hidden font-sans text-white relative">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#020617] flex overflow-hidden font-sans text-slate-900 dark:text-white relative transition-colors duration-300">
       
       {/* Close/Home Button */}
       <button 
         onClick={() => navigate('/')}
-        className="absolute top-6 right-6 z-50 p-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-full text-gray-400 hover:text-white transition-all backdrop-blur-md"
+        className="absolute top-6 right-6 z-50 p-2 bg-white/50 dark:bg-white/5 hover:bg-white/80 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 rounded-full text-slate-600 dark:text-gray-400 hover:text-black dark:hover:text-white transition-all backdrop-blur-md"
       >
         <X size={24} />
       </button>
 
       {/* LEFT SIDE: 3D Animation */}
-      <div className="hidden lg:flex w-1/2 relative flex-col items-center justify-center bg-[#020617] border-r border-white/5">
+      <div className="hidden lg:flex w-1/2 relative flex-col items-center justify-center bg-slate-100 dark:bg-[#020617] border-r border-slate-200 dark:border-white/5">
         <div className="absolute inset-0 z-0 opacity-80">
              <Canvas camera={{ position: [0, 0, 6], fov: 45 }}>
                 <EducationScene />
@@ -201,22 +204,22 @@ const Login: React.FC = () => {
         </div>
         
         {/* Overlay Text */}
-        <div className="absolute bottom-12 left-12 right-12 bg-black/60 backdrop-blur-md p-6 rounded-2xl border border-white/10 shadow-lg z-10">
-            <h2 className="text-2xl font-bold text-white mb-2 font-[Poppins]">Empowering Young Minds</h2>
-            <p className="text-slate-400 leading-relaxed">
+        <div className="absolute bottom-12 left-12 right-12 bg-white/60 dark:bg-black/60 backdrop-blur-md p-6 rounded-2xl border border-slate-200 dark:border-white/10 shadow-lg z-10">
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2 font-[Poppins]">Empowering Young Minds</h2>
+            <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
                 "Education is not the learning of facts, but the training of the mind to think." 
-                <span className="block mt-2 text-sm font-bold text-indigo-400">- Albert Einstein</span>
+                <span className="block mt-2 text-sm font-bold text-blue-600 dark:text-indigo-400">- Albert Einstein</span>
             </p>
         </div>
       </div>
 
       {/* RIGHT SIDE: Login Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 relative bg-[#020617]">
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 relative bg-white dark:bg-[#020617]">
           
           {/* Mobile Background Blob */}
           <div className="lg:hidden absolute inset-0 overflow-hidden z-0">
-              <div className="absolute -top-20 -right-20 w-80 h-80 bg-purple-900/20 rounded-full blur-[80px] opacity-40" />
-              <div className="absolute top-40 -left-20 w-60 h-60 bg-blue-900/20 rounded-full blur-[60px] opacity-40" />
+              <div className="absolute -top-20 -right-20 w-80 h-80 bg-purple-200 dark:bg-purple-900/20 rounded-full blur-[80px] opacity-40" />
+              <div className="absolute top-40 -left-20 w-60 h-60 bg-blue-200 dark:bg-blue-900/20 rounded-full blur-[60px] opacity-40" />
           </div>
 
           <motion.div 
@@ -226,22 +229,22 @@ const Login: React.FC = () => {
             className="w-full max-w-md relative z-10"
           >
               <div className="text-center mb-10">
-                  <h1 className="text-4xl font-black text-white font-[Poppins] tracking-tight">Login</h1>
+                  <h1 className="text-4xl font-black text-slate-900 dark:text-white font-[Poppins] tracking-tight">Login</h1>
                   <p className="text-slate-500 mt-2 text-sm">Access your dashboard</p>
               </div>
 
-              <div className="bg-slate-900/60 backdrop-blur-xl rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] border border-white/10 p-8">
+              <div className="bg-white/80 dark:bg-slate-900/60 backdrop-blur-xl rounded-3xl shadow-xl dark:shadow-[0_20px_50px_rgba(0,0,0,0.3)] border border-slate-200 dark:border-white/10 p-8">
                   <form onSubmit={handleLogin} className="space-y-6">
                       
                       {/* Username */}
                       <div className="space-y-2">
-                          <label className="text-xs font-bold text-slate-400 ml-1 uppercase tracking-wide">Student ID / Username</label>
-                          <div className={`flex items-center bg-slate-950/50 border-2 rounded-xl px-4 py-3 transition-all duration-300 ${focused === 'user' ? 'border-indigo-500 shadow-[0_0_20px_rgba(99,102,241,0.2)]' : 'border-slate-800 hover:border-slate-700'}`}>
-                              <UserIcon size={20} className={`mr-3 ${focused === 'user' ? 'text-indigo-500' : 'text-slate-500'}`} />
+                          <label className="text-xs font-bold text-slate-500 dark:text-slate-400 ml-1 uppercase tracking-wide">Student ID / Username</label>
+                          <div className={`flex items-center bg-slate-50 dark:bg-slate-950/50 border-2 rounded-xl px-4 py-3 transition-all duration-300 ${focused === 'user' ? 'border-blue-500 dark:border-indigo-500 shadow-lg ring-1 ring-blue-500/20' : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'}`}>
+                              <UserIcon size={20} className={`mr-3 ${focused === 'user' ? 'text-blue-500 dark:text-indigo-500' : 'text-slate-400 dark:text-slate-500'}`} />
                               <input 
                                 type="text" 
                                 placeholder="Enter ID"
-                                className="w-full bg-transparent outline-none text-white font-medium placeholder-slate-600"
+                                className="w-full bg-transparent outline-none text-slate-800 dark:text-white font-medium placeholder-slate-400 dark:placeholder-slate-600"
                                 value={username}
                                 onChange={(e) => setUsername(e.target.value)}
                                 onFocus={() => setFocused('user')}
@@ -253,14 +256,14 @@ const Login: React.FC = () => {
                       {/* Password */}
                       <div className="space-y-2">
                           <div className="flex justify-between ml-1">
-                             <label className="text-xs font-bold text-slate-400 uppercase tracking-wide">Password</label>
+                             <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Password</label>
                           </div>
-                          <div className={`flex items-center bg-slate-950/50 border-2 rounded-xl px-4 py-3 transition-all duration-300 ${focused === 'pass' ? 'border-indigo-500 shadow-[0_0_20px_rgba(99,102,241,0.2)]' : 'border-slate-800 hover:border-slate-700'}`}>
-                              <Lock size={20} className={`mr-3 ${focused === 'pass' ? 'text-indigo-500' : 'text-slate-500'}`} />
+                          <div className={`flex items-center bg-slate-50 dark:bg-slate-950/50 border-2 rounded-xl px-4 py-3 transition-all duration-300 ${focused === 'pass' ? 'border-blue-500 dark:border-indigo-500 shadow-lg ring-1 ring-blue-500/20' : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'}`}>
+                              <Lock size={20} className={`mr-3 ${focused === 'pass' ? 'text-blue-500 dark:text-indigo-500' : 'text-slate-400 dark:text-slate-500'}`} />
                               <input 
                                 type="password" 
                                 placeholder="••••••••"
-                                className="w-full bg-transparent outline-none text-white font-medium placeholder-slate-600"
+                                className="w-full bg-transparent outline-none text-slate-800 dark:text-white font-medium placeholder-slate-400 dark:placeholder-slate-600"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 onFocus={() => setFocused('pass')}
@@ -275,7 +278,7 @@ const Login: React.FC = () => {
                                 initial={{ height: 0, opacity: 0 }}
                                 animate={{ height: 'auto', opacity: 1 }}
                                 exit={{ height: 0, opacity: 0 }}
-                                className="bg-red-500/10 text-red-400 text-sm p-3 rounded-lg flex items-center gap-2 border border-red-500/20"
+                                className="bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 text-sm p-3 rounded-lg flex items-center gap-2 border border-red-200 dark:border-red-500/20"
                               >
                                   <AlertCircle size={16} /> {error}
                               </motion.div>
@@ -285,7 +288,7 @@ const Login: React.FC = () => {
                       <button 
                         type="submit" 
                         disabled={loading}
-                        className="w-full bg-indigo-600 text-white font-bold py-4 rounded-xl shadow-lg shadow-indigo-900/50 hover:bg-indigo-500 hover:scale-[1.01] active:scale-[0.98] transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                        className="w-full bg-blue-600 dark:bg-indigo-600 text-white font-bold py-4 rounded-xl shadow-lg shadow-blue-500/30 dark:shadow-indigo-900/50 hover:bg-blue-700 dark:hover:bg-indigo-500 hover:scale-[1.01] active:scale-[0.98] transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                       >
                           {loading ? (
                               <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -295,7 +298,7 @@ const Login: React.FC = () => {
                       </button>
 
                       <div className="text-center">
-                          <a href="#" className="text-sm font-medium text-slate-500 hover:text-indigo-400 transition-colors">Forgot Password?</a>
+                          <a href="#" className="text-sm font-medium text-slate-500 hover:text-blue-600 dark:hover:text-indigo-400 transition-colors">Forgot Password?</a>
                       </div>
                   </form>
               </div>
