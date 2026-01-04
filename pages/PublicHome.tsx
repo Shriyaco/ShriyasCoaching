@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import ThreeHero from '../components/ThreeHero';
 import { db } from '../services/db';
 import { Notice } from '../types';
-import { ArrowRight, Shield, Users, Trophy, ChevronRight, CheckCircle2, TrendingUp, Zap, Brain, Microscope, Calculator, BookOpen, Star, Plus, Minus, MessageCircle, Phone, Mail, MapPin, Globe, Palette } from 'lucide-react';
+import { ArrowRight, Shield, Users, Trophy, ChevronRight, CheckCircle2, TrendingUp, Zap, Brain, Microscope, Calculator, BookOpen, Star, Plus, Minus, MessageCircle, Phone, Mail, MapPin, Globe, Palette, X, Send } from 'lucide-react';
 import { motion, useScroll, useTransform, Variants, AnimatePresence } from 'framer-motion';
 
 const PublicHome: React.FC = () => {
@@ -14,8 +14,22 @@ const PublicHome: React.FC = () => {
   const scale = useTransform(scrollYProgress, [0, 0.2], [0.9, 1]);
   const opacity = useTransform(scrollYProgress, [0, 0.2], [0, 1]);
 
-  // FAQ State
-  const [openFaq, setOpenFaq] = useState<number | null>(null);
+  // UI State
+  const [isEnquiryModalOpen, setIsEnquiryModalOpen] = useState(false);
+  const [enquirySubmitted, setEnquirySubmitted] = useState(false);
+  
+  // Enquiry Form State
+  const [enquiryForm, setEnquiryForm] = useState({
+      studentName: '',
+      parentName: '',
+      relation: '',
+      grade: '',
+      schoolName: '',
+      hasCoaching: null as boolean | null,
+      reason: '',
+      mobile: '',
+      connectTime: ''
+  });
 
   useEffect(() => {
     // Get all important notices for the ticker
@@ -43,22 +57,39 @@ const PublicHome: React.FC = () => {
       }
   };
 
-  const subjects = [
-    { icon: Calculator, title: "Mathematics", desc: "Mastering arithmetic, geometry, and logic through visual learning methods." },
-    { icon: Microscope, title: "Science", desc: "Hands-on experiments and observation-based learning for Biology, Physics & Chemistry." },
-    { icon: BookOpen, title: "English", desc: "Focus on grammar, creative writing, and verbal communication skills." },
-    { icon: Globe, title: "Social Studies", desc: "Interactive history and geography lessons to understand our world better." },
-    { icon: Brain, title: "Olympiad Prep", desc: "Specialized training for IMO, NSO, and other national level competitive exams." },
-    { icon: Palette, title: "Creative Thinking", desc: "Art integration and lateral thinking puzzles to boost cognitive development." }
-  ];
+  const handleEnquirySubmit = async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (enquiryForm.hasCoaching === null) {
+          alert("Please select if your child is already getting coaching.");
+          return;
+      }
+      try {
+          await db.addEnquiry({
+              ...enquiryForm,
+              hasCoaching: enquiryForm.hasCoaching as boolean
+          });
+          setEnquirySubmitted(true);
+      } catch (error) {
+          console.error(error);
+          alert("Something went wrong. Please try again.");
+      }
+  };
 
-  const faqs = [
-    { q: "What is the student-teacher ratio?", a: "We maintain a strict 1:15 ratio to ensure every child gets personal attention during these formative years (Grade 1-8)." },
-    { q: "Do you prepare for Olympiads?", a: "Yes, our curriculum integrates preparation for SOF, NSTSE, and other competitive exams alongside the standard school syllabus." },
-    { q: "Is there transport facility available?", a: "We have partnered with safe, GPS-enabled private van services covering a 5km radius around the center." },
-    { q: "How can parents track progress?", a: "We provide a dedicated login where parents can check daily attendance, weekly test marks, and teacher remarks." },
-    { q: "Which boards do you cover?", a: "We provide specialized batches for CBSE, ICSE, and State Board curriculums with board-specific study materials." }
-  ];
+  const closeEnquiryModal = () => {
+      setIsEnquiryModalOpen(false);
+      setEnquirySubmitted(false);
+      setEnquiryForm({
+          studentName: '',
+          parentName: '',
+          relation: '',
+          grade: '',
+          schoolName: '',
+          hasCoaching: null,
+          reason: '',
+          mobile: '',
+          connectTime: ''
+      });
+  };
 
   return (
     <div className="min-h-screen bg-[#020617] text-white font-sans selection:bg-[#00E5FF] selection:text-[#020617] overflow-x-hidden perspective-1000">
@@ -112,10 +143,10 @@ const PublicHome: React.FC = () => {
                       </p>
 
                       <div className="flex flex-col sm:flex-row gap-5 justify-center md:justify-start">
-                          <a href="#about" className="group relative px-8 py-4 bg-gradient-to-r from-[#00E5FF] to-cyan-600 text-[#020617] rounded-full font-bold text-lg shadow-[0_0_40px_rgba(0,229,255,0.3)] hover:shadow-[0_0_60px_rgba(0,229,255,0.5)] transition-all overflow-hidden hover:-translate-y-1">
-                             <span className="relative z-10 flex items-center gap-2">Discover More <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform"/></span>
+                          <button onClick={() => setIsEnquiryModalOpen(true)} className="group relative px-8 py-4 bg-gradient-to-r from-[#00E5FF] to-cyan-600 text-[#020617] rounded-full font-bold text-lg shadow-[0_0_40px_rgba(0,229,255,0.3)] hover:shadow-[0_0_60px_rgba(0,229,255,0.5)] transition-all overflow-hidden hover:-translate-y-1">
+                             <span className="relative z-10 flex items-center gap-2">Enroll Now <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform"/></span>
                              <div className="absolute inset-0 bg-white/30 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-500 skew-x-12" />
-                          </a>
+                          </button>
                           <a href="/login" className="px-8 py-4 bg-white/5 border border-white/10 text-white rounded-full font-bold text-lg hover:bg-white/10 hover:border-[#00E5FF]/30 backdrop-blur-md transition-all flex items-center gap-2 group">
                              Access Portal <ChevronRight size={18} className="text-[#00E5FF] group-hover:translate-x-1 transition-transform" />
                           </a>
@@ -289,6 +320,132 @@ const PublicHome: React.FC = () => {
             </a>
         </div>
       </footer>
+
+      {/* --- ENQUIRY MODAL --- */}
+      <AnimatePresence>
+        {isEnquiryModalOpen && (
+            <motion.div 
+                initial={{ opacity: 0 }} 
+                animate={{ opacity: 1 }} 
+                exit={{ opacity: 0 }} 
+                className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+            >
+                <motion.div 
+                    initial={{ scale: 0.9, y: 20 }} 
+                    animate={{ scale: 1, y: 0 }} 
+                    exit={{ scale: 0.9, y: 20 }} 
+                    className="bg-[#0B1120] rounded-3xl border border-[#00E5FF]/20 shadow-[0_0_50px_rgba(0,229,255,0.1)] w-full max-w-2xl overflow-hidden relative"
+                >
+                    <button onClick={closeEnquiryModal} className="absolute top-4 right-4 text-gray-500 hover:text-white transition-colors z-20"><X size={24} /></button>
+                    
+                    {enquirySubmitted ? (
+                        <div className="p-12 text-center flex flex-col items-center justify-center min-h-[400px]">
+                            <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="w-24 h-24 bg-[#00E5FF]/10 rounded-full flex items-center justify-center text-[#00E5FF] mb-6">
+                                <CheckCircle2 size={48} />
+                            </motion.div>
+                            <h3 className="text-3xl font-bold text-white mb-4 font-[Poppins]">Thank You!</h3>
+                            <p className="text-gray-400 max-w-md">Your enquiry has been received. Our team will connect with you at your preferred time.</p>
+                            <button onClick={closeEnquiryModal} className="mt-8 px-8 py-3 bg-[#00E5FF] text-[#020617] font-bold rounded-xl hover:bg-cyan-400 transition-colors">Close</button>
+                        </div>
+                    ) : (
+                        <div className="flex flex-col h-full max-h-[90vh]">
+                            <div className="p-6 md:p-8 bg-[#020617] border-b border-white/5">
+                                <h3 className="text-2xl font-bold text-white font-[Poppins] flex items-center gap-3">
+                                    <MessageCircle className="text-[#00E5FF]" /> Admission Enquiry
+                                </h3>
+                                <p className="text-gray-500 text-sm mt-1">Fill in the details below to start your journey with us.</p>
+                            </div>
+                            
+                            <div className="overflow-y-auto p-6 md:p-8 custom-scrollbar space-y-6">
+                                <form id="enquiryForm" onSubmit={handleEnquirySubmit} className="space-y-5">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                        <div className="space-y-1">
+                                            <label className="text-xs font-bold text-gray-500 uppercase">Student Name</label>
+                                            <input required className="w-full bg-[#020617] border border-white/10 rounded-xl px-4 py-3 text-white focus:border-[#00E5FF] focus:ring-1 focus:ring-[#00E5FF] outline-none transition-colors" placeholder="Child's Name" value={enquiryForm.studentName} onChange={e => setEnquiryForm({...enquiryForm, studentName: e.target.value})} />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-xs font-bold text-gray-500 uppercase">Your Name</label>
+                                            <input required className="w-full bg-[#020617] border border-white/10 rounded-xl px-4 py-3 text-white focus:border-[#00E5FF] focus:ring-1 focus:ring-[#00E5FF] outline-none transition-colors" placeholder="Parent/Guardian Name" value={enquiryForm.parentName} onChange={e => setEnquiryForm({...enquiryForm, parentName: e.target.value})} />
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                        <div className="space-y-1">
+                                            <label className="text-xs font-bold text-gray-500 uppercase">Relation with Student</label>
+                                            <select required className="w-full bg-[#020617] border border-white/10 rounded-xl px-4 py-3 text-white focus:border-[#00E5FF] focus:ring-1 focus:ring-[#00E5FF] outline-none transition-colors" value={enquiryForm.relation} onChange={e => setEnquiryForm({...enquiryForm, relation: e.target.value})}>
+                                                <option value="" disabled>Select Relation</option>
+                                                <option value="Father">Father</option>
+                                                <option value="Mother">Mother</option>
+                                                <option value="Guardian">Guardian</option>
+                                            </select>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-xs font-bold text-gray-500 uppercase">Grade Applying For</label>
+                                            <select required className="w-full bg-[#020617] border border-white/10 rounded-xl px-4 py-3 text-white focus:border-[#00E5FF] focus:ring-1 focus:ring-[#00E5FF] outline-none transition-colors" value={enquiryForm.grade} onChange={e => setEnquiryForm({...enquiryForm, grade: e.target.value})}>
+                                                <option value="" disabled>Select Grade</option>
+                                                {[1,2,3,4,5,6,7,8].map(g => <option key={g} value={`Grade ${g}`}>Grade {g}</option>)}
+                                            </select>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="space-y-1">
+                                        <label className="text-xs font-bold text-gray-500 uppercase">Current School Name</label>
+                                        <input required className="w-full bg-[#020617] border border-white/10 rounded-xl px-4 py-3 text-white focus:border-[#00E5FF] focus:ring-1 focus:ring-[#00E5FF] outline-none transition-colors" placeholder="School Name" value={enquiryForm.schoolName} onChange={e => setEnquiryForm({...enquiryForm, schoolName: e.target.value})} />
+                                    </div>
+
+                                    <div className="bg-[#020617] p-5 rounded-xl border border-white/10 space-y-4">
+                                        <label className="block text-sm font-bold text-gray-300">Is your child already getting coaching somewhere?</label>
+                                        <div className="flex gap-6">
+                                            <label className="flex items-center gap-2 cursor-pointer group">
+                                                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${enquiryForm.hasCoaching === true ? 'border-[#00E5FF]' : 'border-gray-500 group-hover:border-gray-300'}`}>
+                                                    {enquiryForm.hasCoaching === true && <div className="w-2.5 h-2.5 rounded-full bg-[#00E5FF]" />}
+                                                </div>
+                                                <input type="radio" name="coaching" className="hidden" checked={enquiryForm.hasCoaching === true} onChange={() => setEnquiryForm({...enquiryForm, hasCoaching: true, reason: ''})} />
+                                                <span className="text-gray-300 group-hover:text-white">Yes</span>
+                                            </label>
+                                            <label className="flex items-center gap-2 cursor-pointer group">
+                                                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${enquiryForm.hasCoaching === false ? 'border-[#00E5FF]' : 'border-gray-500 group-hover:border-gray-300'}`}>
+                                                    {enquiryForm.hasCoaching === false && <div className="w-2.5 h-2.5 rounded-full bg-[#00E5FF]" />}
+                                                </div>
+                                                <input type="radio" name="coaching" className="hidden" checked={enquiryForm.hasCoaching === false} onChange={() => setEnquiryForm({...enquiryForm, hasCoaching: false, reason: ''})} />
+                                                <span className="text-gray-300 group-hover:text-white">No</span>
+                                            </label>
+                                        </div>
+                                        
+                                        {enquiryForm.hasCoaching !== null && (
+                                            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="pt-2">
+                                                <label className="text-xs font-bold text-[#00E5FF] uppercase block mb-1">
+                                                    {enquiryForm.hasCoaching ? "Reason for Shifting" : "Reason for Tuition from us"}
+                                                </label>
+                                                <input required className="w-full bg-[#0B1120] border border-white/10 rounded-xl px-4 py-3 text-white focus:border-[#00E5FF] outline-none" placeholder={enquiryForm.hasCoaching ? "Why do you want to change?" : "Why are you looking for tuition?"} value={enquiryForm.reason} onChange={e => setEnquiryForm({...enquiryForm, reason: e.target.value})} />
+                                            </motion.div>
+                                        )}
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                        <div className="space-y-1">
+                                            <label className="text-xs font-bold text-gray-500 uppercase">Mobile Number</label>
+                                            <input required type="tel" className="w-full bg-[#020617] border border-white/10 rounded-xl px-4 py-3 text-white focus:border-[#00E5FF] focus:ring-1 focus:ring-[#00E5FF] outline-none transition-colors" placeholder="10-digit Mobile" value={enquiryForm.mobile} onChange={e => setEnquiryForm({...enquiryForm, mobile: e.target.value})} />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-xs font-bold text-gray-500 uppercase">Right Time to Connect</label>
+                                            <input required type="text" className="w-full bg-[#020617] border border-white/10 rounded-xl px-4 py-3 text-white focus:border-[#00E5FF] focus:ring-1 focus:ring-[#00E5FF] outline-none transition-colors" placeholder="e.g. After 6 PM" value={enquiryForm.connectTime} onChange={e => setEnquiryForm({...enquiryForm, connectTime: e.target.value})} />
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                            
+                            <div className="p-6 border-t border-white/5 bg-[#020617]/50 flex justify-end">
+                                <button type="submit" form="enquiryForm" className="bg-gradient-to-r from-[#00E5FF] to-cyan-600 text-[#020617] px-8 py-3 rounded-xl font-bold hover:shadow-[0_0_20px_rgba(0,229,255,0.4)] transition-all flex items-center gap-2">
+                                    Submit Enquiry <Send size={18} />
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </motion.div>
+            </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

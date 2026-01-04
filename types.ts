@@ -182,4 +182,19 @@ export interface StudentQuery {
     createdAt: string;
 }
 
-export type TabView = 'dashboard' | 'students' | 'notices' | 'timetable' | 'grades' | 'teachers' | 'fees' | 'settings';
+export interface Enquiry {
+    id: string;
+    studentName: string;
+    parentName: string;
+    relation: string;
+    grade: string;
+    schoolName: string;
+    hasCoaching: boolean;
+    reason: string;
+    mobile: string;
+    connectTime: string;
+    createdAt: string;
+    status: 'New' | 'Contacted';
+}
+
+export type TabView = 'dashboard' | 'students' | 'notices' | 'timetable' | 'grades' | 'teachers' | 'fees' | 'settings' | 'enquiries';

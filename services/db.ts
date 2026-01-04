@@ -1,6 +1,6 @@
 import { supabase } from './supabase';
 import { RealtimeChannel } from '@supabase/supabase-js';
-import { Student, Grade, Subdivision, Notice, User, Teacher, TimetableEntry, LiveClass, FeeSubmission, SystemSettings, AttendanceRecord, Homework, Exam, ExamResult, HomeworkSubmission, ExamSubmission, StudentQuery } from '../types';
+import { Student, Grade, Subdivision, Notice, User, Teacher, TimetableEntry, LiveClass, FeeSubmission, SystemSettings, AttendanceRecord, Homework, Exam, ExamResult, HomeworkSubmission, ExamSubmission, StudentQuery, Enquiry } from '../types';
 
 // Helper to map snake_case (DB) to camelCase (Frontend)
 const mapStudent = (s: any): Student => ({
@@ -566,6 +566,40 @@ class DatabaseService {
 
   async answerQuery(queryId: string, replyText: string) {
       await supabase.from('queries').update({ status: 'Answered', reply_text: replyText }).eq('id', queryId);
+  }
+
+  // --- ENQUIRY SYSTEM ---
+  async addEnquiry(data: Omit<Enquiry, 'id' | 'createdAt' | 'status'>) {
+      await supabase.from('enquiries').insert({
+          student_name: data.studentName,
+          parent_name: data.parentName,
+          relation: data.relation,
+          grade: data.grade,
+          school_name: data.schoolName,
+          has_coaching: data.hasCoaching,
+          reason: data.reason,
+          mobile: data.mobile,
+          connect_time: data.connectTime,
+          status: 'New'
+      });
+  }
+
+  async getEnquiries(): Promise<Enquiry[]> {
+      const { data } = await supabase.from('enquiries').select('*').order('created_at', { ascending: false });
+      return (data || []).map(e => ({
+          id: e.id,
+          studentName: e.student_name,
+          parentName: e.parent_name,
+          relation: e.relation,
+          grade: e.grade,
+          schoolName: e.school_name,
+          hasCoaching: e.has_coaching,
+          reason: e.reason,
+          mobile: e.mobile,
+          connectTime: e.connect_time,
+          createdAt: e.created_at,
+          status: e.status
+      }));
   }
 }
 

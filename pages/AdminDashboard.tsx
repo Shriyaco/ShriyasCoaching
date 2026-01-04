@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { db } from '../services/db';
-import { Student, TabView, Grade, Subdivision, Teacher, FeeSubmission, SystemSettings, GatewayConfig } from '../types';
-import { Users, Settings, LogOut, Plus, Edit2, Search, Briefcase, CreditCard, Save, Layers, UserPlus, Lock, ShieldAlert, Key, Power, X, Trash2, GraduationCap, TrendingUp, DollarSign, RefreshCw, Menu, Check, Upload, Calendar } from 'lucide-react';
+import { Student, TabView, Grade, Subdivision, Teacher, FeeSubmission, SystemSettings, GatewayConfig, Enquiry } from '../types';
+import { Users, Settings, LogOut, Plus, Edit2, Search, Briefcase, CreditCard, Save, Layers, UserPlus, Lock, ShieldAlert, Key, Power, X, Trash2, GraduationCap, TrendingUp, DollarSign, RefreshCw, Menu, Check, Upload, Calendar, MessageCircle, Phone, Clock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -15,6 +15,7 @@ export default function AdminDashboard() {
   const [subdivisions, setSubdivisions] = useState<Subdivision[]>([]);
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [fees, setFees] = useState<FeeSubmission[]>([]);
+  const [enquiries, setEnquiries] = useState<Enquiry[]>([]);
   const [settings, setSettings] = useState<SystemSettings | null>(null);
   const [loading, setLoading] = useState(true);
   
@@ -38,13 +39,14 @@ export default function AdminDashboard() {
 
   const refreshData = useCallback(async () => {
     try {
-        const [s, g, sd, t, f, set] = await Promise.all([
+        const [s, g, sd, t, f, set, enq] = await Promise.all([
             db.getStudents(),
             db.getGrades(),
             db.getSubdivisions(),
             db.getTeachers(),
             db.getFeeSubmissions(),
-            db.getSettings()
+            db.getSettings(),
+            db.getEnquiries()
         ]);
         setStudents(s);
         setGrades(g);
@@ -52,6 +54,7 @@ export default function AdminDashboard() {
         setTeachers(t);
         setFees(f);
         setSettings(set);
+        setEnquiries(enq);
     } catch(e) {
         console.error(e);
     }
@@ -69,7 +72,8 @@ export default function AdminDashboard() {
         db.subscribe('teachers', refreshData),
         db.subscribe('grades', refreshData),
         db.subscribe('subdivisions', refreshData),
-        db.subscribe('fee_submissions', refreshData)
+        db.subscribe('fee_submissions', refreshData),
+        db.subscribe('enquiries', refreshData)
     ];
 
     return () => {
@@ -351,10 +355,7 @@ export default function AdminDashboard() {
     .filter(s => s.status === 'Active')
     .reduce((acc, s) => acc + (parseInt(s.monthlyFees || '0')), 0);
   
-  // Pending Fees logic: In a real app this is complex (checking last payment date).
-  // For this SMS, we'll assume "Fees Needed" is the sum of pending status students, or simple potential.
-  // Prompt asks "fees needed to be collected". Let's show the Monthly Revenue Potential vs Collected.
-  const pendingFees = totalMonthlyPotential - collectedFees; // Simple approximation for the month
+  const pendingFees = totalMonthlyPotential - collectedFees;
 
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden font-sans relative">
@@ -405,6 +406,7 @@ export default function AdminDashboard() {
         <div className="flex-1 py-6 space-y-2 overflow-y-auto custom-scrollbar">
           <div className="px-6 mb-2 text-xs font-bold text-slate-500 uppercase tracking-widest">Main Menu</div>
           <SidebarItem tab="dashboard" icon={TrendingUp} label="Overview" />
+          <SidebarItem tab="enquiries" icon={MessageCircle} label="Enquiries" />
           <SidebarItem tab="students" icon={Users} label="Students" />
           <SidebarItem tab="teachers" icon={Briefcase} label="Faculty" />
           
@@ -452,6 +454,13 @@ export default function AdminDashboard() {
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                     <StatCard 
+                        title="New Enquiries" 
+                        value={enquiries.length} 
+                        icon={MessageCircle} 
+                        color="bg-blue-500" 
+                        subtext="Leads to follow up"
+                    />
+                    <StatCard 
                         title="Total Teachers" 
                         value={teachers.length} 
                         icon={Briefcase} 
@@ -466,13 +475,6 @@ export default function AdminDashboard() {
                         subtext="Est. Monthly Revenue"
                     />
                     <StatCard 
-                        title="Collected (Mo)" 
-                        value={`₹${collectedFees.toLocaleString()}`} 
-                        icon={Check} 
-                        color="bg-emerald-500" 
-                        subtext={`${fees.length} Transactions`}
-                    />
-                    <StatCard 
                         title="Total Students" 
                         value={students.length} 
                         icon={GraduationCap} 
@@ -481,6 +483,61 @@ export default function AdminDashboard() {
                     />
                 </div>
             </motion.div>
+          )}
+
+          {activeTab === 'enquiries' && (
+             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+                 {enquiries.length === 0 ? (
+                     <div className="text-center py-20 bg-white rounded-2xl border border-slate-200">
+                         <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-400">
+                             <MessageCircle size={32} />
+                         </div>
+                         <h3 className="text-xl font-bold text-slate-700">No New Enquiries</h3>
+                         <p className="text-slate-400">Enquiries from the website will appear here.</p>
+                     </div>
+                 ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {enquiries.map(enq => (
+                            <div key={enq.id} className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
+                                <div className="flex justify-between items-start mb-4 border-b border-slate-50 pb-3">
+                                    <div>
+                                        <h4 className="font-bold text-slate-800 text-lg">{enq.studentName}</h4>
+                                        <p className="text-xs text-indigo-500 font-bold uppercase">{enq.grade}</p>
+                                    </div>
+                                    <div className="text-right">
+                                        <span className="text-[10px] bg-slate-100 text-slate-500 px-2 py-1 rounded-full">{enq.createdAt?.split('T')[0] || 'Today'}</span>
+                                    </div>
+                                </div>
+                                <div className="space-y-3 text-sm text-slate-600">
+                                    <div className="flex items-center gap-2">
+                                        <Users size={14} className="text-slate-400"/>
+                                        <span>Parent: <span className="font-bold">{enq.parentName}</span> ({enq.relation})</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <Phone size={14} className="text-slate-400"/>
+                                        <a href={`tel:${enq.mobile}`} className="hover:text-indigo-600 font-medium">{enq.mobile}</a>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <GraduationCap size={14} className="text-slate-400"/>
+                                        <span className="truncate">{enq.schoolName}</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <Clock size={14} className="text-slate-400"/>
+                                        <span className="text-amber-600 font-medium">Call at: {enq.connectTime}</span>
+                                    </div>
+                                </div>
+                                
+                                <div className="mt-4 bg-slate-50 p-3 rounded-xl">
+                                    <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">
+                                        {enq.hasCoaching ? "Reason for Shifting" : "Reason for Joining"}
+                                    </p>
+                                    <p className="text-sm italic text-slate-700">"{enq.reason}"</p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                 )}
+             </motion.div>
           )}
           
           {/* ... Grades, Students, Teachers, Fees Tabs (Hidden for brevity as they are unchanged) ... */}
