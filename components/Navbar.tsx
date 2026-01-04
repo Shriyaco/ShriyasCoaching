@@ -116,7 +116,7 @@ const Navbar: React.FC = () => {
             >
               <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
               <LogIn size={16} className="relative z-10" />
-              <span className="relative z-10">Student Login</span>
+              <span className="relative z-10">Login</span>
             </Link>
           </div>
 
@@ -162,7 +162,7 @@ const Navbar: React.FC = () => {
               ))}
               <div className="pt-6 flex flex-col space-y-4 px-2">
                 <Link to="/pay-fees" onClick={() => setIsOpen(false)} className="w-full text-center py-3 border border-[#00E5FF] text-[#00E5FF] rounded-xl font-bold">Pay Fees</Link>
-                <Link to="/login" onClick={() => setIsOpen(false)} className="w-full text-center py-3 bg-[#00E5FF] text-[#020617] rounded-xl font-bold shadow-[0_0_20px_rgba(0,229,255,0.3)]">Student Login</Link>
+                <Link to="/login" onClick={() => setIsOpen(false)} className="w-full text-center py-3 bg-[#00E5FF] text-[#020617] rounded-xl font-bold shadow-[0_0_20px_rgba(0,229,255,0.3)]">Login</Link>
               </div>
             </div>
           </motion.div>

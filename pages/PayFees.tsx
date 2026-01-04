@@ -23,7 +23,9 @@ export default function PayFees() {
     const [selectedGatewayKey, setSelectedGatewayKey] = useState<string | null>(null);
 
     // Guest Lookup State
-    const [lookupEmail, setLookupEmail] = useState('');
+    const [lookupName, setLookupName] = useState('');
+    const [lookupId, setLookupId] = useState('');
+    const [lookupMobile, setLookupMobile] = useState('');
     const [lookupError, setLookupError] = useState('');
 
     useEffect(() => {
@@ -53,13 +55,18 @@ export default function PayFees() {
     const handleLookup = async (e: React.FormEvent) => {
         e.preventDefault();
         const students = await db.getStudents();
-        const found = students.find(s => s.email && s.email.toLowerCase() === lookupEmail.toLowerCase().trim());
+        
+        const found = students.find(s => 
+            s.name.toLowerCase().trim() === lookupName.toLowerCase().trim() &&
+            s.studentCustomId.toLowerCase().trim() === lookupId.toLowerCase().trim() &&
+            s.mobile.trim() === lookupMobile.trim()
+        );
         
         if (found) {
             setIdentifiedStudent(found);
             setLookupError('');
         } else {
-            setLookupError('Student record not found. Please check the email.');
+            setLookupError('Record not found. Ensure Name, ID & Mobile match exactly.');
         }
     };
 
@@ -112,31 +119,56 @@ export default function PayFees() {
                                 <UserIcon className="text-[#00E5FF]" /> Student Identification
                             </h3>
                             <p className="text-gray-300 text-sm leading-relaxed">
-                                Please identify the student account to link your payment. You can scan the QR code first, but identification is required to submit.
+                                Please enter your details below to verify your account.
                             </p>
                             
                             <form onSubmit={handleLookup} className="space-y-4 mt-2">
                                 <div>
-                                    <label className="block text-xs font-bold text-gray-400 mb-1 uppercase tracking-wider">Registered Email Address</label>
-                                    <div className="flex gap-2">
-                                        <input 
-                                            type="email" 
-                                            required
-                                            value={lookupEmail}
-                                            onChange={(e) => setLookupEmail(e.target.value)}
-                                            placeholder="student@example.com"
-                                            className="w-full bg-slate-800 border border-gray-600 rounded-lg px-4 py-3 focus:ring-2 focus:ring-[#00E5FF] outline-none text-white transition-all"
-                                        />
-                                        <button type="submit" className="bg-[#00E5FF] text-[#002366] px-4 rounded-lg hover:bg-cyan-400 transition-colors font-bold">
-                                            <Search size={20} />
-                                        </button>
-                                    </div>
-                                    {lookupError && (
-                                        <div className="flex items-center gap-2 mt-3 text-rose-400 text-sm animate-pulse bg-rose-400/10 p-2 rounded">
-                                            <AlertCircle size={14} /> {lookupError}
-                                        </div>
-                                    )}
+                                    <label className="block text-xs font-bold text-gray-400 mb-1 uppercase tracking-wider">Student Name</label>
+                                    <input 
+                                        type="text" 
+                                        required
+                                        value={lookupName}
+                                        onChange={(e) => setLookupName(e.target.value)}
+                                        placeholder="Full Name"
+                                        className="w-full bg-slate-800 border border-gray-600 rounded-lg px-4 py-3 focus:ring-2 focus:ring-[#00E5FF] outline-none text-white transition-all placeholder-gray-500"
+                                    />
                                 </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-400 mb-1 uppercase tracking-wider">Student ID</label>
+                                        <input 
+                                            type="text" 
+                                            required
+                                            value={lookupId}
+                                            onChange={(e) => setLookupId(e.target.value)}
+                                            placeholder="e.g. STU001"
+                                            className="w-full bg-slate-800 border border-gray-600 rounded-lg px-4 py-3 focus:ring-2 focus:ring-[#00E5FF] outline-none text-white transition-all placeholder-gray-500"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-400 mb-1 uppercase tracking-wider">Mobile</label>
+                                        <input 
+                                            type="tel" 
+                                            required
+                                            value={lookupMobile}
+                                            onChange={(e) => setLookupMobile(e.target.value)}
+                                            placeholder="Registered Mobile"
+                                            className="w-full bg-slate-800 border border-gray-600 rounded-lg px-4 py-3 focus:ring-2 focus:ring-[#00E5FF] outline-none text-white transition-all placeholder-gray-500"
+                                        />
+                                    </div>
+                                </div>
+
+                                <button type="submit" className="w-full bg-[#00E5FF] text-[#002366] py-3 rounded-lg hover:bg-cyan-400 transition-colors font-bold flex items-center justify-center gap-2 mt-2">
+                                    <Search size={18} /> Verify Student Details
+                                </button>
+                                
+                                {lookupError && (
+                                    <div className="flex items-center gap-2 mt-3 text-rose-400 text-sm animate-pulse bg-rose-400/10 p-2 rounded">
+                                        <AlertCircle size={14} /> {lookupError}
+                                    </div>
+                                )}
+
                                 <div className="text-xs text-center text-gray-500 pt-2 border-t border-white/10">
                                     <span className="cursor-pointer hover:text-white transition-colors underline" onClick={() => navigate('/login')}>Already have an account? Login here</span>
                                 </div>
@@ -149,7 +181,7 @@ export default function PayFees() {
                                     <div>
                                         <p className="text-xs text-emerald-400 font-bold uppercase mb-1 tracking-wider">Paying Fees For</p>
                                         <p className="text-2xl font-bold text-white font-[Poppins]">{activeStudentName}</p>
-                                        <p className="text-sm opacity-70 mt-1">{user ? 'Logged In User' : identifiedStudent?.email}</p>
+                                        <p className="text-sm opacity-70 mt-1">{user ? 'Logged In User' : `ID: ${identifiedStudent?.studentCustomId}`}</p>
                                     </div>
                                     <div className="bg-emerald-500/20 p-2 rounded-full text-emerald-400">
                                         <Check size={24} />
