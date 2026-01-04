@@ -11,10 +11,13 @@ import ContactUs from './pages/ContactUs';
 import { AlertCircle } from 'lucide-react';
 
 // --- Error Boundary ---
-class ErrorBoundary extends Component<{ children: React.ReactNode }, { hasError: boolean }> {
-  constructor(props: { children: React.ReactNode }) {
+class ErrorBoundary extends Component<{ children?: React.ReactNode }, { hasError: boolean }> {
+  public state = { hasError: false };
+  public readonly props: Readonly<{ children?: React.ReactNode }>;
+
+  constructor(props: { children?: React.ReactNode }) {
     super(props);
-    this.state = { hasError: false };
+    this.props = props;
   }
 
   static getDerivedStateFromError(_: Error) {
@@ -52,7 +55,7 @@ class ErrorBoundary extends Component<{ children: React.ReactNode }, { hasError:
 export const ThemeContext = createContext({ theme: 'dark', toggleTheme: () => {} });
 export const useTheme = () => useContext(ThemeContext);
 
-const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
+const ThemeProvider = ({ children }: { children?: React.ReactNode }) => {
     const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark');
 
     useEffect(() => {

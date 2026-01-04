@@ -53,47 +53,45 @@ const Navbar: React.FC = () => {
   const menuContainerVariants: Variants = {
     closed: {
       opacity: 0,
+      x: "100%", 
       transition: {
         staggerChildren: 0.05,
         staggerDirection: -1,
-        when: "afterChildren"
+        when: "afterChildren",
+        duration: 0.3
       }
     },
     open: {
       opacity: 1,
+      x: 0,
       transition: {
         staggerChildren: 0.1,
-        delayChildren: 0.1
+        delayChildren: 0.1,
+        duration: 0.4
       }
     }
   };
 
   const menuItemVariants: Variants = {
     closed: {
-      y: 50,
+      x: 50,
       opacity: 0,
-      rotateX: -45,
-      transition: {
-        duration: 0.3,
-        ease: "easeIn"
-      }
+      rotateX: -20,
+      transition: { duration: 0.3 }
     },
     open: {
-      y: 0,
+      x: 0,
       opacity: 1,
       rotateX: 0,
-      transition: {
-        duration: 0.5,
-        ease: "backOut"
-      }
+      transition: { duration: 0.5, type: "spring", stiffness: 100 }
     }
   };
 
   return (
     <nav
-      className={`fixed w-full z-50 transition-all duration-500 ${
+      className={`fixed w-full z-50 transition-all duration-300 ${
         scrolled || isOpen
-          ? 'bg-white/90 dark:bg-[#020617]/90 backdrop-blur-xl border-b border-slate-200 dark:border-[#00E5FF]/20 shadow-[0_4px_30px_rgba(0,0,0,0.1)] dark:shadow-[0_4px_30px_rgba(0,0,0,0.5)] py-3'
+          ? 'bg-white/90 dark:bg-[#020617]/90 backdrop-blur-xl border-b border-slate-200 dark:border-[#00E5FF]/20 shadow-lg py-3'
           : 'bg-transparent py-6'
       } ${isLoginPage ? 'lg:hidden' : ''}`}
     >
@@ -105,9 +103,10 @@ const Navbar: React.FC = () => {
                 <img 
                   src="https://advedasolutions.in/sc.png" 
                   alt="Shriya's Coaching" 
-                  className="h-12 w-auto object-contain" 
+                  className="h-8 md:h-12 w-auto object-contain" 
                 />
             </div>
+            <span className="font-bold text-lg md:text-xl text-slate-800 dark:text-white hidden sm:block font-[Poppins]">Shriya's</span>
           </Link>
 
           {/* Desktop Nav */}
@@ -182,11 +181,17 @@ const Navbar: React.FC = () => {
             </Link>
           </div>
 
-          {/* Mobile Menu Button */}
-          <div className="md:hidden flex items-center gap-4 z-50">
+          {/* Mobile Menu Button & Theme Toggle */}
+          <div className="md:hidden flex items-center gap-3 z-50">
+             <button 
+                onClick={toggleTheme}
+                className="p-2 rounded-full bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-gray-300 hover:text-[#00E5FF] transition-colors"
+            >
+                {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+            </button>
             <button
               onClick={() => setIsOpen(!isOpen)}
-              className={`text-slate-700 dark:text-white hover:text-[#00E5FF] transition-colors p-2 rounded-full ${isOpen ? 'bg-white/10' : ''}`}
+              className={`text-slate-700 dark:text-white hover:text-[#00E5FF] transition-colors p-2 rounded-full ${isOpen ? 'bg-slate-100 dark:bg-white/10 text-red-500' : ''}`}
             >
               {isOpen ? <X size={28} /> : <Menu size={28} />}
             </button>
@@ -198,34 +203,34 @@ const Navbar: React.FC = () => {
       <AnimatePresence>
         {isOpen && (
           <motion.div 
+            key="mobile-menu"
             initial="closed"
             animate="open"
             exit="closed"
             variants={menuContainerVariants}
-            className="md:hidden fixed inset-0 z-40 bg-white/95 dark:bg-[#020617]/95 backdrop-blur-2xl flex flex-col pt-28 px-6 perspective-1000"
-            style={{ perspective: "1000px" }} // CSS Perspective for 3D effect
+            className="md:hidden fixed inset-0 z-40 bg-white/95 dark:bg-[#020617]/95 backdrop-blur-2xl flex flex-col pt-24 px-6 h-screen overflow-y-auto"
+            style={{ perspective: "1000px" }}
           >
             {/* Background Decoration */}
-            <div className="absolute top-1/4 right-0 w-64 h-64 bg-[#00E5FF] rounded-full filter blur-[100px] opacity-10 pointer-events-none" />
+            <div className="absolute top-0 right-0 w-64 h-64 bg-[#00E5FF] rounded-full filter blur-[100px] opacity-10 pointer-events-none" />
             <div className="absolute bottom-0 left-0 w-48 h-48 bg-purple-500 rounded-full filter blur-[80px] opacity-10 pointer-events-none" />
 
-            <div className="flex flex-col space-y-2 h-full overflow-y-auto">
+            <div className="flex flex-col space-y-2 pb-10">
               {navLinks.map((link, idx) => (
                 <motion.div 
                   key={link.name} 
                   variants={menuItemVariants}
-                  className="transform-style-3d"
                 >
                   <Link 
                     to={link.path}
                     onClick={() => setIsOpen(false)}
-                    className="group flex items-center justify-between py-4 text-2xl font-bold text-slate-800 dark:text-white border-b border-slate-100 dark:border-white/5 hover:text-[#00E5FF] transition-colors"
+                    className="group flex items-center justify-between py-4 text-2xl font-bold text-slate-800 dark:text-white border-b border-slate-100 dark:border-white/5 hover:text-[#00E5FF] transition-colors font-[Poppins]"
                   >
                     <span>{link.name}</span>
                     <ArrowRight size={20} className="opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all text-[#00E5FF]"/>
                   </Link>
                   
-                  {/* Nested Links for 3D Effect */}
+                  {/* Nested Links */}
                   {link.dropdown && (
                     <div className="pl-4 mt-2 space-y-3 mb-4 border-l-2 border-slate-100 dark:border-white/10 ml-2">
                       {link.dropdown.map((item, subIdx) => (
@@ -244,16 +249,6 @@ const Navbar: React.FC = () => {
               ))}
 
               <motion.div variants={menuItemVariants} className="pt-8 space-y-4">
-                 <div className="flex items-center justify-between bg-slate-50 dark:bg-white/5 p-4 rounded-2xl border border-slate-100 dark:border-white/10">
-                    <span className="text-slate-600 dark:text-gray-300 font-medium">Appearance</span>
-                    <button 
-                        onClick={toggleTheme}
-                        className="p-2 rounded-full bg-white dark:bg-white/10 shadow-sm border border-slate-100 dark:border-white/5 text-[#00E5FF]"
-                    >
-                        {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
-                    </button>
-                 </div>
-
                  <Link 
                     to="/pay-fees" 
                     onClick={() => setIsOpen(false)} 
@@ -265,7 +260,7 @@ const Navbar: React.FC = () => {
                  <Link 
                     to="/login" 
                     onClick={() => setIsOpen(false)} 
-                    className="w-full flex items-center justify-center gap-3 py-4 bg-gradient-to-r from-[#00E5FF] to-cyan-600 text-[#020617] rounded-2xl font-bold text-lg shadow-[0_0_20px_rgba(0,229,255,0.3)]"
+                    className="w-full flex items-center justify-center gap-3 py-4 bg-gradient-to-r from-[#00E5FF] to-cyan-600 text-[#020617] rounded-2xl font-bold text-lg shadow-lg hover:shadow-[#00E5FF]/20"
                  >
                     <LogIn size={20} /> Login Portal
                  </Link>
