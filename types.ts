@@ -1,4 +1,3 @@
-
 export interface Grade {
   id: string;
   gradeName: string;
@@ -9,6 +8,8 @@ export interface Subdivision {
   id: string;
   gradeId: string;
   divisionName: string;
+  isLive?: boolean;
+  liveMeetingId?: string;
 }
 
 export interface Student {

@@ -1,16 +1,16 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../services/db';
 import { Subdivision, Student, User, Grade, Homework, Exam, Question, StudentQuery, ExamSubmission, AttendanceRecord, StudyNote, HomeworkSubmission } from '../types';
 import ThreeOrb from '../components/ThreeOrb';
-import { LogOut, Calendar, BookOpen, PenTool, CheckCircle, ChevronLeft, ChevronRight, Plus, Trash2, Award, ClipboardCheck, X, Save, MessageSquare, Clock, Unlock, UserCheck, UserX, AlertCircle, Send, Settings, Lock, Eye, EyeOff, ShieldCheck, FileText, Upload, Download } from 'lucide-react';
+import JitsiMeeting from '../components/JitsiMeeting';
+import { LogOut, Calendar, BookOpen, PenTool, CheckCircle, ChevronLeft, ChevronRight, Plus, Trash2, Award, ClipboardCheck, X, Save, MessageSquare, Clock, Unlock, UserCheck, UserX, AlertCircle, Send, Settings, Lock, Eye, EyeOff, ShieldCheck, FileText, Upload, Download, Radio, Power } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const TeacherDashboard: React.FC = () => {
     const navigate = useNavigate();
     const [user, setUser] = useState<User | null>(null);
-    const [activeTab, setActiveTab] = useState<'attendance' | 'homework' | 'notes' | 'exams' | 'grading' | 'queries' | 'settings'>('attendance');
+    const [activeTab, setActiveTab] = useState<'attendance' | 'live' | 'homework' | 'notes' | 'exams' | 'grading' | 'queries' | 'settings'>('attendance');
     
     // Core Data
     const [grades, setGrades] = useState<Grade[]>([]);
@@ -43,13 +43,18 @@ const TeacherDashboard: React.FC = () => {
             if (selectedGradeId) {
                 const subs = await db.getSubdivisions(selectedGradeId);
                 setAvailableSubdivisions(subs);
-                if (subs.length > 0) setSelectedDivisionId(subs[0].id);
+                if (subs.length > 0) {
+                    const current = subs.find(s => s.id === selectedDivisionId) || subs[0];
+                    setSelectedDivisionId(current.id);
+                }
             }
         }
         loadSubs();
-    }, [selectedGradeId]);
+    }, [selectedGradeId, selectedDivisionId]);
 
     const handleLogout = () => { sessionStorage.removeItem('sc_user'); navigate('/'); };
+
+    const selectedDivision = availableSubdivisions.find(s => s.id === selectedDivisionId);
 
     return (
         <div className="min-h-screen bg-slate-50 relative font-sans flex flex-col">
@@ -71,6 +76,7 @@ const TeacherDashboard: React.FC = () => {
             <div className="bg-white border-b border-gray-200 px-4 md:px-6 flex space-x-6 overflow-x-auto relative z-10 scrollbar-hide">
                 {[
                     { id: 'attendance', label: 'Attendance', icon: Calendar },
+                    { id: 'live', label: 'Go Live', icon: Radio },
                     { id: 'homework', label: 'Homework', icon: BookOpen },
                     { id: 'notes', label: 'Study Notes', icon: FileText },
                     { id: 'exams', label: 'Exam Builder', icon: PenTool },
@@ -86,6 +92,7 @@ const TeacherDashboard: React.FC = () => {
                 <AnimatePresence mode="wait">
                     <motion.div key={activeTab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
                         {activeTab === 'attendance' && <AttendanceModule gradeId={selectedGradeId} divisionId={selectedDivisionId} />}
+                        {activeTab === 'live' && <LiveManagementModule division={selectedDivision} userName={user?.username || ''} />}
                         {activeTab === 'homework' && <HomeworkModule gradeId={selectedGradeId} divisionId={selectedDivisionId} teacherId={user?.id || ''} />}
                         {activeTab === 'notes' && <NotesModule gradeId={selectedGradeId} divisionId={selectedDivisionId} teacherId={user?.id || ''} />}
                         {activeTab === 'exams' && <ExamBuilderModule gradeId={selectedGradeId} divisionId={selectedDivisionId} teacherId={user?.id || ''} />}
@@ -95,6 +102,60 @@ const TeacherDashboard: React.FC = () => {
                     </motion.div>
                 </AnimatePresence>
             </main>
+        </div>
+    );
+};
+
+const LiveManagementModule = ({ division, userName }: { division?: Subdivision, userName: string }) => {
+    const [isInMeeting, setIsInMeeting] = useState(false);
+    
+    const startLive = async () => {
+        if (!division) return;
+        const meetingId = `ShriyasGurukul_${division.id.replace(/-/g, '')}`;
+        await db.setLiveStatus(division.id, true, meetingId);
+        setIsInMeeting(true);
+    };
+
+    const stopLive = async () => {
+        if (!division) return;
+        await db.setLiveStatus(division.id, false);
+        setIsInMeeting(false);
+    };
+
+    if (!division) return <p className="text-center py-20 text-gray-400">Please select a class to go live.</p>;
+
+    return (
+        <div className="max-w-4xl mx-auto space-y-6">
+            <div className="bg-white p-8 rounded-3xl border shadow-sm text-center">
+                 <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 ${division.isLive ? 'bg-red-100 text-red-600 pulse-gold' : 'bg-slate-100 text-slate-400'}`}>
+                     <Radio size={40} />
+                 </div>
+                 <h3 className="text-2xl font-black mb-2 uppercase tracking-tight">Virtual Classroom</h3>
+                 <p className="text-gray-500 mb-8 font-medium">Class: <span className="font-bold text-indigo-600">Grade {division.gradeId} - {division.divisionName}</span></p>
+                 
+                 {!division.isLive ? (
+                    <button onClick={startLive} className="bg-indigo-600 text-white px-10 py-4 rounded-2xl font-black text-lg shadow-xl hover:shadow-indigo-500/20 transition-all flex items-center justify-center gap-3 mx-auto">
+                        <Radio size={24}/> Start Live Session
+                    </button>
+                 ) : (
+                    <div className="space-y-4">
+                        <button onClick={() => setIsInMeeting(true)} className="bg-emerald-600 text-white px-10 py-4 rounded-2xl font-black text-lg shadow-xl transition-all flex items-center justify-center gap-3 mx-auto">
+                            Re-join Classroom
+                        </button>
+                        <button onClick={stopLive} className="text-rose-500 font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-2 mx-auto hover:text-rose-700 transition-colors">
+                            <Power size={14}/> End Session for Everyone
+                        </button>
+                    </div>
+                 )}
+            </div>
+
+            {isInMeeting && division.liveMeetingId && (
+                <JitsiMeeting 
+                    roomName={division.liveMeetingId} 
+                    userName={userName} 
+                    onClose={() => setIsInMeeting(false)} 
+                />
+            )}
         </div>
     );
 };

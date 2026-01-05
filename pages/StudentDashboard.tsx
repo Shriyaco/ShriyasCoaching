@@ -1,18 +1,20 @@
-
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { db } from '../services/db';
-import { User, TimetableEntry, AttendanceRecord, Student, Homework, Exam, StudentQuery, HomeworkSubmission, StudyNote, StudentNotification } from '../types';
+import { User, TimetableEntry, AttendanceRecord, Student, Homework, Exam, StudentQuery, HomeworkSubmission, StudyNote, StudentNotification, Subdivision } from '../types';
 import ThreeOrb from '../components/ThreeOrb';
-import { LogOut, Calendar, BookOpen, PenTool, HelpCircle, Send, CheckCircle, X, Timer, GraduationCap, ChevronRight, MessageSquare, Plus, UserCheck, ShoppingBag, CreditCard, Clock, Settings, Lock, Eye, EyeOff, ShieldCheck, FileText, Download, Bell, Info, AlertCircle, Megaphone } from 'lucide-react';
+import JitsiMeeting from '../components/JitsiMeeting';
+import { LogOut, Calendar, BookOpen, PenTool, HelpCircle, Send, CheckCircle, X, Timer, GraduationCap, ChevronRight, MessageSquare, Plus, UserCheck, ShoppingBag, CreditCard, Clock, Settings, Lock, Eye, EyeOff, ShieldCheck, FileText, Download, Bell, Info, AlertCircle, Megaphone, Radio } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const StudentDashboard: React.FC = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
   const [studentDetails, setStudentDetails] = useState<Student | null>(null);
+  const [divisionDetails, setDivisionDetails] = useState<Subdivision | null>(null);
   const [notifications, setNotifications] = useState<StudentNotification[]>([]);
   const [activeTab, setActiveTab] = useState<'dashboard' | 'homework' | 'notes' | 'exams' | 'queries' | 'settings'>('dashboard');
+  const [isInMeeting, setIsInMeeting] = useState(false);
 
   useEffect(() => {
     const storedUser = sessionStorage.getItem('sc_user');
@@ -29,9 +31,18 @@ const StudentDashboard: React.FC = () => {
             setStudentDetails(me);
             const notifs = await db.getStudentNotifications(me);
             setNotifications(notifs);
+            
+            // Get division for live status
+            const subs = await db.getSubdivisions(me.gradeId);
+            const myDiv = subs.find(s => s.id === me.subdivisionId);
+            if (myDiv) setDivisionDetails(myDiv);
         }
     };
     init();
+
+    // Subscribe to subdivision changes for real-time live status
+    const channel = db.subscribe('subdivisions', init);
+    return () => db.unsubscribe(channel);
   }, [navigate]);
 
   const handleLogout = () => { sessionStorage.removeItem('sc_user'); navigate('/'); };
@@ -57,6 +68,14 @@ const StudentDashboard: React.FC = () => {
             </div>
         </div>
         <div className="flex items-center gap-3">
+            {divisionDetails?.isLive && (
+                <button 
+                  onClick={() => setIsInMeeting(true)}
+                  className="bg-premium-accent text-black px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-2 pulse-gold"
+                >
+                  <Radio size={14} className="animate-pulse" /> Live Now
+                </button>
+            )}
             <button onClick={handleLogout} className="text-gray-500 dark:text-gray-400 hover:text-red-500 transition-colors p-2 rounded-full hover:bg-gray-100 dark:hover:bg-white/5">
                 <LogOut size={20} />
             </button>
@@ -91,7 +110,7 @@ const StudentDashboard: React.FC = () => {
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.2 }}
              >
-                {activeTab === 'dashboard' && <DashboardOverview student={studentDetails} notifications={notifications} />}
+                {activeTab === 'dashboard' && <DashboardOverview student={studentDetails} notifications={notifications} liveDivision={divisionDetails || undefined} onJoinLive={() => setIsInMeeting(true)} />}
                 {activeTab === 'homework' && <HomeworkSection student={studentDetails} />}
                 {activeTab === 'notes' && <NotesSection student={studentDetails} />}
                 {activeTab === 'exams' && <ExamSection student={studentDetails} />}
@@ -107,13 +126,20 @@ const StudentDashboard: React.FC = () => {
             </a>
          </div>
       </main>
+
+      {isInMeeting && divisionDetails?.liveMeetingId && (
+          <JitsiMeeting 
+            roomName={divisionDetails.liveMeetingId} 
+            userName={user.username} 
+            onClose={() => setIsInMeeting(false)} 
+          />
+      )}
     </div>
   );
 };
 
 // --- TAB 1: DASHBOARD ---
-const DashboardOverview = ({ student, notifications }: { student: Student, notifications: StudentNotification[] }) => {
-    const navigate = useNavigate();
+const DashboardOverview = ({ student, notifications, liveDivision, onJoinLive }: { student: Student, notifications: StudentNotification[], liveDivision?: Subdivision, onJoinLive: () => void }) => {
     const [timetable, setTimetable] = useState<TimetableEntry[]>([]);
     const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
     
@@ -141,6 +167,22 @@ const DashboardOverview = ({ student, notifications }: { student: Student, notif
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-6">
                 
+                {/* Visual Live Indicator */}
+                {liveDivision?.isLive && (
+                    <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} className="bg-gradient-to-r from-red-600 to-rose-700 p-6 rounded-3xl text-white shadow-xl flex items-center justify-between border border-red-500/20 overflow-hidden relative">
+                         <Radio size={120} className="absolute -right-4 -bottom-4 opacity-10 rotate-12" />
+                         <div className="relative z-10">
+                             <div className="flex items-center gap-2 mb-1">
+                                 <span className="w-2 h-2 bg-white rounded-full animate-ping" />
+                                 <span className="text-[10px] font-black uppercase tracking-[0.2em]">Active Classroom</span>
+                             </div>
+                             <h3 className="text-2xl font-black serif-font">Lecture in Progress</h3>
+                             <p className="text-rose-100 text-xs mt-1 font-bold uppercase tracking-wider">Join your faculty for a live session now.</p>
+                         </div>
+                         <button onClick={onJoinLive} className="relative z-10 bg-white text-rose-600 px-8 py-3 rounded-2xl font-black uppercase text-xs shadow-lg hover:scale-105 transition-all">Join Class</button>
+                    </motion.div>
+                )}
+
                 {/* Visual Notifications Area */}
                 {notifications.length > 0 && (
                     <div className="space-y-3">
@@ -273,7 +315,7 @@ const DashboardOverview = ({ student, notifications }: { student: Student, notif
     );
 };
 
-// ... Remaining tab sections (Homework, Notes, Exams, Queries, Settings) same as original ...
+// --- TABS (Homework, Notes, etc) ---
 const HomeworkSection = ({ student }: { student: Student }) => {
     const [homework, setHomework] = useState<Homework[]>([]);
     const [submissions, setSubmissions] = useState<Record<string, HomeworkSubmission>>({});
@@ -467,7 +509,7 @@ const QuerySection = ({ student }: { student: Student }) => {
         <div className="max-w-4xl mx-auto space-y-6">
             <div className="bg-white dark:bg-[#0B1120] p-6 rounded-2xl shadow-sm flex justify-between items-center">
                 <div><h3 className="text-xl font-bold dark:text-white">Help Desk</h3><p className="text-xs text-gray-500">Messaging portal for doubts.</p></div>
-                <button onClick={() => setIsAsking(true)} className="bg-indigo-600 text-white px-6 py-2.5 rounded-xl font-bold flex items-center gap-2"><Plus size={20}/> New Doubt</button>
+                <button onClick={() => setIsAsking(true)} className="bg-indigo-600 text-white px-6 py-2.5 rounded-xl font-bold flex items-gap-2"><Plus size={20}/> New Doubt</button>
             </div>
             {loading ? <div className="text-center py-20 text-gray-400">Loading...</div> : 
             <div className="space-y-4">

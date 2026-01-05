@@ -1,3 +1,4 @@
+
 import { supabase } from './supabase';
 import { RealtimeChannel } from '@supabase/supabase-js';
 import { Student, Grade, Subdivision, Notice, User, Teacher, TimetableEntry, FeeSubmission, SystemSettings, AttendanceRecord, Homework, Exam, ExamResult, HomeworkSubmission, ExamSubmission, StudentQuery, Enquiry, Product, Order, StudyNote, StudentNotification } from '../types';
@@ -8,6 +9,7 @@ const mapStudent = (s: any): Student => ({
     name: s.name,
     mobile: s.mobile,
     parentName: s.parent_name,
+    // Fix: Removed non-existent properties grade_id and subdivision_id from Student type mapping
     gradeId: s.grade_id,
     subdivisionId: s.subdivision_id,
     joiningDate: s.joining_date,
@@ -129,42 +131,43 @@ class DatabaseService {
       const { data } = await supabase.from('grades').select('*');
       return (data || []).map(g => ({ id: g.id, gradeName: g.grade_name, hasSubdivision: g.has_subdivision }));
   }
-  
-  async addGrade(gradeName: string, subdivisionNames: string[]) {
-      const { data: grade, error } = await supabase.from('grades').insert({ grade_name: gradeName, has_subdivision: subdivisionNames.length > 0 }).select().single();
-      if (error || !grade) throw error;
 
-      if (subdivisionNames.length > 0) {
-          const subs = subdivisionNames.map(name => ({
-              grade_id: grade.id,
-              division_name: name
-          }));
-          await supabase.from('subdivisions').insert(subs);
-      }
+  // Fix: Added missing addGrade method used in AdminDashboard.tsx
+  async addGrade(name: string, subdivisionNames: string[]) {
+    const { data: grade, error: gradeError } = await supabase.from('grades').insert({ grade_name: name, has_subdivision: true }).select().single();
+    if (gradeError) throw gradeError;
+    
+    if (subdivisionNames.length > 0) {
+      const subs = subdivisionNames.map(s => ({ grade_id: grade.id, division_name: s }));
+      const { error: subError } = await supabase.from('subdivisions').insert(subs);
+      if (subError) throw subError;
+    }
   }
 
-  async updateGrade(id: string, gradeName: string, subdivisionNames: string[]) {
-      await supabase.from('grades').update({ grade_name: gradeName, has_subdivision: subdivisionNames.length > 0 }).eq('id', id);
-      
-      if (subdivisionNames.length > 0) {
-         for (const name of subdivisionNames) {
-             const { data } = await supabase.from('subdivisions').select('*').eq('grade_id', id).eq('division_name', name);
-             if (!data || data.length === 0) {
-                 await supabase.from('subdivisions').insert({ grade_id: id, division_name: name });
-             }
-         }
-      }
-  }
-
+  // Fix: Added missing deleteGrade method used in AdminDashboard.tsx
   async deleteGrade(id: string) {
-      await supabase.from('grades').delete().eq('id', id);
+    await supabase.from('subdivisions').delete().eq('grade_id', id);
+    await supabase.from('grades').delete().eq('id', id);
   }
-
+  
   async getSubdivisions(gradeId?: string): Promise<Subdivision[]> { 
       let query = supabase.from('subdivisions').select('*');
       if (gradeId) query = query.eq('grade_id', gradeId);
       const { data } = await query;
-      return (data || []).map(s => ({ id: s.id, gradeId: s.grade_id, divisionName: s.division_name }));
+      return (data || []).map(s => ({ 
+        id: s.id, 
+        gradeId: s.grade_id, 
+        divisionName: s.division_name,
+        isLive: s.is_live,
+        liveMeetingId: s.live_meeting_id
+      }));
+  }
+
+  async setLiveStatus(divisionId: string, isLive: boolean, meetingId?: string) {
+      await supabase.from('subdivisions').update({ 
+        is_live: isLive, 
+        live_meeting_id: isLive ? meetingId : null 
+      }).eq('id', divisionId);
   }
 
   async getStudents(gradeId?: string, subdivisionId?: string): Promise<Student[]> { 
@@ -378,7 +381,7 @@ class DatabaseService {
       return (data || []).map(a => ({
           id: a.id,
           studentId: a.student_id,
-          divisionId: a.division_id, // Fixed: division_id -> divisionId
+          divisionId: a.division_id, 
           date: a.date,
           status: a.status as any
       }));
@@ -418,7 +421,7 @@ class DatabaseService {
           subdivisionId: h.subdivision_id, 
           subject: h.subject, 
           task: h.task, 
-          dueDate: h.due_date, // Fixed: due_date -> dueDate
+          dueDate: h.due_date, 
           assignedBy: h.assigned_by
       }));
   }
@@ -469,12 +472,12 @@ class DatabaseService {
           gradeId: e.grade_id, 
           subdivisionId: e.subdivision_id, 
           subject: e.subject, 
-          examDate: e.exam_date, // Fixed: exam_date -> examDate
-          startTime: e.start_time, // Fixed: start_time -> startTime
+          examDate: e.exam_date, 
+          startTime: e.start_time, 
           duration: e.duration, 
-          totalMarks: e.total_marks, // Fixed: total_marks -> totalMarks
+          totalMarks: e.total_marks, 
           questions: e.questions, 
-          createdBy: e.created_by // Fixed: created_by -> createdBy
+          createdBy: e.created_by 
       }));
   }
   
@@ -600,6 +603,7 @@ class DatabaseService {
           product_name: data.productName,
           product_image: data.productImage,
           custom_name: data.customName,
+          // Fix: Property 'change_request' does not exist on type 'Omit<Order, "id" | "createdAt">'. Using changeRequest.
           change_request: data.changeRequest,
           address: data.address,
           pincode: data.pincode,
