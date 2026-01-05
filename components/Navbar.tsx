@@ -121,13 +121,13 @@ const Navbar: React.FC = () => {
           </div>
 
           {/* Hamburger Trigger (Only visible when closed) */}
-          {!isOpen && (
-            <div className="lg:hidden relative z-[110]">
+          <div className="lg:hidden relative z-[110]">
+            {!isOpen && (
               <button onClick={() => setIsOpen(true)} className="p-2 focus:outline-none">
                 <Menu size={32} strokeWidth={1} className="text-white" />
               </button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </nav>
 
@@ -138,10 +138,10 @@ const Navbar: React.FC = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[200] menu-bg-gradient flex flex-col h-[100dvh] overflow-hidden"
+            className="fixed inset-0 z-[150] menu-bg-gradient flex flex-col h-[100dvh] overflow-hidden"
           >
-            {/* Header with Fixed Close Button */}
-            <div className="flex justify-end p-6 shrink-0 h-24">
+            {/* High-Visibility Fixed Close Button */}
+            <div className="absolute top-8 right-6 z-[250]">
               <button 
                 onClick={() => setIsOpen(false)} 
                 className="w-12 h-12 rounded-xl bg-white flex items-center justify-center shadow-[0_4px_0_#999,0_8px_15px_rgba(0,0,0,0.5)] active:translate-y-[2px] active:shadow-none transition-all"
@@ -150,13 +150,16 @@ const Navbar: React.FC = () => {
               </button>
             </div>
 
-            {/* Scrollable Content Area */}
+            {/* Header Spacer */}
+            <div className="h-28 shrink-0" />
+
+            {/* Scrollable Content Area - Optimized Spacing */}
             <motion.div 
               variants={menuVariants}
               initial="closed"
               animate="open"
               exit="closed"
-              className="flex-1 overflow-y-auto px-8 md:px-12 flex flex-col space-y-4 pb-12"
+              className="flex-1 overflow-y-auto px-8 md:px-12 flex flex-col space-y-4 pb-6"
             >
               {menuStructure.map((item) => (
                 <motion.div key={item.name} variants={itemVariants} className="flex flex-col items-start text-left">
@@ -204,8 +207,8 @@ const Navbar: React.FC = () => {
                 </motion.div>
               ))}
               
-              {/* Stacked: Log in & Pay Fees (Tighter layout) */}
-              <motion.div variants={itemVariants} className="pt-4 flex flex-col items-start gap-4 border-t border-white/5">
+              {/* Stacked: Log in & Pay Fees (Tightized layout to reduce blank space) */}
+              <motion.div variants={itemVariants} className="pt-4 flex flex-col items-start gap-3 border-t border-white/5">
                  <Link 
                    to="/login" 
                    onClick={() => setIsOpen(false)} 
@@ -213,7 +216,7 @@ const Navbar: React.FC = () => {
                  >
                     Log in
                  </Link>
-                 <div className="w-10 h-[1px] bg-white/10" />
+                 <div className="w-8 h-[1px] bg-white/10" />
                  <Link 
                    to="/pay-fees" 
                    onClick={() => setIsOpen(false)} 
@@ -224,7 +227,7 @@ const Navbar: React.FC = () => {
               </motion.div>
             </motion.div>
 
-            {/* Bottom Menu Footer (Single Line, Compact) */}
+            {/* Bottom Menu Footer (The user said this part is "perfect", just ensuring it's properly fixed at the bottom) */}
             <div className="shrink-0 py-4 border-t border-white/5 bg-black/40 backdrop-blur-xl px-8 md:px-12">
                <div className="flex items-center justify-between overflow-hidden">
                   <div className="flex items-center gap-4 shrink-0">

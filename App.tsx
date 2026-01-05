@@ -23,11 +23,10 @@ interface ErrorBoundaryProps {
 
 interface ErrorBoundaryState {
   hasError: boolean;
+  error?: Error;
 }
 
-// Explicitly extending React.Component with props and state interfaces to fix TS errors regarding 'state' and 'props'
 class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  // Fix: Explicitly declare state and props to resolve "Property does not exist on type 'ErrorBoundary'" errors.
   state: ErrorBoundaryState;
   props: ErrorBoundaryProps;
 
@@ -36,34 +35,46 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
     this.state = { hasError: false };
   }
 
-  static getDerivedStateFromError(_: Error): ErrorBoundaryState {
-    return { hasError: true };
+  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+    return { hasError: true, error };
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error("Uncaught error:", error, errorInfo);
+    // Log the error to console for production debugging
+    console.error("FATAL ERROR CAUGHT BY BOUNDARY:", error, errorInfo);
   }
 
   render() {
-    // Accessing this.state which is now correctly inherited from React.Component
     if (this.state.hasError) {
       return (
         <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-[#020617] text-slate-800 dark:text-white p-4 font-sans">
           <div className="text-center max-w-md">
             <AlertCircle className="w-16 h-16 mx-auto text-red-500 mb-6" />
             <h1 className="text-3xl font-black mb-4 font-[Poppins]">Something went wrong</h1>
-            <p className="text-slate-500 dark:text-gray-400 mb-8 leading-relaxed">The application encountered an unexpected error. This usually happens due to a temporary connection glitch or a 3D rendering timeout.</p>
+            <p className="text-slate-500 dark:text-gray-400 mb-8 leading-relaxed">
+              The application encountered an unexpected error. This usually happens due to a temporary connection glitch or a 3D rendering timeout.
+            </p>
+            {this.state.error && (
+              <pre className="text-[10px] bg-red-50 dark:bg-red-950/20 p-4 rounded-xl mb-8 overflow-auto max-h-32 text-left border border-red-100 dark:border-red-900/30 text-red-400">
+                {this.state.error.message}
+              </pre>
+            )}
             <button 
-              onClick={() => window.location.reload()} 
+              onClick={() => {
+                // Clear any potentially corrupted storage and reload
+                try {
+                  sessionStorage.removeItem('sc_user');
+                } catch(e) {}
+                window.location.href = '/';
+              }} 
               className="px-8 py-4 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20 active:scale-95"
             >
-              Reload Application
+              Return to Home
             </button>
           </div>
         </div>
       );
     }
-    // Accessing this.props which is now correctly inherited from React.Component
     return this.props.children;
   }
 }
