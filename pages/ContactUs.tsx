@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MapPin, Phone, Mail, Send, X, MessageCircle, ArrowRight } from 'lucide-react';
+import { MapPin, Phone, Mail, X, Sparkles, ArrowRight } from 'lucide-react';
 import ThreeOrb from '../components/ThreeOrb';
 import Footer from '../components/Footer';
 import { db } from '../services/db';
@@ -8,63 +8,204 @@ import { db } from '../services/db';
 const ContactUs: React.FC = () => {
   const [isEnquiryModalOpen, setIsEnquiryModalOpen] = useState(false);
   const [enquirySubmitted, setEnquirySubmitted] = useState(false);
-  const [enquiryForm, setEnquiryForm] = useState({ studentName: '', parentName: '', relation: '', grade: '', schoolName: '', hasCoaching: null as boolean | null, reason: '', mobile: '', connectTime: '' });
+  const [enquiryForm, setEnquiryForm] = useState({ 
+    studentName: '', 
+    parentName: '', 
+    relation: '', 
+    grade: '', 
+    schoolName: '', 
+    hasCoaching: null as boolean | null, 
+    reason: '', 
+    mobile: '', 
+    connectTime: '' 
+  });
 
   const handleEnquirySubmit = async (e: React.FormEvent) => {
       e.preventDefault();
       if (enquiryForm.hasCoaching === null) { alert("Please select coaching status."); return; }
-      try { await db.addEnquiry({ ...enquiryForm, hasCoaching: enquiryForm.hasCoaching as boolean }); setEnquirySubmitted(true); } catch (error) { alert("Error submitting. Try again."); }
+      try { 
+        await db.addEnquiry({ ...enquiryForm, hasCoaching: enquiryForm.hasCoaching as boolean }); 
+        setEnquirySubmitted(true); 
+      } catch (error) { 
+        alert("Error submitting. Try again."); 
+      }
   };
 
   const closeEnquiryModal = () => { setIsEnquiryModalOpen(false); setEnquirySubmitted(false); };
 
   return (
     <div className="min-h-screen bg-premium-black text-white selection:bg-premium-accent selection:text-black overflow-x-hidden pt-32 transition-colors duration-300">
-      <ThreeOrb className="absolute top-0 right-0 w-[400px] h-[400px] opacity-10 -translate-y-1/4" color="#00E5FF" />
+      <ThreeOrb className="absolute top-0 right-0 w-[400px] h-[400px] opacity-10 -translate-y-1/4" color="#C5A059" />
+      
       <div className="max-w-7xl mx-auto px-6 py-12 relative z-10">
         <div className="text-center mb-16">
-            <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-5xl md:text-8xl font-light serif-font uppercase mb-6 luxury-text-gradient">Connect.</motion.h1>
-            <p className="text-sm md:text-lg text-white/40 max-w-2xl mx-auto uppercase tracking-[0.3em] font-bold">Building foundations for future excellence.</p>
+            <motion.h1 
+                initial={{ opacity: 0, y: 20 }} 
+                animate={{ opacity: 1, y: 0 }} 
+                className="text-5xl md:text-8xl font-light serif-font uppercase mb-6 luxury-text-gradient"
+            >
+                Connect.
+            </motion.h1>
+            <p className="text-sm md:text-lg text-white/40 max-w-2xl mx-auto uppercase tracking-[0.3em] font-bold">
+                Building foundations for future excellence through personal mentorship.
+            </p>
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-start">
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-start mb-24">
             <div className="space-y-12">
                 <div className="grid gap-8">
-                    {[ { icon: Mail, label: "Email", value: "info@shriyasgurukul.in", href: "mailto:info@shriyasgurukul.in" }, { icon: Phone, label: "Call", value: "+91 97241 11369", href: "tel:+919724111369" } ].map((item, i) => (
+                    {[ 
+                        { icon: Mail, label: "Email", value: "info@shriyasgurukul.in", href: "mailto:info@shriyasgurukul.in" }, 
+                        { icon: Phone, label: "Call", value: "+91 97241 11369", href: "tel:+919724111369" } 
+                    ].map((item, i) => (
                         <div key={i} className="flex gap-6 items-start group">
-                            <div className="p-4 bg-white/5 rounded-2xl group-hover:bg-premium-accent group-hover:text-black transition-all"><item.icon size={24}/></div>
-                            <div><p className="text-[9px] font-black uppercase text-white/30 tracking-widest mb-1">{item.label}</p><a href={item.href} className="text-xl font-light serif-font hover:text-premium-accent transition-colors">{item.value}</a></div>
+                            <div className="p-4 bg-white/5 rounded-2xl group-hover:bg-premium-accent group-hover:text-black transition-all">
+                                <item.icon size={24}/>
+                            </div>
+                            <div>
+                                <p className="text-[9px] font-black uppercase text-white/30 tracking-widest mb-1">{item.label}</p>
+                                <a href={item.href} className="text-xl font-light serif-font hover:text-premium-accent transition-colors">{item.value}</a>
+                            </div>
                         </div>
                     ))}
                     <div className="flex gap-6 items-start">
-                        <div className="p-4 bg-white/5 rounded-2xl text-premium-accent"><MapPin size={24}/></div>
-                        <div><p className="text-[9px] font-black uppercase text-white/30 tracking-widest mb-1">Visit</p><p className="text-sm text-white/50 uppercase tracking-[0.2em] font-bold leading-loose">Bungalow no 19, Abhishek Bungalows,<br/>Hathijan Circle, Ahmedabad - 382445</p></div>
+                        <div className="p-4 bg-white/5 rounded-2xl text-premium-accent">
+                            <MapPin size={24}/>
+                        </div>
+                        <div>
+                            <p className="text-[9px] font-black uppercase text-white/30 tracking-widest mb-1">Visit</p>
+                            <p className="text-sm text-white/50 uppercase tracking-[0.2em] font-bold leading-loose">
+                                Bungalow no 19, Abhishek Bungalows,<br/>Hathijan Circle, Ahmedabad - 382445
+                            </p>
+                        </div>
                     </div>
                 </div>
-                <button onClick={() => setIsEnquiryModalOpen(true)} className="w-full py-5 bg-white text-black rounded-2xl font-black text-xs uppercase tracking-[0.5em] hover:bg-premium-accent transition-all flex items-center justify-center gap-4">Enroll Now <ArrowRight size={18}/></button>
+                <button 
+                    onClick={() => setIsEnquiryModalOpen(true)} 
+                    className="w-full py-6 bg-white text-black rounded-2xl font-black text-xs uppercase tracking-[0.5em] hover:bg-premium-accent transition-all flex items-center justify-center gap-4 shadow-xl active:scale-[0.98]"
+                >
+                    Enroll Now <ArrowRight size={18}/>
+                </button>
             </div>
-            <div className="h-[500px] bg-white/5 rounded-[50px] border border-white/5 overflow-hidden relative grayscale opacity-50 hover:grayscale-0 hover:opacity-100 transition-all duration-1000">
-                <iframe src="https://maps.google.com/maps?q=Abhishek%20Bungalows%2C%20Hathijan%20Circle%2C%20Ahmedabad&t=&z=15&ie=UTF8&iwloc=&output=embed" width="100%" height="100%" style={{ border: 0 }} allowFullScreen loading="lazy"></iframe>
+            
+            <div className="h-[500px] bg-white/5 rounded-[50px] border border-white/5 overflow-hidden relative grayscale opacity-40 hover:grayscale-0 hover:opacity-100 transition-all duration-1000">
+                <iframe 
+                    src="https://maps.google.com/maps?q=Abhishek%20Bungalows%2C%20Hathijan%20Circle%2C%20Ahmedabad&t=&z=15&ie=UTF8&iwloc=&output=embed" 
+                    width="100%" 
+                    height="100%" 
+                    style={{ border: 0 }} 
+                    allowFullScreen 
+                    loading="lazy"
+                ></iframe>
             </div>
         </div>
       </div>
+
       <Footer />
+
+      {/* --- RE-BUILDING THE FULL ENQUIRY MODAL --- */}
       <AnimatePresence>
         {isEnquiryModalOpen && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[200] flex items-center justify-center bg-black/90 p-4 backdrop-blur-md">
-                <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9 }} className="bg-premium-black border border-white/10 rounded-[40px] w-full max-w-2xl overflow-hidden relative">
-                    <button onClick={closeEnquiryModal} className="absolute top-8 right-8 text-white/40 hover:text-white transition-colors z-20"><X size={24}/></button>
-                    <div className="p-12">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[200] flex items-center justify-center bg-black/95 p-4 backdrop-blur-xl">
+                <motion.div 
+                    initial={{ scale: 0.9, y: 20 }} 
+                    animate={{ scale: 1, y: 0 }} 
+                    exit={{ scale: 0.9 }} 
+                    className="bg-[#0A0A0A] border border-white/10 rounded-[40px] w-full max-w-2xl overflow-hidden relative shadow-2xl"
+                >
+                    <button onClick={closeEnquiryModal} className="absolute top-8 right-8 text-white/40 hover:text-white transition-colors z-20 p-2"><X size={28}/></button>
+                    
+                    <div className="p-10 md:p-14 max-h-[90vh] overflow-y-auto custom-scrollbar">
                         {enquirySubmitted ? (
-                            <div className="text-center py-20"><h3 className="text-4xl serif-font uppercase mb-4 luxury-text-gradient">Thank You.</h3><p className="text-white/40 uppercase tracking-widest text-xs font-bold">We will connect with you shortly.</p></div>
-                        ) : (
-                            <form onSubmit={handleEnquirySubmit} className="space-y-6">
-                                <h3 className="text-3xl serif-font uppercase mb-8 luxury-text-gradient">Enquiry.</h3>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <input required placeholder="Student Name" className="w-full bg-white/5 border border-white/5 rounded-xl px-5 py-4 outline-none focus:border-premium-accent text-sm" value={enquiryForm.studentName} onChange={e => setEnquiryForm({...enquiryForm, studentName: e.target.value})} />
-                                    <input required placeholder="Parent Name" className="w-full bg-white/5 border border-white/5 rounded-xl px-5 py-4 outline-none focus:border-premium-accent text-sm" value={enquiryForm.parentName} onChange={e => setEnquiryForm({...enquiryForm, parentName: e.target.value})} />
+                            <div className="text-center py-20 animate-fade-in">
+                                <div className="w-20 h-20 bg-premium-accent/10 rounded-full flex items-center justify-center mx-auto mb-6 text-premium-accent">
+                                    <Sparkles size={40} />
                                 </div>
-                                <input required type="tel" placeholder="Mobile Number" className="w-full bg-white/5 border border-white/5 rounded-xl px-5 py-4 outline-none focus:border-premium-accent text-sm" value={enquiryForm.mobile} onChange={e => setEnquiryForm({...enquiryForm, mobile: e.target.value})} />
-                                <button type="submit" className="w-full py-4 bg-white text-black font-black uppercase tracking-[0.4em] rounded-xl hover:bg-premium-accent transition-all text-xs">Send Message</button>
+                                <h3 className="text-4xl serif-font uppercase mb-4 luxury-text-gradient">Success.</h3>
+                                <p className="text-white/40 uppercase tracking-widest text-xs font-bold">We will connect with you shortly.</p>
+                            </div>
+                        ) : (
+                            <form onSubmit={handleEnquirySubmit} className="space-y-8 text-left">
+                                <div className="inline-flex items-center gap-2 mb-2">
+                                  <Sparkles size={14} className="text-premium-accent" />
+                                  <span className="text-[10px] font-black uppercase tracking-widest text-white/30">Admissions 2025</span>
+                                </div>
+                                <h3 className="text-3xl md:text-4xl serif-font uppercase mb-8 luxury-text-gradient">Enquiry Form</h3>
+                                
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-black uppercase text-white/30 ml-1">Student Name</label>
+                                        <input required placeholder="Student's Full Name" className="w-full bg-white/5 border border-white/5 rounded-2xl px-5 py-4 outline-none focus:border-premium-accent text-sm text-white" value={enquiryForm.studentName} onChange={e => setEnquiryForm({...enquiryForm, studentName: e.target.value})} />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-black uppercase text-white/30 ml-1">Parent Name</label>
+                                        <input required placeholder="Parent's Full Name" className="w-full bg-white/5 border border-white/5 rounded-2xl px-5 py-4 outline-none focus:border-premium-accent text-sm text-white" value={enquiryForm.parentName} onChange={e => setEnquiryForm({...enquiryForm, parentName: e.target.value})} />
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-black uppercase text-white/30 ml-1">Relation</label>
+                                        <select required className="w-full bg-white/5 border border-white/5 rounded-2xl px-5 py-4 outline-none focus:border-premium-accent text-sm text-white appearance-none" value={enquiryForm.relation} onChange={e => setEnquiryForm({...enquiryForm, relation: e.target.value})}>
+                                            <option value="" className="bg-black">Select Relation</option>
+                                            <option value="Father" className="bg-black">Father</option>
+                                            <option value="Mother" className="bg-black">Mother</option>
+                                            <option value="Guardian" className="bg-black">Guardian</option>
+                                        </select>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-black uppercase text-white/30 ml-1">Grade</label>
+                                        <input required placeholder="e.g. 5th" className="w-full bg-white/5 border border-white/5 rounded-2xl px-5 py-4 outline-none focus:border-premium-accent text-sm text-white" value={enquiryForm.grade} onChange={e => setEnquiryForm({...enquiryForm, grade: e.target.value})} />
+                                    </div>
+                                </div>
+
+                                <div className="space-y-1">
+                                    <label className="text-[10px] font-black uppercase text-white/30 ml-1">School Name</label>
+                                    <input required placeholder="Current School" className="w-full bg-white/5 border border-white/5 rounded-2xl px-5 py-4 outline-none focus:border-premium-accent text-sm text-white" value={enquiryForm.schoolName} onChange={e => setEnquiryForm({...enquiryForm, schoolName: e.target.value})} />
+                                </div>
+
+                                <div className="space-y-3">
+                                    <label className="text-[10px] font-black uppercase text-white/30 ml-1">Attending any other coaching?</label>
+                                    <div className="flex gap-6 px-1">
+                                        <label className="flex items-center gap-2 cursor-pointer group">
+                                            <input type="radio" name="coaching_contact" checked={enquiryForm.hasCoaching === true} onChange={() => setEnquiryForm({...enquiryForm, hasCoaching: true})} className="hidden" />
+                                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${enquiryForm.hasCoaching === true ? 'border-premium-accent bg-premium-accent' : 'border-white/20'}`}>
+                                                {enquiryForm.hasCoaching === true && <div className="w-2 h-2 bg-black rounded-full" />}
+                                            </div>
+                                            <span className="text-sm font-bold uppercase tracking-widest text-white/60 group-hover:text-white">Yes</span>
+                                        </label>
+                                        <label className="flex items-center gap-2 cursor-pointer group">
+                                            <input type="radio" name="coaching_contact" checked={enquiryForm.hasCoaching === false} onChange={() => setEnquiryForm({...enquiryForm, hasCoaching: false})} className="hidden" />
+                                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${enquiryForm.hasCoaching === false ? 'border-premium-accent bg-premium-accent' : 'border-white/20'}`}>
+                                                {enquiryForm.hasCoaching === false && <div className="w-2 h-2 bg-black rounded-full" />}
+                                            </div>
+                                            <span className="text-sm font-bold uppercase tracking-widest text-white/60 group-hover:text-white">No</span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-1">
+                                    <label className="text-[10px] font-black uppercase text-white/30 ml-1">Reason for Coaching</label>
+                                    <textarea required placeholder="Tell us about your requirements..." className="w-full bg-white/5 border border-white/5 rounded-2xl px-5 py-4 outline-none focus:border-premium-accent text-sm text-white h-24 resize-none" value={enquiryForm.reason} onChange={e => setEnquiryForm({...enquiryForm, reason: e.target.value})} />
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-black uppercase text-white/30 ml-1">Mobile Number</label>
+                                        <input required type="tel" placeholder="10-digit number" className="w-full bg-white/5 border border-white/5 rounded-2xl px-5 py-4 outline-none focus:border-premium-accent text-sm text-white" value={enquiryForm.mobile} onChange={e => setEnquiryForm({...enquiryForm, mobile: e.target.value})} />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-black uppercase text-white/30 ml-1">Preferred Connect Time</label>
+                                        <select required className="w-full bg-white/5 border border-white/5 rounded-2xl px-5 py-4 outline-none focus:border-premium-accent text-sm text-white appearance-none" value={enquiryForm.connectTime} onChange={e => setEnquiryForm({...enquiryForm, connectTime: e.target.value})}>
+                                            <option value="" className="bg-black">Select Time</option>
+                                            <option value="Morning" className="bg-black">Morning</option>
+                                            <option value="Afternoon" className="bg-black">Afternoon</option>
+                                            <option value="Evening" className="bg-black">Evening</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <button type="submit" className="w-full py-6 bg-white text-black font-black uppercase tracking-[0.5em] rounded-2xl hover:bg-premium-accent transition-all text-xs shadow-xl active:scale-[0.98]">Submit Form</button>
                             </form>
                         )}
                     </div>

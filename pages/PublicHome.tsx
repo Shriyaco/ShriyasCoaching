@@ -4,14 +4,24 @@ import ThreeHero from '../components/ThreeHero';
 import Footer from '../components/Footer';
 import { db } from '../services/db';
 import { Notice } from '../types';
-import { ArrowRight, X, Sparkles } from 'lucide-react';
+import { ArrowRight, X, Sparkles, User, School, MessageSquare, Clock, Phone } from 'lucide-react';
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
 
 const PublicHome: React.FC = () => {
   const [notices, setNotices] = useState<Notice[]>([]);
   const [isEnquiryModalOpen, setIsEnquiryModalOpen] = useState(false);
   const [enquirySubmitted, setEnquirySubmitted] = useState(false);
-  const [enquiryForm, setEnquiryForm] = useState({ studentName: '', parentName: '', relation: '', grade: '', schoolName: '', hasCoaching: null as boolean | null, reason: '', mobile: '', connectTime: '' });
+  const [enquiryForm, setEnquiryForm] = useState({ 
+    studentName: '', 
+    parentName: '', 
+    relation: '', 
+    grade: '', 
+    schoolName: '', 
+    hasCoaching: null as boolean | null, 
+    reason: '', 
+    mobile: '', 
+    connectTime: '' 
+  });
 
   const { scrollYProgress } = useScroll();
   const opacityHero = useTransform(scrollYProgress, [0, 0.4], [1, 0]);
@@ -30,8 +40,9 @@ const PublicHome: React.FC = () => {
 
   const handleEnquirySubmit = async (e: React.FormEvent) => {
       e.preventDefault();
+      if (enquiryForm.hasCoaching === null) { alert("Please select coaching status."); return; }
       try { 
-        await db.addEnquiry({ ...enquiryForm, hasCoaching: enquiryForm.hasCoaching ?? false }); 
+        await db.addEnquiry({ ...enquiryForm, hasCoaching: enquiryForm.hasCoaching as boolean }); 
         setEnquirySubmitted(true); 
       } catch (error) { 
         alert("Error submitting. Try again."); 
@@ -84,37 +95,113 @@ const PublicHome: React.FC = () => {
                         )) : (
                             <div className="flex items-center mx-16 text-white/30 text-[9px] uppercase font-bold tracking-[0.6em]">Academic Session 2024-25 • Admissions Open • Excellence Redefined</div>
                         )}
-                        {!marqueeNotices.length && <div className="flex items-center mx-16 text-white/30 text-[9px] uppercase font-bold tracking-[0.6em]">Academic Session 2024-25 • Admissions Open • Excellence Redefined</div>}
                      </div>
                 </div>
              </motion.div>
         </div>
       </section>
 
+      {/* --- ENROLLMENT MODAL (Full Yesterday Version) --- */}
       <AnimatePresence>
         {isEnquiryModalOpen && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[200] flex items-center justify-center bg-black/95 p-4 backdrop-blur-xl">
-                <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9 }} className="bg-premium-black border border-white/10 rounded-[40px] w-full max-w-2xl overflow-hidden relative">
-                    <button onClick={closeEnquiryModal} className="absolute top-8 right-8 text-white/40 hover:text-white transition-colors z-20"><X size={24}/></button>
-                    <div className="p-10 md:p-14">
+                <motion.div 
+                    initial={{ scale: 0.9, y: 20 }} 
+                    animate={{ scale: 1, y: 0 }} 
+                    exit={{ scale: 0.9 }} 
+                    className="bg-[#0A0A0A] border border-white/10 rounded-[40px] w-full max-w-2xl overflow-hidden relative shadow-2xl"
+                >
+                    <button onClick={closeEnquiryModal} className="absolute top-8 right-8 text-white/40 hover:text-white transition-colors z-20 p-2"><X size={28}/></button>
+                    
+                    <div className="p-10 md:p-14 max-h-[90vh] overflow-y-auto custom-scrollbar">
                         {enquirySubmitted ? (
-                            <div className="text-center py-20"><h3 className="text-4xl serif-font uppercase mb-4 luxury-text-gradient">Thank You.</h3><p className="text-white/40 uppercase tracking-widest text-xs font-bold">We will connect with you shortly.</p></div>
+                            <div className="text-center py-20 animate-fade-in">
+                                <CheckCircle2 className="mx-auto text-premium-accent mb-6" size={60} />
+                                <h3 className="text-4xl serif-font uppercase mb-4 luxury-text-gradient">Thank You.</h3>
+                                <p className="text-white/40 uppercase tracking-widest text-xs font-bold">We will connect with you shortly for the next steps.</p>
+                            </div>
                         ) : (
-                            <form onSubmit={handleEnquirySubmit} className="space-y-6 text-left">
+                            <form onSubmit={handleEnquirySubmit} className="space-y-8">
                                 <div className="inline-flex items-center gap-2 mb-2">
                                   <Sparkles size={14} className="text-premium-accent" />
-                                  <span className="text-[10px] font-black uppercase tracking-widest text-white/30">Session 2025-26</span>
+                                  <span className="text-[10px] font-black uppercase tracking-widest text-white/30">Session 2025-26 Enrollment</span>
                                 </div>
-                                <h3 className="text-3xl serif-font uppercase mb-8 luxury-text-gradient">Enquiry Form</h3>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <input required placeholder="Student Name" className="w-full bg-white/5 border border-white/5 rounded-xl px-5 py-4 outline-none focus:border-premium-accent text-sm text-white" value={enquiryForm.studentName} onChange={e => setEnquiryForm({...enquiryForm, studentName: e.target.value})} />
-                                    <input required placeholder="Parent Name" className="w-full bg-white/5 border border-white/5 rounded-xl px-5 py-4 outline-none focus:border-premium-accent text-sm text-white" value={enquiryForm.parentName} onChange={e => setEnquiryForm({...enquiryForm, parentName: e.target.value})} />
+                                <h3 className="text-3xl md:text-4xl serif-font uppercase mb-8 luxury-text-gradient">Enquiry Application</h3>
+                                
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-black uppercase text-white/30 ml-1">Student Name</label>
+                                        <input required placeholder="Enter name" className="w-full bg-white/5 border border-white/5 rounded-2xl px-5 py-4 outline-none focus:border-premium-accent text-sm text-white" value={enquiryForm.studentName} onChange={e => setEnquiryForm({...enquiryForm, studentName: e.target.value})} />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-black uppercase text-white/30 ml-1">Parent Name</label>
+                                        <input required placeholder="Enter name" className="w-full bg-white/5 border border-white/5 rounded-2xl px-5 py-4 outline-none focus:border-premium-accent text-sm text-white" value={enquiryForm.parentName} onChange={e => setEnquiryForm({...enquiryForm, parentName: e.target.value})} />
+                                    </div>
                                 </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <input required placeholder="Grade" className="w-full bg-white/5 border border-white/5 rounded-xl px-5 py-4 outline-none focus:border-premium-accent text-sm text-white" value={enquiryForm.grade} onChange={e => setEnquiryForm({...enquiryForm, grade: e.target.value})} />
-                                    <input required type="tel" placeholder="Mobile Number" className="w-full bg-white/5 border border-white/5 rounded-xl px-5 py-4 outline-none focus:border-premium-accent text-sm text-white" value={enquiryForm.mobile} onChange={e => setEnquiryForm({...enquiryForm, mobile: e.target.value})} />
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-black uppercase text-white/30 ml-1">Relation</label>
+                                        <select required className="w-full bg-white/5 border border-white/5 rounded-2xl px-5 py-4 outline-none focus:border-premium-accent text-sm text-white appearance-none" value={enquiryForm.relation} onChange={e => setEnquiryForm({...enquiryForm, relation: e.target.value})}>
+                                            <option value="" className="bg-black">Select Relation</option>
+                                            <option value="Father" className="bg-black">Father</option>
+                                            <option value="Mother" className="bg-black">Mother</option>
+                                            <option value="Guardian" className="bg-black">Guardian</option>
+                                        </select>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-black uppercase text-white/30 ml-1">Grade / Class</label>
+                                        <input required placeholder="e.g. 7th Grade" className="w-full bg-white/5 border border-white/5 rounded-2xl px-5 py-4 outline-none focus:border-premium-accent text-sm text-white" value={enquiryForm.grade} onChange={e => setEnquiryForm({...enquiryForm, grade: e.target.value})} />
+                                    </div>
                                 </div>
-                                <button type="submit" className="w-full py-5 bg-white text-black font-black uppercase tracking-[0.4em] rounded-xl hover:bg-premium-accent transition-all text-xs">Submit Application</button>
+
+                                <div className="space-y-1">
+                                    <label className="text-[10px] font-black uppercase text-white/30 ml-1">Current School Name</label>
+                                    <input required placeholder="Name of institution" className="w-full bg-white/5 border border-white/5 rounded-2xl px-5 py-4 outline-none focus:border-premium-accent text-sm text-white" value={enquiryForm.schoolName} onChange={e => setEnquiryForm({...enquiryForm, schoolName: e.target.value})} />
+                                </div>
+
+                                <div className="space-y-3">
+                                    <label className="text-[10px] font-black uppercase text-white/30 ml-1">Attending any other coaching?</label>
+                                    <div className="flex gap-6 px-1">
+                                        <label className="flex items-center gap-2 cursor-pointer group">
+                                            <input type="radio" name="coaching" checked={enquiryForm.hasCoaching === true} onChange={() => setEnquiryForm({...enquiryForm, hasCoaching: true})} className="hidden" />
+                                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${enquiryForm.hasCoaching === true ? 'border-premium-accent bg-premium-accent' : 'border-white/20'}`}>
+                                                {enquiryForm.hasCoaching === true && <div className="w-2 h-2 bg-black rounded-full" />}
+                                            </div>
+                                            <span className="text-sm font-bold uppercase tracking-widest text-white/60 group-hover:text-white">Yes</span>
+                                        </label>
+                                        <label className="flex items-center gap-2 cursor-pointer group">
+                                            <input type="radio" name="coaching" checked={enquiryForm.hasCoaching === false} onChange={() => setEnquiryForm({...enquiryForm, hasCoaching: false})} className="hidden" />
+                                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${enquiryForm.hasCoaching === false ? 'border-premium-accent bg-premium-accent' : 'border-white/20'}`}>
+                                                {enquiryForm.hasCoaching === false && <div className="w-2 h-2 bg-black rounded-full" />}
+                                            </div>
+                                            <span className="text-sm font-bold uppercase tracking-widest text-white/60 group-hover:text-white">No</span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-1">
+                                    <label className="text-[10px] font-black uppercase text-white/30 ml-1">Why are you looking for coaching?</label>
+                                    <textarea required placeholder="Brief reason..." className="w-full bg-white/5 border border-white/5 rounded-2xl px-5 py-4 outline-none focus:border-premium-accent text-sm text-white h-24 resize-none" value={enquiryForm.reason} onChange={e => setEnquiryForm({...enquiryForm, reason: e.target.value})} />
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-black uppercase text-white/30 ml-1">Mobile Number</label>
+                                        <input required type="tel" placeholder="10-digit number" className="w-full bg-white/5 border border-white/5 rounded-2xl px-5 py-4 outline-none focus:border-premium-accent text-sm text-white" value={enquiryForm.mobile} onChange={e => setEnquiryForm({...enquiryForm, mobile: e.target.value})} />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-black uppercase text-white/30 ml-1">Best Time to Connect</label>
+                                        <select required className="w-full bg-white/5 border border-white/5 rounded-2xl px-5 py-4 outline-none focus:border-premium-accent text-sm text-white appearance-none" value={enquiryForm.connectTime} onChange={e => setEnquiryForm({...enquiryForm, connectTime: e.target.value})}>
+                                            <option value="" className="bg-black">Select Time</option>
+                                            <option value="Morning" className="bg-black">Morning (9AM - 12PM)</option>
+                                            <option value="Afternoon" className="bg-black">Afternoon (12PM - 4PM)</option>
+                                            <option value="Evening" className="bg-black">Evening (4PM - 8PM)</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <button type="submit" className="w-full py-6 bg-white text-black font-black uppercase tracking-[0.5em] rounded-2xl hover:bg-premium-accent transition-all text-xs shadow-xl active:scale-[0.98]">Launch Application</button>
                             </form>
                         )}
                     </div>
@@ -123,6 +210,7 @@ const PublicHome: React.FC = () => {
         )}
       </AnimatePresence>
 
+      {/* Philosophy Section */}
       <section className="py-32 md:py-60 px-6">
           <div className="max-w-[1200px] mx-auto text-center md:text-left">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-24 items-start">
@@ -143,6 +231,7 @@ const PublicHome: React.FC = () => {
           </div>
       </section>
 
+      {/* Board Grid Section */}
       <section className="bg-premium-black">
           <div className="grid grid-cols-1 lg:grid-cols-3">
               {[
@@ -168,5 +257,11 @@ const PublicHome: React.FC = () => {
     </div>
   );
 };
+
+const CheckCircle2 = ({ className, size }: { className?: string, size?: number }) => (
+    <div className={`rounded-full flex items-center justify-center ${className}`}>
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+    </div>
+);
 
 export default PublicHome;
