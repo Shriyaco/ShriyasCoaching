@@ -1,5 +1,5 @@
 
-import React, { useRef } from 'react';
+import React, { useRef, Suspense } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Float, Box, Sphere, MeshDistortMaterial, Environment, ContactShadows, Stars, PerspectiveCamera } from '@react-three/drei';
@@ -24,11 +24,9 @@ const CBSEScene = () => {
   return (
     <group ref={group}>
       <Float speed={2} rotationIntensity={0.5} floatIntensity={0.5}>
-        {/* Central NCERT Block */}
         <Box args={[2, 2.5, 0.4]} position={[0, 0, 0]}>
           <meshStandardMaterial color="#00E5FF" metalness={0.8} roughness={0.2} emissive="#00E5FF" emissiveIntensity={0.2} />
         </Box>
-        {/* Floating Concept Spheres */}
         <Sphere args={[0.3, 32, 32]} position={[1.8, 1.2, 0.5]}>
            <MeshDistortMaterial color="#f472b6" speed={3} distort={0.4} />
         </Sphere>
@@ -58,16 +56,16 @@ const CBSEBoard: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#020617] text-slate-900 dark:text-white transition-colors duration-300 overflow-x-hidden">
-      
-      {/* Hero Section */}
       <section className="relative min-h-[80vh] flex flex-col items-center justify-center pt-24 overflow-hidden">
         <div className="absolute inset-0 z-0">
           <Canvas>
-            <PerspectiveCamera makeDefault position={[0, 0, 8]} />
-            <ambientLight intensity={0.5} />
-            <pointLight position={[10, 10, 10]} />
-            <CBSEScene />
-            {isDark && <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />}
+            <Suspense fallback={null}>
+                <PerspectiveCamera makeDefault position={[0, 0, 8]} />
+                <ambientLight intensity={0.5} />
+                <pointLight position={[10, 10, 10]} />
+                <CBSEScene />
+                {isDark && <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />}
+            </Suspense>
           </Canvas>
         </div>
 
@@ -91,14 +89,10 @@ const CBSEBoard: React.FC = () => {
         </div>
       </section>
 
-      {/* Curriculum Section */}
       <section className="py-24 relative">
         <ThreeOrb className="absolute top-1/2 left-0 w-96 h-96 opacity-10 -translate-x-1/2" color="#00E5FF" />
-        
         <div className="max-w-7xl mx-auto px-6 relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-            
-            {/* Primary Wing */}
             <motion.div 
                style={{ scale: scaleEffect }}
                className="bg-white dark:bg-[#0B1120] p-8 md:p-12 rounded-[40px] border border-slate-200 dark:border-white/5 shadow-xl group hover:border-blue-400 dark:hover:border-[#00E5FF]/30 transition-all"
@@ -119,8 +113,6 @@ const CBSEBoard: React.FC = () => {
                 ))}
               </ul>
             </motion.div>
-
-            {/* Middle School */}
             <motion.div 
                style={{ scale: scaleEffect }}
                className="bg-slate-900 p-8 md:p-12 rounded-[40px] border border-white/5 shadow-2xl text-white relative overflow-hidden group"
@@ -142,12 +134,10 @@ const CBSEBoard: React.FC = () => {
                 ))}
               </ul>
             </motion.div>
-
           </div>
         </div>
       </section>
 
-      {/* Key Features / Analytical Thinking */}
       <section className="py-20 bg-blue-600 dark:bg-indigo-900 text-white overflow-hidden relative">
           <div className="absolute top-0 left-0 w-full h-full opacity-10">
               <div className="grid grid-cols-10 h-full w-full">
@@ -189,14 +179,12 @@ const CBSEBoard: React.FC = () => {
           </div>
       </section>
 
-      {/* Testimonials */}
       <section className="py-24 bg-white dark:bg-[#020617]">
           <div className="max-w-7xl mx-auto px-6">
               <div className="text-center mb-16">
                   <h3 className="text-4xl font-black font-[Poppins] mb-4">Voice of our <span className="text-blue-600">Students</span></h3>
                   <p className="text-slate-500 dark:text-gray-400">Honest feedback from the future leaders of our community.</p>
               </div>
-
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                   {testimonials.map((t, i) => (
                       <motion.div 
@@ -222,7 +210,6 @@ const CBSEBoard: React.FC = () => {
               </div>
           </div>
       </section>
-
       <Footer />
     </div>
   );

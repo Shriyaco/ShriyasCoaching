@@ -1,5 +1,5 @@
 
-import React, { useRef } from 'react';
+import React, { useRef, Suspense } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Float, Environment, ContactShadows, Stars, PerspectiveCamera, MeshWobbleMaterial, TorusKnot, Cylinder } from '@react-three/drei';
@@ -24,7 +24,6 @@ const WisdomScene = () => {
   return (
     <group ref={group}>
       <Float speed={2} rotationIntensity={0.8} floatIntensity={1}>
-        {/* Abstract "Pillar of Knowledge" */}
         <Cylinder args={[1.2, 1.5, 4, 32]} position={[0, 0, 0]}>
            <meshStandardMaterial 
               color="#6366f1" 
@@ -35,8 +34,6 @@ const WisdomScene = () => {
               emissiveIntensity={0.5} 
            />
         </Cylinder>
-        
-        {/* Core Jewel */}
         <TorusKnot args={[0.8, 0.2, 128, 32]} position={[0, 0, 0]}>
            <MeshWobbleMaterial color="#00E5FF" speed={2} factor={0.6} metalness={0.8} />
         </TorusKnot>
@@ -50,11 +47,7 @@ const WisdomScene = () => {
 const WhyUs: React.FC = () => {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
-  const { scrollYProgress } = useScroll();
   
-  const opacity = useTransform(scrollYProgress, [0, 0.2], [0, 1]);
-  const scale = useTransform(scrollYProgress, [0, 0.2], [0.95, 1]);
-
   const pillars = [
     {
       id: "01",
@@ -88,16 +81,16 @@ const WhyUs: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#020617] text-slate-900 dark:text-white transition-colors duration-300 overflow-x-hidden">
-      
-      {/* Hero Section */}
       <section className="relative min-h-[90vh] flex flex-col items-center justify-center pt-24 overflow-hidden">
         <div className="absolute inset-0 z-0">
           <Canvas>
-            <PerspectiveCamera makeDefault position={[0, 0, 10]} />
-            <ambientLight intensity={0.5} />
-            <pointLight position={[10, 10, 10]} intensity={1.5} color="#6366f1" />
-            <WisdomScene />
-            {isDark && <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />}
+            <Suspense fallback={null}>
+                <PerspectiveCamera makeDefault position={[0, 0, 10]} />
+                <ambientLight intensity={0.5} />
+                <pointLight position={[10, 10, 10]} intensity={1.5} color="#6366f1" />
+                <WisdomScene />
+                {isDark && <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />}
+            </Suspense>
           </Canvas>
         </div>
 
@@ -122,10 +115,8 @@ const WhyUs: React.FC = () => {
         </div>
       </section>
 
-      {/* Philosophy Section */}
       <section className="py-32 relative bg-white dark:bg-[#0B1120] transition-colors">
         <ThreeOrb className="absolute top-1/2 left-0 w-96 h-96 opacity-10 -translate-x-1/2" color="#6366f1" />
-        
         <div className="max-w-7xl mx-auto px-6 relative z-10">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
                 <motion.div
@@ -151,7 +142,6 @@ const WhyUs: React.FC = () => {
                         </div>
                     </div>
                 </motion.div>
-                
                 <div className="relative">
                     <motion.div 
                         initial={{ scale: 0.8, rotate: 5 }}
@@ -174,14 +164,12 @@ const WhyUs: React.FC = () => {
         </div>
       </section>
 
-      {/* Pillars Grid */}
       <section className="py-32 bg-slate-50 dark:bg-[#020617] relative">
           <div className="max-w-7xl mx-auto px-6">
               <div className="text-center mb-20">
                   <h3 className="text-xs font-black uppercase text-indigo-600 dark:text-indigo-400 tracking-[0.3em] mb-4">Our Methodology</h3>
                   <h2 className="text-4xl md:text-7xl font-black font-[Poppins] dark:text-white">Built on Four <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-cyan-500">Pillars</span></h2>
               </div>
-
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   {pillars.map((pillar, i) => (
                       <motion.div 
@@ -204,7 +192,6 @@ const WhyUs: React.FC = () => {
           </div>
       </section>
 
-      {/* Feature Matrix */}
       <section className="py-24 bg-indigo-900 text-white relative overflow-hidden">
           <div className="absolute inset-0 opacity-10">
               <div className="grid grid-cols-12 h-full">
@@ -260,7 +247,6 @@ const WhyUs: React.FC = () => {
               </div>
           </div>
       </section>
-
       <Footer />
     </div>
   );

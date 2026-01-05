@@ -1,5 +1,5 @@
 
-import React, { useRef } from 'react';
+import React, { useRef, Suspense } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Float, Environment, ContactShadows, Stars, PerspectiveCamera, Torus, Sphere, MeshDistortMaterial } from '@react-three/drei';
@@ -24,15 +24,12 @@ const VisionScene = () => {
   return (
     <group ref={group}>
       <Float speed={3} rotationIntensity={1} floatIntensity={1.5}>
-        {/* The "Eye" of Vision */}
         <Torus args={[2, 0.05, 16, 100]} position={[0, 0, 0]} rotation={[Math.PI / 2, 0, 0]}>
           <meshStandardMaterial color="#00E5FF" emissive="#00E5FF" emissiveIntensity={2} />
         </Torus>
         <Torus args={[1.5, 0.05, 16, 100]} position={[0, 0, 0]} rotation={[0, Math.PI / 4, 0]}>
           <meshStandardMaterial color="#8b5cf6" emissive="#8b5cf6" emissiveIntensity={2} />
         </Torus>
-        
-        {/* Central Core of Enlightenment */}
         <Sphere args={[0.6, 64, 64]}>
           <MeshDistortMaterial 
             color="#ffffff" 
@@ -56,8 +53,6 @@ const Vision: React.FC = () => {
   const isDark = theme === 'dark';
   const { scrollYProgress } = useScroll();
   
-  const yParallax = useTransform(scrollYProgress, [0, 1], [0, -100]);
-
   const coreValues = [
     { name: "Excellence", desc: "We strive for the highest standards in academic results and teaching quality.", icon: Target, color: "text-blue-500", bg: "bg-blue-500/10" },
     { name: "Integrity", desc: "We instill a strong sense of ethics and honesty in our students from a young age.", icon: Shield, color: "text-emerald-500", bg: "bg-emerald-500/10" },
@@ -74,16 +69,16 @@ const Vision: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#020617] text-slate-900 dark:text-white transition-colors duration-300 overflow-x-hidden">
-      
-      {/* Hero Section */}
       <section className="relative min-h-[80vh] flex flex-col items-center justify-center pt-24 overflow-hidden">
         <div className="absolute inset-0 z-0">
           <Canvas>
-            <PerspectiveCamera makeDefault position={[0, 0, 8]} />
-            <ambientLight intensity={0.5} />
-            <pointLight position={[10, 10, 10]} intensity={1.5} color="#00E5FF" />
-            <VisionScene />
-            {isDark && <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />}
+            <Suspense fallback={null}>
+                <PerspectiveCamera makeDefault position={[0, 0, 8]} />
+                <ambientLight intensity={0.5} />
+                <pointLight position={[10, 10, 10]} intensity={1.5} color="#00E5FF" />
+                <VisionScene />
+                {isDark && <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />}
+            </Suspense>
           </Canvas>
         </div>
 
@@ -110,7 +105,6 @@ const Vision: React.FC = () => {
         </div>
       </section>
 
-      {/* Vision Statement Section */}
       <section className="py-24 relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-6 relative z-10">
           <div className="bg-white dark:bg-[#0B1120] rounded-[60px] p-12 md:p-20 border border-slate-200 dark:border-white/5 shadow-2xl relative overflow-hidden group">
@@ -141,14 +135,12 @@ const Vision: React.FC = () => {
         </div>
       </section>
 
-      {/* Mission Section */}
       <section className="py-24 bg-slate-900 text-white relative">
           <div className="max-w-7xl mx-auto px-6 relative z-10">
               <div className="text-center mb-20">
                   <h3 className="text-cyan-400 font-bold tracking-widest uppercase text-sm mb-4">Our Mission</h3>
                   <h2 className="text-4xl md:text-6xl font-black font-[Poppins]">The Gurukul <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">Pledge</span></h2>
               </div>
-
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   {missionPillars.map((pillar, i) => (
                       <motion.div 
@@ -169,14 +161,12 @@ const Vision: React.FC = () => {
           </div>
       </section>
 
-      {/* Core Values Section */}
       <section className="py-24 bg-white dark:bg-[#020617]">
           <div className="max-w-7xl mx-auto px-6">
               <div className="text-center mb-20">
                   <h2 className="text-4xl md:text-5xl font-black font-[Poppins] mb-4">Core <span className="text-blue-600">Values</span></h2>
                   <p className="text-slate-500 dark:text-gray-400">The fundamental beliefs that drive Shriyas Gurukul.</p>
               </div>
-
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
                   {coreValues.map((value, i) => (
                       <motion.div 
@@ -195,10 +185,8 @@ const Vision: React.FC = () => {
           </div>
       </section>
 
-      {/* The Promise Section */}
       <section className="py-24 relative overflow-hidden">
         <ThreeOrb className="absolute bottom-0 right-0 w-[500px] h-[500px] opacity-10 translate-x-1/4 translate-y-1/4" color="#00E5FF" />
-        
         <div className="max-w-4xl mx-auto px-6 relative z-10">
           <motion.div 
             initial={{ opacity: 0, y: 30 }}
@@ -221,7 +209,6 @@ const Vision: React.FC = () => {
           </motion.div>
         </div>
       </section>
-
       <Footer />
     </div>
   );

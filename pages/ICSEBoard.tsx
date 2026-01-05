@@ -1,5 +1,5 @@
 
-import React, { useRef } from 'react';
+import React, { useRef, Suspense } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Float, Box, Sphere, MeshDistortMaterial, Environment, ContactShadows, Stars, PerspectiveCamera, TorusKnot } from '@react-three/drei';
@@ -24,7 +24,6 @@ const ICSEScene = () => {
   return (
     <group ref={group}>
       <Float speed={3} rotationIntensity={1} floatIntensity={2}>
-        {/* Central Complex Structure representing specialized knowledge */}
         <TorusKnot args={[1.5, 0.4, 128, 32]} position={[0, 0, 0]}>
           <meshStandardMaterial 
             color="#8b5cf6" 
@@ -35,8 +34,6 @@ const ICSEScene = () => {
             wireframe
           />
         </TorusKnot>
-        
-        {/* Floating "Subject" Spheres */}
         <Sphere args={[0.4, 32, 32]} position={[2.5, 1.5, -1]}>
            <MeshDistortMaterial color="#00E5FF" speed={4} distort={0.3} />
         </Sphere>
@@ -55,9 +52,6 @@ const ICSEBoard: React.FC = () => {
   const isDark = theme === 'dark';
   const { scrollYProgress } = useScroll();
   
-  const yParallax = useTransform(scrollYProgress, [0, 1], [0, -150]);
-  const opacityEffect = useTransform(scrollYProgress, [0, 0.1], [0, 1]);
-
   const testimonials = [
     { name: "Sanya Malhotra", grade: "Grade 8", text: "ICSE's focus on English Literature is amazing. Shriya's teachers helped me master Shakespearean English and creative writing early on.", avatar: "S" },
     { name: "Vihaan Gupta", grade: "Grade 6", text: "The jump to separate Physics and Biology was scary, but the project-based learning here made it very practical and fun.", avatar: "V" },
@@ -66,17 +60,17 @@ const ICSEBoard: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#020617] text-slate-900 dark:text-white transition-colors duration-300 overflow-x-hidden">
-      
-      {/* Hero Section */}
       <section className="relative min-h-[90vh] flex flex-col items-center justify-center pt-24 overflow-hidden">
         <div className="absolute inset-0 z-0">
           <Canvas>
-            <PerspectiveCamera makeDefault position={[0, 0, 10]} />
-            <ambientLight intensity={0.8} />
-            <pointLight position={[10, 10, 10]} intensity={2} />
-            <spotLight position={[-10, 10, 10]} angle={0.15} penumbra={1} intensity={1.5} color="#8b5cf6" />
-            <ICSEScene />
-            {isDark && <Stars radius={150} depth={60} count={6000} factor={5} saturation={0} fade speed={1.5} />}
+            <Suspense fallback={null}>
+                <PerspectiveCamera makeDefault position={[0, 0, 10]} />
+                <ambientLight intensity={0.8} />
+                <pointLight position={[10, 10, 10]} intensity={2} />
+                <spotLight position={[-10, 10, 10]} angle={0.15} penumbra={1} intensity={1.5} color="#8b5cf6" />
+                <ICSEScene />
+                {isDark && <Stars radius={150} depth={60} count={6000} factor={5} saturation={0} fade speed={1.5} />}
+            </Suspense>
           </Canvas>
         </div>
 
@@ -101,10 +95,8 @@ const ICSEBoard: React.FC = () => {
         </div>
       </section>
 
-      {/* Methodology Section */}
       <section className="py-32 relative">
         <ThreeOrb className="absolute bottom-0 right-0 w-[500px] h-[500px] opacity-10 translate-x-1/4 translate-y-1/4" color="#8b5cf6" />
-        
         <div className="max-w-7xl mx-auto px-6 relative z-10">
           <div className="flex flex-col lg:flex-row gap-20 items-center">
             <div className="lg:w-1/2">
@@ -132,7 +124,6 @@ const ICSEBoard: React.FC = () => {
             </div>
             
             <div className="lg:w-1/2 grid grid-cols-1 gap-8">
-                {/* Primary Wing */}
                 <motion.div 
                     whileHover={{ y: -5 }}
                     className="p-10 bg-white dark:bg-[#0B1120] rounded-[40px] border border-slate-200 dark:border-white/5 shadow-2xl relative overflow-hidden group"
@@ -152,7 +143,6 @@ const ICSEBoard: React.FC = () => {
                     </div>
                 </motion.div>
 
-                {/* Middle School */}
                 <motion.div 
                     whileHover={{ y: -5 }}
                     className="p-10 bg-slate-900 rounded-[40px] border border-white/5 shadow-2xl text-white group"
@@ -176,7 +166,6 @@ const ICSEBoard: React.FC = () => {
         </div>
       </section>
 
-      {/* Feature Highlight */}
       <section className="py-24 bg-gradient-to-b from-slate-900 to-indigo-950 text-white relative overflow-hidden">
           <div className="absolute inset-0 opacity-5">
               <div className="grid grid-cols-12 h-full">
@@ -216,14 +205,12 @@ const ICSEBoard: React.FC = () => {
           </div>
       </section>
 
-      {/* Testimonials */}
       <section className="py-32 bg-white dark:bg-[#020617]">
           <div className="max-w-7xl mx-auto px-6">
               <div className="text-center mb-20">
                   <h3 className="text-4xl md:text-5xl font-black font-[Poppins] mb-4">Student <span className="text-purple-600">Perspectives</span></h3>
                   <p className="text-slate-500 dark:text-gray-400 max-w-xl mx-auto italic">Hearing from our high-achieving ICSE batch.</p>
               </div>
-
               <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
                   {testimonials.map((t, i) => (
                       <motion.div 
@@ -250,7 +237,6 @@ const ICSEBoard: React.FC = () => {
               </div>
           </div>
       </section>
-
       <Footer />
     </div>
   );
