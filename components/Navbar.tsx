@@ -1,357 +1,253 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, ChevronDown, CreditCard, LogIn, Sun, Moon, ArrowRight, ShoppingBag, ChevronRight } from 'lucide-react';
-import { motion, AnimatePresence, Variants } from 'framer-motion';
-import { useTheme } from '../App';
-import { db } from '../services/db';
+import { Menu, X, ChevronDown } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [hoveredLink, setHoveredLink] = useState<string | null>(null);
-  const [expandedMobileMenu, setExpandedMobileMenu] = useState<string | null>(null);
-  
-  // Badge State
-  const [pendingPaymentCount, setPendingPaymentCount] = useState(0);
-  
-  const { theme, toggleTheme } = useTheme();
-  
+  const [activeSubmenu, setActiveSubmenu] = useState<string | null>(null);
   const location = useLocation();
   const isDashboard = location.pathname.startsWith('/admin') || location.pathname.startsWith('/student') || location.pathname.startsWith('/teacher');
-  const isLoginPage = location.pathname === '/login';
 
-  // Check for student login and updates
   useEffect(() => {
-    const checkBadge = async () => {
-        const storedUser = sessionStorage.getItem('sc_user');
-        if (storedUser) {
-            const user = JSON.parse(storedUser);
-            if (user.role === 'student') {
-                const orders = await db.getOrders(user.id);
-                const count = orders.filter(o => o.status === 'Payment Pending').length;
-                setPendingPaymentCount(count);
-            }
-        } else {
-            setPendingPaymentCount(0);
-        }
-    };
+    const handleScroll = () => setScrolled(window.scrollY > 50);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
-    checkBadge();
-    const interval = setInterval(checkBadge, 10000);
-    return () => clearInterval(interval);
-  }, [location.pathname]);
-
-  // Prevent scrolling when mobile menu is open
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'unset';
-      setExpandedMobileMenu(null); // Reset expansion when closing
     }
   }, [isOpen]);
 
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 20);
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
   if (isDashboard) return null;
 
-  const navLinks = [
+  const menuStructure = [
+    { name: 'Home', path: '/' },
     { 
       name: 'Boards', 
-      path: '#', 
-      dropdown: [
-        { label: 'CBSE Board', path: '/cbse' },
-        { label: 'ICSE Board', path: '/icse' },
-        { label: 'State Board', path: '/state-board' }
-      ] 
+      submenu: [
+        { name: 'CBSE', path: '/cbse' },
+        { name: 'ICSE', path: '/icse' },
+        { name: 'State Board', path: '/state-board' }
+      ]
     },
     { 
       name: 'About Us', 
-      path: '#',
-      dropdown: [
-        { label: 'Why Choose Us', path: '/why-us' },
-        { label: 'Vision & Mission', path: '/vision' }
-      ] 
+      submenu: [
+        { name: 'Why Us', path: '/why-us' },
+        { name: 'Vision', path: '/vision' }
+      ]
     },
-    { name: 'Contact Us', path: '/contact' }
+    { name: 'Connect', path: '/contact' }
   ];
 
-  const menuContainerVariants: Variants = {
-    closed: {
-      opacity: 0,
-      x: "100%", 
-      transition: {
-        staggerChildren: 0.05,
-        staggerDirection: -1,
-        when: "afterChildren",
-        duration: 0.3
-      }
-    },
+  const menuVariants = {
+    closed: { opacity: 0 },
     open: {
       opacity: 1,
-      x: 0,
-      transition: {
-        staggerChildren: 0.1,
-        delayChildren: 0.1,
-        duration: 0.4
-      }
+      transition: { staggerChildren: 0.05, delayChildren: 0.1 }
     }
   };
 
-  const menuItemVariants: Variants = {
-    closed: {
-      x: 50,
-      opacity: 0,
-      rotateX: -20,
-      transition: { duration: 0.3 }
-    },
-    open: {
-      x: 0,
-      opacity: 1,
-      rotateX: 0,
-      transition: { duration: 0.5, type: "spring", stiffness: 100 }
-    }
+  const itemVariants = {
+    closed: { opacity: 0, y: 10 },
+    open: { opacity: 1, y: 0 }
   };
 
-  const toggleMobileAccordion = (name: string) => {
-    setExpandedMobileMenu(prev => (prev === name ? null : name));
+  const toggleSubmenu = (name: string) => {
+    setActiveSubmenu(activeSubmenu === name ? null : name);
   };
 
   return (
-    <nav
-      className={`fixed w-full z-50 transition-all duration-300 ${
-        scrolled || isOpen
-          ? 'bg-white/90 dark:bg-[#020617]/90 backdrop-blur-xl border-b border-slate-200 dark:border-[#00E5FF]/20 shadow-lg py-3'
-          : 'bg-transparent py-6'
-      } ${isLoginPage ? 'lg:hidden' : ''}`}
-    >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-3 group relative z-50">
-            <div className="relative z-10 bg-gradient-to-br from-gray-900 to-black p-2 rounded-xl shadow-[0_0_15px_rgba(0,229,255,0.4)] border border-[#00E5FF]/30 group-hover:scale-105 transition-transform duration-300">
-                <img 
-                  src="https://advedasolutions.in/sc.png" 
-                  alt="Shriya's Coaching" 
-                  className="h-8 md:h-12 w-auto object-contain" 
-                />
-            </div>
-            <span className="font-bold text-lg md:text-xl text-slate-800 dark:text-white hidden sm:block font-[Poppins]">Shriya's</span>
+    <>
+      <nav
+        className={`fixed top-0 w-full z-[100] transition-all duration-700 ease-in-out ${
+          scrolled ? 'bg-black/90 backdrop-blur-lg py-3 md:py-4' : 'bg-transparent py-8'
+        }`}
+      >
+        <div className="max-w-[1800px] mx-auto px-6 md:px-12 flex items-center justify-between">
+          {/* Main Logo */}
+          <Link to="/" className="relative z-[110]">
+            <img 
+              src="https://advedasolutions.in/sc.png" 
+              alt="Shriya's Logo" 
+              className={`transition-all duration-500 ${scrolled ? 'h-10 md:h-12' : 'h-14 md:h-16'}`}
+              style={{ filter: 'brightness(0) invert(1)' }}
+            />
           </Link>
 
-          <div className="hidden md:flex items-center space-x-8">
-            {navLinks.map((link) => (
-              <div 
-                key={link.name} 
-                className="relative group"
-                onMouseEnter={() => setHoveredLink(link.name)}
-                onMouseLeave={() => setHoveredLink(null)}
-              >
-                <Link 
-                  to={link.path} 
-                  className="flex items-center text-slate-700 dark:text-gray-300 hover:text-black dark:hover:text-white px-3 py-2 text-sm font-medium transition-colors font-[Poppins] relative overflow-hidden"
-                >
-                  <span className="relative z-10">{link.name}</span>
-                  <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-[#00E5FF] transition-all duration-300 group-hover:w-full box-border shadow-[0_0_10px_#00E5FF]" />
-                  {link.dropdown && <ChevronDown size={14} className="ml-1 group-hover:rotate-180 transition-transform text-[#00E5FF]" />}
-                </Link>
-                
-                {link.dropdown && (
-                  <AnimatePresence>
-                    {hoveredLink === link.name && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 15, scale: 0.95 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 15, scale: 0.95 }}
-                        className="absolute top-full left-0 w-56 bg-white/95 dark:bg-[#0B1120]/95 backdrop-blur-xl border border-slate-200 dark:border-[#00E5FF]/20 rounded-xl shadow-xl dark:shadow-[0_0_30px_rgba(0,229,255,0.1)] overflow-hidden pt-2 p-2 mt-2"
-                      >
-                        {link.dropdown.map((item) => (
-                          <Link 
-                            key={item.label} 
-                            to={item.path} 
-                            className="block px-4 py-3 text-sm text-slate-600 dark:text-gray-300 hover:bg-slate-50 dark:hover:bg-[#00E5FF]/10 hover:text-[#00E5FF] dark:hover:text-[#00E5FF] rounded-lg transition-all"
-                          >
-                            {item.label}
-                          </Link>
-                        ))}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+          {/* Desktop Links */}
+          <div className="hidden lg:flex items-center space-x-12">
+            {menuStructure.map((item) => (
+              <div key={item.name} className="relative group">
+                {item.submenu ? (
+                  <button className="text-white text-[10px] font-bold uppercase tracking-[0.4em] hover:text-premium-accent transition-colors flex items-center gap-2">
+                    {item.name} <ChevronDown size={10} className="group-hover:rotate-180 transition-transform" />
+                  </button>
+                ) : (
+                  <Link 
+                    to={item.path!} 
+                    className="text-white text-[10px] font-bold uppercase tracking-[0.4em] hover:text-premium-accent transition-colors"
+                  >
+                    {item.name}
+                  </Link>
+                )}
+
+                {item.submenu && (
+                  <div className="absolute top-full left-1/2 -translate-x-1/2 pt-6 opacity-0 translate-y-2 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto transition-all duration-300">
+                    <div className="bg-black/90 backdrop-blur-xl border border-white/10 p-6 min-w-[200px] shadow-2xl flex flex-col space-y-4">
+                      {item.submenu.map((sub) => (
+                        <Link 
+                          key={sub.name} 
+                          to={sub.path} 
+                          className="text-white/60 text-[9px] font-bold uppercase tracking-[0.3em] hover:text-premium-accent transition-colors block"
+                        >
+                          {sub.name}
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
                 )}
               </div>
             ))}
-            
-            <Link 
-                to="/shop"
-                className="flex items-center text-slate-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 px-3 py-2 text-sm font-medium transition-colors font-[Poppins] relative"
-            >
-                <ShoppingBag size={18} className="mr-1"/> Shop
-                {pendingPaymentCount > 0 && (
-                    <span className="absolute top-0 right-0 h-4 w-4 rounded-full bg-red-500 text-white text-[9px] flex items-center justify-center font-bold animate-pulse">
-                        {pendingPaymentCount}
-                    </span>
-                )}
+            <Link to="/login" className="border border-white/20 text-white px-8 py-2.5 text-[10px] font-bold uppercase tracking-widest hover:bg-white hover:text-black transition-all">
+              Log in
             </Link>
           </div>
 
-          <div className="hidden md:flex items-center space-x-4">
-            <button 
-                onClick={toggleTheme}
-                className="p-2 rounded-full border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-slate-600 dark:text-gray-300 hover:text-[#00E5FF] dark:hover:text-[#00E5FF] transition-colors"
-                title="Toggle Theme"
-            >
-                {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
-            </button>
-
-            <Link 
-              to="/pay-fees" 
-              className="px-5 py-2 rounded-full border border-[#00E5FF]/30 text-[#00E5FF] font-medium hover:bg-[#00E5FF]/10 transition-colors flex items-center space-x-2 text-sm hover:shadow-[0_0_15px_rgba(0,229,255,0.2)]"
-            >
-              <CreditCard size={16} />
-              <span>Pay Fees</span>
-            </Link>
-            <Link 
-              to="/login" 
-              className="relative px-6 py-2 rounded-full bg-gradient-to-r from-[#00E5FF] to-[#0099cc] text-[#020617] font-bold text-sm shadow-[0_0_20px_rgba(0,229,255,0.4)] hover:shadow-[0_0_30px_rgba(0,229,255,0.6)] transition-all transform hover:-translate-y-0.5 flex items-center space-x-2 overflow-hidden group"
-            >
-              <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
-              <LogIn size={16} className="relative z-10" />
-              <span className="relative z-10">Login</span>
-            </Link>
-          </div>
-
-          <div className="md:hidden flex items-center gap-3 z-50">
-             <button 
-                onClick={toggleTheme}
-                className="p-2 rounded-full bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-gray-300 hover:text-[#00E5FF] transition-colors"
-            >
-                {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
-            </button>
-            <button
-              onClick={() => setIsOpen(!isOpen)}
-              className={`text-slate-700 dark:text-white hover:text-[#00E5FF] transition-colors p-2 rounded-full ${isOpen ? 'bg-slate-100 dark:bg-white/10 text-red-500' : ''}`}
-            >
-              {isOpen ? <X size={28} /> : <Menu size={28} />}
-            </button>
-          </div>
+          {/* Hamburger Trigger (Only visible when closed) */}
+          {!isOpen && (
+            <div className="lg:hidden relative z-[110]">
+              <button onClick={() => setIsOpen(true)} className="p-2 focus:outline-none">
+                <Menu size={32} strokeWidth={1} className="text-white" />
+              </button>
+            </div>
+          )}
         </div>
-      </div>
+      </nav>
 
+      {/* Fullscreen Mobile Menu Overlay */}
       <AnimatePresence>
         {isOpen && (
           <motion.div 
-            key="mobile-menu"
-            initial="closed"
-            animate="open"
-            exit="closed"
-            variants={menuContainerVariants}
-            className="md:hidden fixed inset-0 z-40 bg-white/95 dark:bg-[#020617]/95 backdrop-blur-2xl flex flex-col pt-24 px-6 h-screen overflow-y-auto"
-            style={{ perspective: "1000px" }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[200] menu-bg-gradient flex flex-col h-[100dvh] overflow-hidden"
           >
-            <div className="absolute top-0 right-0 w-64 h-64 bg-[#00E5FF] rounded-full filter blur-[100px] opacity-10 pointer-events-none" />
-            <div className="absolute bottom-0 left-0 w-48 h-48 bg-purple-500 rounded-full filter blur-[80px] opacity-10 pointer-events-none" />
+            {/* Header with Fixed Close Button */}
+            <div className="flex justify-end p-6 shrink-0 h-24">
+              <button 
+                onClick={() => setIsOpen(false)} 
+                className="w-12 h-12 rounded-xl bg-white flex items-center justify-center shadow-[0_4px_0_#999,0_8px_15px_rgba(0,0,0,0.5)] active:translate-y-[2px] active:shadow-none transition-all"
+              >
+                <X size={26} className="text-black" strokeWidth={3} />
+              </button>
+            </div>
 
-            <div className="flex flex-col space-y-2 pb-10">
-              {navLinks.map((link) => (
-                <motion.div 
-                  key={link.name} 
-                  variants={menuItemVariants}
-                >
-                  {link.dropdown ? (
+            {/* Scrollable Content Area */}
+            <motion.div 
+              variants={menuVariants}
+              initial="closed"
+              animate="open"
+              exit="closed"
+              className="flex-1 overflow-y-auto px-8 md:px-12 flex flex-col space-y-4 pb-12"
+            >
+              {menuStructure.map((item) => (
+                <motion.div key={item.name} variants={itemVariants} className="flex flex-col items-start text-left">
+                  {item.submenu ? (
                     <>
                       <button 
-                        onClick={() => toggleMobileAccordion(link.name)}
-                        className="w-full flex items-center justify-between py-4 text-2xl font-bold text-slate-800 dark:text-white border-b border-slate-100 dark:border-white/5 hover:text-[#00E5FF] transition-colors font-[Poppins]"
+                        onClick={() => toggleSubmenu(item.name)}
+                        className={`text-4xl md:text-5xl serif-font font-light tracking-tight transition-all duration-300 flex items-center gap-3 ${activeSubmenu === item.name ? 'text-premium-accent' : 'text-white/90'}`}
                       >
-                        <span>{link.name}</span>
-                        <ChevronRight 
-                          size={24} 
-                          className={`text-[#00E5FF] transition-transform duration-300 ${expandedMobileMenu === link.name ? 'rotate-90' : ''}`}
-                        />
+                        {item.name} 
+                        <ChevronDown size={20} className={`transition-transform duration-500 ${activeSubmenu === item.name ? 'rotate-180' : ''}`} />
                       </button>
+                      
                       <AnimatePresence>
-                        {expandedMobileMenu === link.name && (
+                        {activeSubmenu === item.name && (
                           <motion.div 
                             initial={{ height: 0, opacity: 0 }}
                             animate={{ height: 'auto', opacity: 1 }}
                             exit={{ height: 0, opacity: 0 }}
-                            className="overflow-hidden bg-slate-50/50 dark:bg-white/5 rounded-xl mt-2 mb-4"
+                            className="overflow-hidden flex flex-col items-start mt-2 space-y-2 pl-6 border-l border-white/10"
                           >
-                            <div className="pl-6 py-4 space-y-4 border-l-4 border-[#00E5FF]">
-                              {link.dropdown.map((item) => (
-                                <Link
-                                    key={item.label}
-                                    to={item.path}
-                                    onClick={() => setIsOpen(false)}
-                                    className="block text-slate-600 dark:text-gray-300 text-lg hover:text-[#00E5FF] dark:hover:text-[#00E5FF] transition-colors font-medium"
-                                >
-                                  {item.label}
-                                </Link>
-                              ))}
-                            </div>
+                            {item.submenu.map((sub) => (
+                              <Link 
+                                key={sub.name} 
+                                to={sub.path} 
+                                onClick={() => setIsOpen(false)}
+                                className="text-xl md:text-2xl serif-font text-white/40 hover:text-white transition-colors"
+                              >
+                                {sub.name}
+                              </Link>
+                            ))}
                           </motion.div>
                         )}
                       </AnimatePresence>
                     </>
                   ) : (
                     <Link 
-                      to={link.path}
+                      to={item.path!} 
                       onClick={() => setIsOpen(false)}
-                      className="group flex items-center justify-between py-4 text-2xl font-bold text-slate-800 dark:text-white border-b border-slate-100 dark:border-white/5 hover:text-[#00E5FF] transition-colors font-[Poppins]"
+                      className={`text-4xl md:text-5xl serif-font font-light tracking-tight transition-all duration-300 ${location.pathname === item.path ? 'text-premium-accent' : 'text-white/90'}`}
                     >
-                      <span>{link.name}</span>
-                      <ArrowRight size={20} className="opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all text-[#00E5FF]"/>
+                      {item.name}
                     </Link>
                   )}
                 </motion.div>
               ))}
-
-              <motion.div variants={menuItemVariants}>
-                  <Link 
-                    to="/shop"
-                    onClick={() => setIsOpen(false)}
-                    className="group flex items-center justify-between py-4 text-2xl font-bold text-purple-600 dark:text-purple-400 border-b border-slate-100 dark:border-white/5 hover:text-[#00E5FF] transition-colors font-[Poppins]"
-                  >
-                    <span className="flex items-center gap-2">
-                         <ShoppingBag size={24}/> Shop
-                         {pendingPaymentCount > 0 && (
-                            <span className="h-5 w-5 rounded-full bg-red-500 text-white text-[10px] flex items-center justify-center font-bold">
-                                {pendingPaymentCount}
-                            </span>
-                        )}
-                    </span>
-                    <ArrowRight size={20} className="opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all text-[#00E5FF]"/>
-                  </Link>
-              </motion.div>
-
-              <motion.div variants={menuItemVariants} className="pt-8 space-y-4">
+              
+              {/* Stacked: Log in & Pay Fees (Tighter layout) */}
+              <motion.div variants={itemVariants} className="pt-4 flex flex-col items-start gap-4 border-t border-white/5">
                  <Link 
-                    to="/pay-fees" 
-                    onClick={() => setIsOpen(false)} 
-                    className="w-full flex items-center justify-center gap-3 py-4 border border-[#00E5FF] text-[#00E5FF] rounded-2xl font-bold text-lg hover:bg-[#00E5FF]/5 transition-colors"
+                   to="/login" 
+                   onClick={() => setIsOpen(false)} 
+                   className="text-white text-[14px] font-bold uppercase tracking-[0.4em] hover:text-premium-accent transition-colors"
                  >
-                    <CreditCard size={20} /> Pay Fees
+                    Log in
                  </Link>
-                 
+                 <div className="w-10 h-[1px] bg-white/10" />
                  <Link 
-                    to="/login" 
-                    onClick={() => setIsOpen(false)} 
-                    className="w-full flex items-center justify-center gap-3 py-4 bg-gradient-to-r from-[#00E5FF] to-cyan-600 text-[#020617] rounded-2xl font-bold text-lg shadow-lg hover:shadow-[#00E5FF]/20"
+                   to="/pay-fees" 
+                   onClick={() => setIsOpen(false)} 
+                   className="text-premium-accent text-[14px] font-bold uppercase tracking-[0.4em] hover:brightness-125 transition-all"
                  >
-                    <LogIn size={20} /> Login Portal
+                    Pay Fees
                  </Link>
               </motion.div>
+            </motion.div>
+
+            {/* Bottom Menu Footer (Single Line, Compact) */}
+            <div className="shrink-0 py-4 border-t border-white/5 bg-black/40 backdrop-blur-xl px-8 md:px-12">
+               <div className="flex items-center justify-between overflow-hidden">
+                  <div className="flex items-center gap-4 shrink-0">
+                    <span className="text-white/30 text-[8px] font-bold uppercase tracking-[0.15em]">Policy</span>
+                    <span className="text-white/30 text-[8px] font-bold uppercase tracking-[0.15em]">T&C</span>
+                  </div>
+                  
+                  <div className="flex items-center gap-2 whitespace-nowrap ml-4">
+                    <span className="text-white/40 text-[8px] font-bold uppercase tracking-[0.15em]">Developed with ♥️ by</span>
+                    <div className="bg-white/10 p-1 rounded-md backdrop-blur-md">
+                      <img 
+                        src="https://advedasolutions.in/logo.png" 
+                        alt="Adveda Solutions" 
+                        className="h-3.5 w-auto object-contain" 
+                      />
+                    </div>
+                  </div>
+               </div>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
-    </nav>
+    </>
   );
 };
 

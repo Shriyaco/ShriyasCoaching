@@ -1,40 +1,20 @@
 
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import ThreeHero from '../components/ThreeHero';
 import Footer from '../components/Footer';
 import { db } from '../services/db';
 import { Notice } from '../types';
-import { ArrowRight, Shield, Users, Trophy, ChevronRight, CheckCircle2, TrendingUp, Zap, Brain, Microscope, Calculator, BookOpen, Star, Plus, Minus, MessageCircle, Phone, Mail, MapPin, Globe, Palette, X, Send } from 'lucide-react';
-import { motion, useScroll, useTransform, Variants, AnimatePresence } from 'framer-motion';
+import { ArrowRight, Star } from 'lucide-react';
+import { motion, useScroll, useTransform } from 'framer-motion';
 
 const PublicHome: React.FC = () => {
   const [notices, setNotices] = useState<Notice[]>([]);
   const { scrollYProgress } = useScroll();
   
-  // 3D Parallax & Scroll Effects
-  const rotateX = useTransform(scrollYProgress, [0, 0.2], [15, 0]);
-  const scale = useTransform(scrollYProgress, [0, 0.2], [0.9, 1]);
-  const opacity = useTransform(scrollYProgress, [0, 0.2], [0, 1]);
-
-  // UI State
-  const [isEnquiryModalOpen, setIsEnquiryModalOpen] = useState(false);
-  const [enquirySubmitted, setEnquirySubmitted] = useState(false);
-  
-  // Enquiry Form State
-  const [enquiryForm, setEnquiryForm] = useState({
-      studentName: '',
-      parentName: '',
-      relation: '',
-      grade: '',
-      schoolName: '',
-      hasCoaching: null as boolean | null,
-      reason: '',
-      mobile: '',
-      connectTime: ''
-  });
+  const opacityHero = useTransform(scrollYProgress, [0, 0.4], [1, 0]);
 
   useEffect(() => {
-    // Get all important notices for the ticker
     const load = async () => {
         const all = await db.getNotices();
         setNotices(all.filter(n => n.important));
@@ -44,355 +24,113 @@ const PublicHome: React.FC = () => {
 
   const marqueeNotices = [...notices, ...notices, ...notices, ...notices];
 
-  const fadeInUp: Variants = {
-      hidden: { opacity: 0, y: 60, rotateX: -15 },
-      visible: { opacity: 1, y: 0, rotateX: 0, transition: { duration: 0.8, ease: "easeOut", type: "spring" } }
-  };
-
-  const staggerContainer: Variants = {
-      hidden: { opacity: 0 },
-      visible: {
-          opacity: 1,
-          transition: {
-              staggerChildren: 0.15
-          }
-      }
-  };
-
-  const handleEnquirySubmit = async (e: React.FormEvent) => {
-      e.preventDefault();
-      if (enquiryForm.hasCoaching === null) {
-          alert("Please select if your child is already getting coaching.");
-          return;
-      }
-      try {
-          await db.addEnquiry({
-              ...enquiryForm,
-              hasCoaching: enquiryForm.hasCoaching as boolean
-          });
-          setEnquirySubmitted(true);
-      } catch (error) {
-          console.error(error);
-          alert("Something went wrong. Please try again.");
-      }
-  };
-
-  const closeEnquiryModal = () => {
-      setIsEnquiryModalOpen(false);
-      setEnquirySubmitted(false);
-      setEnquiryForm({
-          studentName: '',
-          parentName: '',
-          relation: '',
-          grade: '',
-          schoolName: '',
-          hasCoaching: null,
-          reason: '',
-          mobile: '',
-          connectTime: ''
-      });
-  };
-
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-[#020617] text-slate-900 dark:text-white font-sans selection:bg-[#00E5FF] selection:text-[#020617] overflow-x-hidden perspective-1000 transition-colors duration-300">
+    <div className="min-h-screen bg-premium-black text-white selection:bg-premium-accent selection:text-black overflow-x-hidden">
       
-      {/* --- HERO SECTION --- */}
-      <section className="relative min-h-screen flex flex-col pt-20 overflow-hidden">
-        <ThreeHero />
+      {/* --- IMMERSIVE HERO --- */}
+      <section className="relative h-screen flex flex-col items-center justify-center overflow-hidden px-6">
+        <motion.div style={{ opacity: opacityHero }} className="absolute inset-0 z-0">
+          <ThreeHero />
+          <div className="absolute inset-0 bg-black/30" />
+        </motion.div>
         
-        {/* Gradient Ticker */}
-        <div className="relative z-20 w-full bg-white/50 dark:bg-[#020617]/50 backdrop-blur-md border-y border-slate-200 dark:border-[#00E5FF]/20 overflow-hidden py-3 shadow-sm dark:shadow-[0_0_30px_rgba(0,229,255,0.15)]">
-             <div className="flex animate-marquee whitespace-nowrap hover:pause">
+        <div className="max-w-[1400px] w-full mx-auto relative z-10 text-center">
+             <motion.div
+                initial={{ opacity: 0, y: 40 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 1.5, ease: [0.77, 0, 0.175, 1] }}
+             >
+                <h1 className="text-5xl md:text-[8rem] font-light leading-[1] tracking-tight serif-font uppercase mb-12 luxury-text-gradient">
+                  Your Future <br /> in the Sky.
+                </h1>
+
+                <p className="text-sm md:text-lg text-white/60 max-w-2xl mx-auto leading-relaxed tracking-widest uppercase mb-12">
+                  Premium academic coaching for the next generation of global leaders.
+                </p>
+
+                <div className="flex flex-col sm:flex-row justify-center items-center gap-6 md:gap-12">
+                  <button className="group text-white text-[11px] font-bold uppercase tracking-[0.5em] flex items-center gap-4 hover:text-premium-accent transition-all">
+                    Discover More <ArrowRight size={14} className="group-hover:translate-x-2 transition-transform"/>
+                  </button>
+                </div>
+             </motion.div>
+        </div>
+
+        {/* Status Ticker - Minimalist */}
+        <div className="absolute bottom-0 w-full border-t border-white/5 bg-black/40 backdrop-blur-sm py-4 overflow-hidden">
+             <div className="flex animate-marquee whitespace-nowrap">
                 {marqueeNotices.length > 0 ? marqueeNotices.map((notice, idx) => (
-                    <div key={`${notice.id}-${idx}`} className="flex items-center mx-8">
-                         <Zap size={14} className="text-[#00E5FF] mr-2 fill-current animate-pulse" />
-                         <span className="text-slate-700 dark:text-gray-300 font-medium text-sm tracking-wide">
-                             <span className="text-[#00E5FF] font-bold mr-2 uppercase text-xs border border-[#00E5FF]/50 px-2 py-0.5 rounded-full shadow-[0_0_10px_#00E5FF]">New</span>
-                             <span className="bg-clip-text text-transparent bg-gradient-to-r from-slate-800 to-slate-500 dark:from-white dark:to-gray-400 font-bold">{notice.content}</span>
+                    <div key={idx} className="flex items-center mx-16">
+                         <span className="text-white/40 text-[9px] font-bold tracking-[0.4em] uppercase mr-4">Update</span>
+                         <span className="text-white/80 font-light text-xs tracking-[0.2em] uppercase italic serif-font">
+                             {notice.content}
                          </span>
                     </div>
                 )) : (
-                    <div className="flex items-center mx-8 text-slate-500 dark:text-gray-400 text-sm">Welcome to Shriya's Coaching - The Foundation Experts</div>
+                    <div className="flex items-center mx-16 text-white/30 text-[9px] uppercase font-bold tracking-[0.6em]">Academic Session 2024-25 • Admissions Open • Excellence Delivered</div>
                 )}
              </div>
         </div>
-
-        {/* Hero Content */}
-        <div className="flex-1 flex items-center w-full max-w-7xl mx-auto px-6 py-12 relative z-10 pointer-events-none">
-             <div className="w-full md:w-3/5 pointer-events-auto text-center md:text-left">
-                  <motion.div
-                    initial={{ opacity: 0, x: -50, rotateY: 10 }}
-                    animate={{ opacity: 1, x: 0, rotateY: 0 }}
-                    transition={{ duration: 1, ease: "easeOut" }}
-                  >
-                      <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/20 dark:bg-white/10 border border-slate-200 dark:border-white/10 backdrop-blur-xl mb-6 shadow-sm dark:shadow-[0_0_20px_rgba(0,229,255,0.2)] hover:border-[#00E5FF]/50 transition-colors">
-                          <span className="relative flex h-2 w-2">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#00E5FF] opacity-75"></span>
-                            <span className="relative inline-flex rounded-full h-2 w-2 bg-[#00E5FF]"></span>
-                          </span>
-                          <span className="text-[#0066cc] dark:text-[#00E5FF] text-xs font-bold tracking-[0.2em] uppercase">Grade 1st to 8th Specialists</span>
-                      </div>
-
-                      <h1 className="text-5xl md:text-8xl font-[Poppins] font-black text-slate-900 dark:text-white mb-6 leading-[0.95] tracking-tight drop-shadow-xl dark:drop-shadow-2xl">
-                          Strong <br />
-                          <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 dark:from-[#00E5FF] dark:via-purple-400 dark:to-pink-400 drop-shadow-sm dark:drop-shadow-[0_0_30px_rgba(0,229,255,0.5)]">
-                            Foundations.
-                          </span>
-                      </h1>
-
-                      <p className="text-lg md:text-xl text-slate-600 dark:text-gray-300/90 mb-10 max-w-lg mx-auto md:mx-0 leading-relaxed font-light border-l-4 border-l-blue-500 dark:border-l-[#00E5FF] pl-6 bg-gradient-to-r from-blue-50 to-transparent dark:from-[#00E5FF]/5 dark:to-transparent py-2 rounded-r-2xl">
-                        Building confident learners for tomorrow. We specialize in Primary and Middle School education, ensuring concept clarity from Day 1.
-                      </p>
-
-                      <div className="flex flex-col sm:flex-row gap-5 justify-center md:justify-start">
-                          <button onClick={() => setIsEnquiryModalOpen(true)} className="group relative px-8 py-4 bg-gradient-to-r from-blue-600 to-cyan-600 dark:from-[#00E5FF] dark:to-cyan-600 text-white dark:text-[#020617] rounded-full font-bold text-lg shadow-xl dark:shadow-[0_0_40px_rgba(0,229,255,0.3)] hover:shadow-2xl dark:hover:shadow-[0_0_60px_rgba(0,229,255,0.5)] transition-all overflow-hidden hover:-translate-y-1">
-                             <span className="relative z-10 flex items-center gap-2">Enroll Now <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform"/></span>
-                             <div className="absolute inset-0 bg-white/30 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-500 skew-x-12" />
-                          </button>
-                          <a href="/login" className="px-8 py-4 bg-white/50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-800 dark:text-white rounded-full font-bold text-lg hover:bg-white/80 dark:hover:bg-white/10 hover:border-blue-300 dark:hover:border-[#00E5FF]/30 backdrop-blur-md transition-all flex items-center gap-2 group shadow-sm">
-                             Access Portal <ChevronRight size={18} className="text-blue-600 dark:text-[#00E5FF] group-hover:translate-x-1 transition-transform" />
-                          </a>
-                      </div>
-                  </motion.div>
-                  
-                  {/* Floating Glass Stats with 3D Rotation */}
-                  <motion.div 
-                     style={{ rotateX, scale, opacity }}
-                     className="mt-16 inline-block relative group"
-                  >
-                      <div className="absolute inset-0 bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 dark:from-[#00E5FF] dark:via-purple-500 dark:to-pink-500 blur-2xl opacity-20 group-hover:opacity-40 transition-opacity rounded-3xl" />
-                      <div className="relative flex items-center gap-8 px-10 py-6 bg-white/60 dark:bg-[#0B1120]/60 backdrop-blur-xl border border-slate-200 dark:border-white/10 rounded-3xl hover:border-blue-300 dark:hover:border-[#00E5FF]/30 transition-colors shadow-2xl">
-                          <div>
-                              <div className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-b from-slate-800 to-slate-500 dark:from-white dark:to-gray-400 font-[Poppins]">1st-8th</div>
-                              <div className="text-[10px] text-blue-600 dark:text-[#00E5FF] uppercase tracking-wider font-bold">Grade Focus</div>
-                          </div>
-                          <div className="w-[1px] h-10 bg-gradient-to-b from-transparent via-slate-300 dark:via-white/20 to-transparent" />
-                          <div>
-                              <div className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-b from-slate-800 to-slate-500 dark:from-white dark:to-gray-400 font-[Poppins]">100%</div>
-                              <div className="text-[10px] text-blue-600 dark:text-[#00E5FF] uppercase tracking-wider font-bold">Attention</div>
-                          </div>
-                      </div>
-                  </motion.div>
-             </div>
-        </div>
       </section>
 
-      {/* --- FEATURES GRID (Gradient & Glass with 3D Reveal) --- */}
-      <section id="about" className="py-24 relative overflow-hidden bg-slate-50 dark:bg-[#020617]">
-          {/* Vibrant Aurora Backgrounds */}
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[600px] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-100/50 via-slate-50 to-slate-50 dark:from-indigo-900/30 dark:via-[#020617] dark:to-[#020617] pointer-events-none" />
-          
-          <div className="max-w-7xl mx-auto px-6 relative z-10">
-              <motion.div 
-                initial="hidden"
-                whileInView="visible"
-                viewport={{ once: true, amount: 0.3 }}
-                variants={fadeInUp}
-                className="text-center mb-24"
-              >
-                  <h2 className="text-blue-600 dark:text-[#00E5FF] font-bold tracking-widest uppercase text-sm mb-4 flex items-center justify-center gap-3">
-                    <span className="w-12 h-[1px] bg-gradient-to-r from-transparent to-blue-600 dark:to-[#00E5FF]"></span> Early Years Excellence <span className="w-12 h-[1px] bg-gradient-to-l from-transparent to-blue-600 dark:to-[#00E5FF]"></span>
-                  </h2>
-                  <h3 className="text-4xl md:text-7xl font-[Poppins] font-black text-slate-900 dark:text-white">
-                    Why Choose <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 dark:from-[#00E5FF] dark:via-purple-400 dark:to-pink-400">Shriya's?</span>
-                  </h3>
-              </motion.div>
-              
-              <motion.div 
-                 variants={staggerContainer}
-                 initial="hidden"
-                 whileInView="visible"
-                 viewport={{ once: true, amount: 0.1 }}
-                 className="grid grid-cols-1 md:grid-cols-3 gap-8"
-              >
-                  {[
-                      { icon: Users, title: "Personalized Care", desc: "Small batch sizes for Grade 1-8 to ensure individual attention.", color: "from-blue-500 to-cyan-500" },
-                      { icon: Shield, title: "Smart Tracking", desc: "Weekly progress reports sent to parents via our app.", color: "from-purple-500 to-pink-500" },
-                      { icon: Trophy, title: "Concept Mastery", desc: "Focus on Olympiads and Scholarship exams, not just rote learning.", color: "from-amber-400 to-orange-500" }
-                  ].map((feature, idx) => (
-                      <motion.div key={idx} variants={fadeInUp} className="group relative p-[1px] rounded-[32px] bg-gradient-to-b from-white/50 to-transparent dark:from-white/10 dark:to-transparent hover:from-blue-500 dark:hover:from-[#00E5FF] hover:to-purple-600 transition-all duration-500 shadow-sm hover:shadow-xl">
-                          <div className="absolute inset-0 bg-blue-400 dark:bg-[#00E5FF] opacity-0 group-hover:opacity-20 blur-xl transition-opacity duration-500 rounded-[32px]" />
-                          <div className="relative h-full bg-white dark:bg-[#0B1120] rounded-[31px] p-8 overflow-hidden group-hover:bg-slate-50 dark:group-hover:bg-[#0B1120]/90 transition-colors">
-                              <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${feature.color} flex items-center justify-center text-white mb-8 shadow-lg transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-300`}>
-                                  <feature.icon size={32} strokeWidth={1.5} />
-                              </div>
-                              <h3 className="text-2xl font-bold font-[Poppins] mb-4 text-slate-900 dark:text-white group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-blue-600 dark:group-hover:from-white group-hover:to-purple-600 dark:group-hover:to-gray-300 transition-colors">{feature.title}</h3>
-                              <p className="text-slate-600 dark:text-gray-400 leading-relaxed text-sm group-hover:text-slate-800 dark:group-hover:text-gray-300">{feature.desc}</p>
-                              
-                              <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-gradient-to-tl from-slate-100 to-transparent dark:from-white/5 dark:to-transparent rounded-full blur-xl pointer-events-none group-hover:from-blue-200 dark:group-hover:from-[#00E5FF]/20 transition-colors" />
-                          </div>
-                      </motion.div>
-                  ))}
-              </motion.div>
+      {/* --- CONTENT SECTION 1: THE PHILOSOPHY --- */}
+      <section className="py-32 md:py-60 px-6">
+          <div className="max-w-[1200px] mx-auto text-center md:text-left">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-24 items-start">
+                  <motion.div initial={{ opacity: 0, x: -30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}>
+                      <h2 className="text-4xl md:text-7xl font-light serif-font uppercase tracking-tight leading-tight mb-8">
+                        Precision <br /> Mastery.
+                      </h2>
+                  </motion.div>
+                  <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} viewport={{ once: true }}>
+                      <p className="text-lg md:text-xl text-white/50 leading-relaxed font-light mb-10">
+                        Created by a core team of academic experts, Shriya's Academic Group is the most sophisticated way to excel in your primary years. Our collective experience and tailored methodology elevate coaching to a whole new level.
+                      </p>
+                      <button className="text-premium-accent text-[11px] font-bold uppercase tracking-[0.5em] border-b border-premium-accent/30 pb-1">
+                        Our Vision
+                      </button>
+                  </motion.div>
+              </div>
           </div>
       </section>
 
-      {/* --- METHODOLOGY SECTION --- */}
-      <section className="py-24 bg-white dark:bg-[#0B1120] relative transition-colors duration-300">
-          <div className="max-w-7xl mx-auto px-6">
-              <div className="mb-16 text-center">
-                  <h3 className="text-3xl md:text-5xl font-[Poppins] font-bold text-slate-900 dark:text-white mb-4">Our Teaching <span className="text-blue-600 dark:text-[#00E5FF]">Methodology</span></h3>
-                  <p className="text-slate-600 dark:text-gray-400 max-w-2xl mx-auto">A systematic approach designed for young minds to grasp complex concepts easily.</p>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6 relative">
-                  {/* Connector Line */}
-                  <div className="hidden md:block absolute top-12 left-0 w-full h-1 bg-gradient-to-r from-slate-200 via-blue-400 to-slate-200 dark:from-gray-800 dark:via-[#00E5FF] dark:to-gray-800 opacity-30 z-0"></div>
-
-                  {[
-                      { step: "01", title: "Assess", desc: "Understanding current student level", icon: Microscope },
-                      { step: "02", title: "Learn", desc: "Interactive visualization & theory", icon: Brain },
-                      { step: "03", title: "Practice", desc: "Daily worksheets & problem solving", icon: Calculator },
-                      { step: "04", title: "Master", desc: "Weekly tests & feedback loop", icon: Trophy },
-                  ].map((m, i) => (
-                      <motion.div 
-                        key={i}
-                        initial={{ opacity: 0, y: 30 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ delay: i * 0.2 }}
-                        className="relative z-10 bg-slate-50 dark:bg-[#020617] border border-slate-200 dark:border-white/10 p-6 rounded-2xl text-center hover:border-blue-400 dark:hover:border-[#00E5FF]/50 transition-colors group shadow-sm"
-                      >
-                          <div className="w-16 h-16 mx-auto bg-gradient-to-br from-white to-slate-100 dark:from-indigo-900 dark:to-slate-900 rounded-full flex items-center justify-center text-blue-600 dark:text-[#00E5FF] mb-6 shadow-lg shadow-blue-500/10 dark:shadow-indigo-500/10 group-hover:scale-110 transition-transform border border-slate-100 dark:border-white/5">
-                              <m.icon size={28} />
+      {/* --- IMAGE GRID SECTION: VERTICALS --- */}
+      <section className="bg-premium-black">
+          <div className="grid grid-cols-1 lg:grid-cols-3">
+              {[
+                  { title: "CBSE", img: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1000", path: "/cbse" },
+                  { title: "ICSE", img: "https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?q=80&w=1000", path: "/icse" },
+                  { title: "STATE", img: "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?q=80&w=1000", path: "/state-board" }
+              ].map((vert, i) => (
+                  <Link to={vert.path} key={i} className="relative h-[70vh] md:h-[90vh] group overflow-hidden border-r last:border-0 border-white/5">
+                      <img src={vert.img} alt={vert.title} className="w-full h-full object-cover grayscale opacity-40 group-hover:scale-105 group-hover:grayscale-0 transition-all duration-1000" />
+                      <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors duration-700" />
+                      <div className="absolute bottom-16 left-12">
+                          <h3 className="text-5xl md:text-7xl font-light text-white uppercase tracking-tight serif-font mb-4">{vert.title}</h3>
+                          <div className="text-white/40 text-[10px] font-bold uppercase tracking-[0.4em] group-hover:text-premium-accent transition-colors">
+                             Explore Tracks
                           </div>
-                          <div className="text-5xl font-[Poppins] font-black text-slate-200 dark:text-white/5 absolute top-2 right-4 pointer-events-none">{m.step}</div>
-                          <h4 className="text-xl font-bold text-slate-800 dark:text-white mb-2">{m.title}</h4>
-                          <p className="text-sm text-slate-500 dark:text-gray-400">{m.desc}</p>
-                      </motion.div>
-                  ))}
-              </div>
+                      </div>
+                  </Link>
+              ))}
+          </div>
+      </section>
+
+      {/* --- QUOTE SECTION --- */}
+      <section className="py-40 md:py-60 px-6 text-center">
+          <div className="max-w-[1000px] mx-auto">
+              <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }}>
+                  <p className="text-2xl md:text-5xl serif-font font-light italic leading-snug luxury-text-gradient mb-12">
+                    "The PC-24 truly is a unicorn, there is no other platform which comes remotely close to the growth at Shriya's."
+                  </p>
+                  <p className="text-xs font-bold uppercase tracking-[0.6em] text-white/30">
+                    S. Mehta, Academic Lead
+                  </p>
+              </motion.div>
           </div>
       </section>
       
-      {/* --- FOOTER --- */}
       <Footer />
-
-      {/* --- ENQUIRY MODAL --- */}
-      <AnimatePresence>
-        {isEnquiryModalOpen && (
-            <motion.div 
-                initial={{ opacity: 0 }} 
-                animate={{ opacity: 1 }} 
-                exit={{ opacity: 0 }} 
-                className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
-            >
-                <motion.div 
-                    initial={{ scale: 0.9, y: 20 }} 
-                    animate={{ scale: 1, y: 0 }} 
-                    exit={{ scale: 0.9, y: 20 }} 
-                    className="bg-white dark:bg-[#0B1120] rounded-3xl border border-slate-200 dark:border-[#00E5FF]/20 shadow-2xl dark:shadow-[0_0_50px_rgba(0,229,255,0.1)] w-full max-w-2xl overflow-hidden relative"
-                >
-                    <button onClick={closeEnquiryModal} className="absolute top-4 right-4 text-slate-400 dark:text-gray-500 hover:text-slate-800 dark:hover:text-white transition-colors z-20"><X size={24} /></button>
-                    
-                    {enquirySubmitted ? (
-                        <div className="p-12 text-center flex flex-col items-center justify-center min-h-[400px]">
-                            <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="w-24 h-24 bg-blue-100 dark:bg-[#00E5FF]/10 rounded-full flex items-center justify-center text-blue-600 dark:text-[#00E5FF] mb-6">
-                                <CheckCircle2 size={48} />
-                            </motion.div>
-                            <h3 className="text-3xl font-bold text-slate-800 dark:text-white mb-4 font-[Poppins]">Thank You!</h3>
-                            <p className="text-slate-500 dark:text-gray-400 max-w-md">Your enquiry has been received. Our team will connect with you at your preferred time.</p>
-                            <button onClick={closeEnquiryModal} className="mt-8 px-8 py-3 bg-blue-600 dark:bg-[#00E5FF] text-white dark:text-[#020617] font-bold rounded-xl hover:bg-blue-700 dark:hover:bg-cyan-400 transition-colors">Close</button>
-                        </div>
-                    ) : (
-                        <div className="flex flex-col h-full max-h-[90vh]">
-                            <div className="p-6 md:p-8 bg-slate-50 dark:bg-[#020617] border-b border-slate-200 dark:border-white/5">
-                                <h3 className="text-2xl font-bold text-slate-800 dark:text-white font-[Poppins] flex items-center gap-3">
-                                    <MessageCircle className="text-blue-600 dark:text-[#00E5FF]" /> Admission Enquiry
-                                </h3>
-                                <p className="text-slate-500 dark:text-gray-500 text-sm mt-1">Fill in the details below to start your journey with us.</p>
-                            </div>
-                            
-                            <div className="overflow-y-auto p-6 md:p-8 custom-scrollbar space-y-6">
-                                <form id="enquiryForm" onSubmit={handleEnquirySubmit} className="space-y-5">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                        <div className="space-y-1">
-                                            <label className="text-xs font-bold text-slate-500 dark:text-gray-500 uppercase">Student Name</label>
-                                            <input required className="w-full bg-white dark:bg-[#020617] border border-slate-300 dark:border-white/10 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:border-blue-500 dark:focus:border-[#00E5FF] focus:ring-1 focus:ring-blue-500 dark:focus:ring-[#00E5FF] outline-none transition-colors" placeholder="Child's Name" value={enquiryForm.studentName} onChange={e => setEnquiryForm({...enquiryForm, studentName: e.target.value})} />
-                                        </div>
-                                        <div className="space-y-1">
-                                            <label className="text-xs font-bold text-slate-500 dark:text-gray-500 uppercase">Your Name</label>
-                                            <input required className="w-full bg-white dark:bg-[#020617] border border-slate-300 dark:border-white/10 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:border-blue-500 dark:focus:border-[#00E5FF] focus:ring-1 focus:ring-blue-500 dark:focus:ring-[#00E5FF] outline-none transition-colors" placeholder="Parent/Guardian Name" value={enquiryForm.parentName} onChange={e => setEnquiryForm({...enquiryForm, parentName: e.target.value})} />
-                                        </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                        <div className="space-y-1">
-                                            <label className="text-xs font-bold text-slate-500 dark:text-gray-500 uppercase">Relation with Student</label>
-                                            <select required className="w-full bg-white dark:bg-[#020617] border border-slate-300 dark:border-white/10 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:border-blue-500 dark:focus:border-[#00E5FF] focus:ring-1 focus:ring-blue-500 dark:focus:ring-[#00E5FF] outline-none transition-colors" value={enquiryForm.relation} onChange={e => setEnquiryForm({...enquiryForm, relation: e.target.value})}>
-                                                <option value="" disabled>Select Relation</option>
-                                                <option value="Father">Father</option>
-                                                <option value="Mother">Mother</option>
-                                                <option value="Guardian">Guardian</option>
-                                            </select>
-                                        </div>
-                                        <div className="space-y-1">
-                                            <label className="text-xs font-bold text-slate-500 dark:text-gray-500 uppercase">Grade Applying For</label>
-                                            <select required className="w-full bg-white dark:bg-[#020617] border border-slate-300 dark:border-white/10 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:border-blue-500 dark:focus:border-[#00E5FF] focus:ring-1 focus:ring-blue-500 dark:focus:ring-[#00E5FF] outline-none transition-colors" value={enquiryForm.grade} onChange={e => setEnquiryForm({...enquiryForm, grade: e.target.value})}>
-                                                <option value="" disabled>Select Grade</option>
-                                                {[1,2,3,4,5,6,7,8].map(g => <option key={g} value={`Grade ${g}`}>Grade {g}</option>)}
-                                            </select>
-                                        </div>
-                                    </div>
-                                    
-                                    <div className="space-y-1">
-                                        <label className="text-xs font-bold text-slate-500 dark:text-gray-500 uppercase">Current School Name</label>
-                                        <input required className="w-full bg-white dark:bg-[#020617] border border-slate-300 dark:border-white/10 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:border-blue-500 dark:focus:border-[#00E5FF] focus:ring-1 focus:ring-blue-500 dark:focus:ring-[#00E5FF] outline-none transition-colors" placeholder="School Name" value={enquiryForm.schoolName} onChange={e => setEnquiryForm({...enquiryForm, schoolName: e.target.value})} />
-                                    </div>
-
-                                    <div className="bg-slate-50 dark:bg-[#020617] p-5 rounded-xl border border-slate-200 dark:border-white/10 space-y-4">
-                                        <label className="block text-sm font-bold text-slate-700 dark:text-gray-300">Is your child already getting coaching somewhere?</label>
-                                        <div className="flex gap-6">
-                                            <label className="flex items-center gap-2 cursor-pointer group">
-                                                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${enquiryForm.hasCoaching === true ? 'border-blue-500 dark:border-[#00E5FF]' : 'border-slate-400 dark:border-gray-500 group-hover:border-slate-600 dark:group-hover:border-gray-300'}`}>
-                                                    {enquiryForm.hasCoaching === true && <div className="w-2.5 h-2.5 rounded-full bg-blue-500 dark:bg-[#00E5FF]" />}
-                                                </div>
-                                                <input type="radio" name="coaching" className="hidden" checked={enquiryForm.hasCoaching === true} onChange={() => setEnquiryForm({...enquiryForm, hasCoaching: true, reason: ''})} />
-                                                <span className="text-slate-700 dark:text-gray-300 group-hover:text-black dark:group-hover:text-white">Yes</span>
-                                            </label>
-                                            <label className="flex items-center gap-2 cursor-pointer group">
-                                                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${enquiryForm.hasCoaching === false ? 'border-blue-500 dark:border-[#00E5FF]' : 'border-slate-400 dark:border-gray-500 group-hover:border-slate-600 dark:group-hover:border-gray-300'}`}>
-                                                    {enquiryForm.hasCoaching === false && <div className="w-2.5 h-2.5 rounded-full bg-blue-500 dark:bg-[#00E5FF]" />}
-                                                </div>
-                                                <input type="radio" name="coaching" className="hidden" checked={enquiryForm.hasCoaching === false} onChange={() => setEnquiryForm({...enquiryForm, hasCoaching: false, reason: ''})} />
-                                                <span className="text-slate-700 dark:text-gray-300 group-hover:text-black dark:group-hover:text-white">No</span>
-                                            </label>
-                                        </div>
-                                        
-                                        {enquiryForm.hasCoaching !== null && (
-                                            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="pt-2">
-                                                <label className="text-xs font-bold text-blue-600 dark:text-[#00E5FF] uppercase block mb-1">
-                                                    {enquiryForm.hasCoaching ? "Reason for Shifting" : "Reason for Tuition from us"}
-                                                </label>
-                                                <input required className="w-full bg-white dark:bg-[#0B1120] border border-slate-300 dark:border-white/10 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:border-blue-500 dark:focus:border-[#00E5FF] outline-none" placeholder={enquiryForm.hasCoaching ? "Why do you want to change?" : "Why are you looking for tuition?"} value={enquiryForm.reason} onChange={e => setEnquiryForm({...enquiryForm, reason: e.target.value})} />
-                                            </motion.div>
-                                        )}
-                                    </div>
-
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                        <div className="space-y-1">
-                                            <label className="text-xs font-bold text-slate-500 dark:text-gray-500 uppercase">Mobile Number</label>
-                                            <input required type="tel" className="w-full bg-white dark:bg-[#020617] border border-slate-300 dark:border-white/10 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:border-blue-500 dark:focus:border-[#00E5FF] focus:ring-1 focus:ring-blue-500 dark:focus:ring-[#00E5FF] outline-none transition-colors" placeholder="10-digit Mobile" value={enquiryForm.mobile} onChange={e => setEnquiryForm({...enquiryForm, mobile: e.target.value})} />
-                                        </div>
-                                        <div className="space-y-1">
-                                            <label className="text-xs font-bold text-slate-500 dark:text-gray-500 uppercase">Right Time to Connect</label>
-                                            <input required type="text" className="w-full bg-white dark:bg-[#020617] border border-slate-300 dark:border-white/10 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:border-blue-500 dark:focus:border-[#00E5FF] focus:ring-1 focus:ring-blue-500 dark:focus:ring-[#00E5FF] outline-none transition-colors" placeholder="e.g. After 6 PM" value={enquiryForm.connectTime} onChange={e => setEnquiryForm({...enquiryForm, connectTime: e.target.value})} />
-                                        </div>
-                                    </div>
-                                </form>
-                            </div>
-                            
-                            <div className="p-6 border-t border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-[#020617]/50 flex justify-end">
-                                <button type="submit" form="enquiryForm" className="bg-gradient-to-r from-blue-600 to-cyan-600 dark:from-[#00E5FF] dark:to-cyan-600 text-white dark:text-[#020617] px-8 py-3 rounded-xl font-bold hover:shadow-lg dark:hover:shadow-[0_0_20px_rgba(0,229,255,0.4)] transition-all flex items-center gap-2">
-                                    Submit Enquiry <Send size={18} />
-                                </button>
-                            </div>
-                        </div>
-                    )}
-                </motion.div>
-            </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 };

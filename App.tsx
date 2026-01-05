@@ -1,4 +1,4 @@
-import React, { Component, createContext, useContext, useEffect, useState, ErrorInfo, Suspense } from 'react';
+import React, { createContext, useContext, useEffect, useState, ErrorInfo, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import PublicHome from './pages/PublicHome';
@@ -25,9 +25,16 @@ interface ErrorBoundaryState {
   hasError: boolean;
 }
 
-// Fixed ErrorBoundary by explicitly extending React.Component with props and state types to resolve 'props' not found error
+// Explicitly extending React.Component with props and state interfaces to fix TS errors regarding 'state' and 'props'
 class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  public state: ErrorBoundaryState = { hasError: false };
+  // Fix: Explicitly declare state and props to resolve "Property does not exist on type 'ErrorBoundary'" errors.
+  state: ErrorBoundaryState;
+  props: ErrorBoundaryProps;
+
+  constructor(props: ErrorBoundaryProps) {
+    super(props);
+    this.state = { hasError: false };
+  }
 
   static getDerivedStateFromError(_: Error): ErrorBoundaryState {
     return { hasError: true };
@@ -38,6 +45,7 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
   }
 
   render() {
+    // Accessing this.state which is now correctly inherited from React.Component
     if (this.state.hasError) {
       return (
         <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-[#020617] text-slate-800 dark:text-white p-4 font-sans">
@@ -55,7 +63,7 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
         </div>
       );
     }
-    // Fixed: Correctly accessing children from this.props which is now properly typed via React.Component inheritance
+    // Accessing this.props which is now correctly inherited from React.Component
     return this.props.children;
   }
 }
