@@ -50,11 +50,15 @@ const TeacherDashboard: React.FC = () => {
             }
         }
         loadSubs();
+        // Subscribe to subdivisions to get live updates
+        const sub = db.subscribe('subdivisions', loadSubs);
+        return () => db.unsubscribe(sub);
     }, [selectedGradeId, selectedDivisionId]);
 
     const handleLogout = () => { sessionStorage.removeItem('sc_user'); navigate('/'); };
 
     const selectedDivision = availableSubdivisions.find(s => s.id === selectedDivisionId);
+    const selectedGrade = grades.find(g => g.id === selectedGradeId);
 
     return (
         <div className="min-h-screen bg-slate-50 relative font-sans flex flex-col">
@@ -92,7 +96,7 @@ const TeacherDashboard: React.FC = () => {
                 <AnimatePresence mode="wait">
                     <motion.div key={activeTab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
                         {activeTab === 'attendance' && <AttendanceModule gradeId={selectedGradeId} divisionId={selectedDivisionId} />}
-                        {activeTab === 'live' && <LiveManagementModule division={selectedDivision} userName={user?.username || ''} />}
+                        {activeTab === 'live' && <LiveManagementModule division={selectedDivision} gradeName={selectedGrade?.gradeName || ''} userName={user?.username || ''} />}
                         {activeTab === 'homework' && <HomeworkModule gradeId={selectedGradeId} divisionId={selectedDivisionId} teacherId={user?.id || ''} />}
                         {activeTab === 'notes' && <NotesModule gradeId={selectedGradeId} divisionId={selectedDivisionId} teacherId={user?.id || ''} />}
                         {activeTab === 'exams' && <ExamBuilderModule gradeId={selectedGradeId} divisionId={selectedDivisionId} teacherId={user?.id || ''} />}
@@ -106,12 +110,14 @@ const TeacherDashboard: React.FC = () => {
     );
 };
 
-const LiveManagementModule = ({ division, userName }: { division?: Subdivision, userName: string }) => {
+const LiveManagementModule = ({ division, gradeName, userName }: { division?: Subdivision, gradeName: string, userName: string }) => {
     const [isInMeeting, setIsInMeeting] = useState(false);
+    const [localMeetingId, setLocalMeetingId] = useState<string | null>(null);
     
     const startLive = async () => {
         if (!division) return;
         const meetingId = `ShriyasGurukul_${division.id.replace(/-/g, '')}`;
+        setLocalMeetingId(meetingId); // Set this first so UI triggers immediately
         await db.setLiveStatus(division.id, true, meetingId);
         setIsInMeeting(true);
     };
@@ -119,10 +125,13 @@ const LiveManagementModule = ({ division, userName }: { division?: Subdivision, 
     const stopLive = async () => {
         if (!division) return;
         await db.setLiveStatus(division.id, false);
+        setLocalMeetingId(null);
         setIsInMeeting(false);
     };
 
     if (!division) return <p className="text-center py-20 text-gray-400">Please select a class to go live.</p>;
+
+    const activeMeetingId = localMeetingId || division.liveMeetingId;
 
     return (
         <div className="max-w-4xl mx-auto space-y-6">
@@ -130,10 +139,10 @@ const LiveManagementModule = ({ division, userName }: { division?: Subdivision, 
                  <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 ${division.isLive ? 'bg-red-100 text-red-600 pulse-gold' : 'bg-slate-100 text-slate-400'}`}>
                      <Radio size={40} />
                  </div>
-                 <h3 className="text-2xl font-black mb-2 uppercase tracking-tight">Virtual Classroom</h3>
-                 <p className="text-gray-500 mb-8 font-medium">Class: <span className="font-bold text-indigo-600">Grade {division.gradeId} - {division.divisionName}</span></p>
+                 <h3 className="text-2xl font-black mb-2 uppercase tracking-tight serif-font">Virtual Classroom</h3>
+                 <p className="text-gray-500 mb-8 font-medium">Class: <span className="font-bold text-indigo-600">{gradeName} - {division.divisionName}</span></p>
                  
-                 {!division.isLive ? (
+                 {!division.isLive && !localMeetingId ? (
                     <button onClick={startLive} className="bg-indigo-600 text-white px-10 py-4 rounded-2xl font-black text-lg shadow-xl hover:shadow-indigo-500/20 transition-all flex items-center justify-center gap-3 mx-auto">
                         <Radio size={24}/> Start Live Session
                     </button>
@@ -149,9 +158,9 @@ const LiveManagementModule = ({ division, userName }: { division?: Subdivision, 
                  )}
             </div>
 
-            {isInMeeting && division.liveMeetingId && (
+            {isInMeeting && activeMeetingId && (
                 <JitsiMeeting 
-                    roomName={division.liveMeetingId} 
+                    roomName={activeMeetingId} 
                     userName={userName} 
                     onClose={() => setIsInMeeting(false)} 
                 />
@@ -160,6 +169,7 @@ const LiveManagementModule = ({ division, userName }: { division?: Subdivision, 
     );
 };
 
+// ... remaining modules (AttendanceModule, HomeworkModule, etc) stay the same ...
 const AttendanceModule = ({ gradeId, divisionId }: any) => {
     const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
     const [students, setStudents] = useState<Student[]>([]);
