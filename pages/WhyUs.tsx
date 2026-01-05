@@ -1,10 +1,9 @@
-import React, { useRef, Suspense } from 'react';
+import React, { useRef, Suspense, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Float, Environment, ContactShadows, Stars, PerspectiveCamera, MeshWobbleMaterial, TorusKnot, Cylinder } from '@react-three/drei';
 import * as THREE from 'three';
 import { Heart, Brain, Zap, GraduationCap, Users, Sparkles, Quote } from 'lucide-react';
-import ThreeOrb from '../components/ThreeOrb';
 import Footer from '../components/Footer';
 
 const WisdomScene = () => {
@@ -33,6 +32,17 @@ const WisdomScene = () => {
 };
 
 const WhyUs: React.FC = () => {
+  const [webglSupported, setWebglSupported] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    try {
+      const canvas = document.createElement('canvas');
+      setWebglSupported(!!(canvas.getContext('webgl') || canvas.getContext('experimental-webgl')));
+    } catch (e) {
+      setWebglSupported(false);
+    }
+  }, []);
+
   const pillars = [
     { id: "01", title: "Gurukul Heritage", desc: "Mentor-shishya relationship where character and values are taught alongside subjects. Max 12 students per batch.", icon: Heart, color: "text-rose-400", bg: "bg-rose-400/10" },
     { id: "02", title: "Life-long Learning", desc: "We prioritize 'Learning for Life' over memorization. Our 'Why' and 'How' approach fosters analytical thinking.", icon: Brain, color: "text-indigo-400", bg: "bg-indigo-400/10" },
@@ -44,15 +54,19 @@ const WhyUs: React.FC = () => {
     <div className="min-h-screen bg-premium-black text-white selection:bg-premium-accent selection:text-black overflow-x-hidden">
       <section className="relative min-h-screen flex flex-col items-center justify-center pt-24 overflow-hidden">
         <div className="absolute inset-0 z-0">
-          <Canvas>
-            <Suspense fallback={null}>
-                <PerspectiveCamera makeDefault position={[0, 0, 10]} />
-                <ambientLight intensity={0.5} />
-                <pointLight position={[10, 10, 10]} intensity={1.5} color="#6366f1" />
-                <WisdomScene />
-                <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
-            </Suspense>
-          </Canvas>
+          {webglSupported ? (
+            <Canvas onError={() => setWebglSupported(false)}>
+              <Suspense fallback={null}>
+                  <PerspectiveCamera makeDefault position={[0, 0, 10]} />
+                  <ambientLight intensity={0.5} />
+                  <pointLight position={[10, 10, 10]} intensity={1.5} color="#6366f1" />
+                  <WisdomScene />
+                  <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
+              </Suspense>
+            </Canvas>
+          ) : (
+            <div className="absolute inset-0 bg-gradient-to-tr from-indigo-950/30 to-black" />
+          )}
         </div>
         <div className="relative z-10 text-center px-6 max-w-5xl">
             <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1 }}>
@@ -69,7 +83,6 @@ const WhyUs: React.FC = () => {
             </motion.div>
         </div>
       </section>
-
       <section className="py-40 relative px-6">
         <div className="max-w-7xl mx-auto relative z-10">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-24 items-center">
@@ -98,7 +111,6 @@ const WhyUs: React.FC = () => {
             </div>
         </div>
       </section>
-
       <section className="py-40 bg-premium-black relative">
           <div className="max-w-7xl mx-auto px-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-10">

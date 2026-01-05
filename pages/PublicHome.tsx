@@ -39,7 +39,6 @@ const PublicHome: React.FC = () => {
   };
 
   const closeEnquiryModal = () => { setIsEnquiryModalOpen(false); setEnquirySubmitted(false); };
-
   const marqueeNotices = [...notices, ...notices, ...notices, ...notices];
 
   return (
@@ -49,7 +48,7 @@ const PublicHome: React.FC = () => {
       <section className="relative h-screen flex flex-col items-center justify-center overflow-hidden px-6">
         <motion.div style={{ opacity: opacityHero }} className="absolute inset-0 z-0">
           <ThreeHero />
-          <div className="absolute inset-0 bg-black/40" />
+          <div className="absolute inset-0 bg-black/50" />
         </motion.div>
         
         <div className="max-w-[1400px] w-full mx-auto relative z-10 text-center">
@@ -57,23 +56,23 @@ const PublicHome: React.FC = () => {
                 initial={{ opacity: 0, y: 40 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 1.5, ease: [0.77, 0, 0.175, 1] }}
+                className="flex flex-col items-center"
              >
-                {/* Headline moved further down using mt-20/mt-32 */}
-                <h1 className="mt-32 text-5xl md:text-[8rem] font-light leading-[1] tracking-tight serif-font uppercase mb-20 luxury-text-gradient">
+                <h1 className="mt-20 text-5xl md:text-[8rem] font-light leading-[1] tracking-tight serif-font uppercase mb-16 luxury-text-gradient">
                   Your Future <br /> Crafted Here.
                 </h1>
 
-                <div className="flex flex-col sm:flex-row justify-center items-center gap-6 md:gap-12 mb-20">
+                <div className="mb-16">
                   <button 
                     onClick={() => setIsEnquiryModalOpen(true)}
-                    className="group text-white text-[11px] font-bold uppercase tracking-[0.5em] flex items-center gap-4 hover:text-premium-accent transition-all bg-white/5 px-8 py-4 rounded-full border border-white/10 hover:border-premium-accent/40"
+                    className="group bg-white text-black px-10 py-5 rounded-full font-black text-xs uppercase tracking-[0.4em] hover:bg-premium-accent transition-all flex items-center gap-4 shadow-2xl"
                   >
-                    Enroll Now <ArrowRight size={14} className="group-hover:translate-x-2 transition-transform"/>
+                    Enroll Now <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform"/>
                   </button>
                 </div>
 
                 {/* Status Ticker */}
-                <div className="w-full max-w-4xl mx-auto border-y border-white/5 bg-black/20 backdrop-blur-sm py-5 overflow-hidden">
+                <div className="w-full max-w-4xl mx-auto border-y border-white/5 bg-black/30 backdrop-blur-md py-5 overflow-hidden">
                      <div className="flex animate-marquee whitespace-nowrap">
                         {marqueeNotices.length > 0 ? marqueeNotices.map((notice, idx) => (
                             <div key={idx} className="flex items-center mx-16">
@@ -92,20 +91,19 @@ const PublicHome: React.FC = () => {
         </div>
       </section>
 
-      {/* Enquiry Modal */}
       <AnimatePresence>
         {isEnquiryModalOpen && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[200] flex items-center justify-center bg-black/90 p-4 backdrop-blur-md">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[200] flex items-center justify-center bg-black/95 p-4 backdrop-blur-xl">
                 <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9 }} className="bg-premium-black border border-white/10 rounded-[40px] w-full max-w-2xl overflow-hidden relative">
                     <button onClick={closeEnquiryModal} className="absolute top-8 right-8 text-white/40 hover:text-white transition-colors z-20"><X size={24}/></button>
-                    <div className="p-12">
+                    <div className="p-10 md:p-14">
                         {enquirySubmitted ? (
                             <div className="text-center py-20"><h3 className="text-4xl serif-font uppercase mb-4 luxury-text-gradient">Thank You.</h3><p className="text-white/40 uppercase tracking-widest text-xs font-bold">We will connect with you shortly.</p></div>
                         ) : (
                             <form onSubmit={handleEnquirySubmit} className="space-y-6 text-left">
                                 <div className="inline-flex items-center gap-2 mb-2">
                                   <Sparkles size={14} className="text-premium-accent" />
-                                  <span className="text-[10px] font-black uppercase tracking-widest text-white/30">Academic Session 2025</span>
+                                  <span className="text-[10px] font-black uppercase tracking-widest text-white/30">Session 2025-26</span>
                                 </div>
                                 <h3 className="text-3xl serif-font uppercase mb-8 luxury-text-gradient">Enquiry Form</h3>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -113,10 +111,9 @@ const PublicHome: React.FC = () => {
                                     <input required placeholder="Parent Name" className="w-full bg-white/5 border border-white/5 rounded-xl px-5 py-4 outline-none focus:border-premium-accent text-sm text-white" value={enquiryForm.parentName} onChange={e => setEnquiryForm({...enquiryForm, parentName: e.target.value})} />
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <input required placeholder="Grade/Class" className="w-full bg-white/5 border border-white/5 rounded-xl px-5 py-4 outline-none focus:border-premium-accent text-sm text-white" value={enquiryForm.grade} onChange={e => setEnquiryForm({...enquiryForm, grade: e.target.value})} />
+                                    <input required placeholder="Grade" className="w-full bg-white/5 border border-white/5 rounded-xl px-5 py-4 outline-none focus:border-premium-accent text-sm text-white" value={enquiryForm.grade} onChange={e => setEnquiryForm({...enquiryForm, grade: e.target.value})} />
                                     <input required type="tel" placeholder="Mobile Number" className="w-full bg-white/5 border border-white/5 rounded-xl px-5 py-4 outline-none focus:border-premium-accent text-sm text-white" value={enquiryForm.mobile} onChange={e => setEnquiryForm({...enquiryForm, mobile: e.target.value})} />
                                 </div>
-                                <textarea placeholder="Any specific requirements?" className="w-full bg-white/5 border border-white/5 rounded-xl px-5 py-4 outline-none focus:border-premium-accent text-sm text-white h-24 resize-none" value={enquiryForm.reason} onChange={e => setEnquiryForm({...enquiryForm, reason: e.target.value})} />
                                 <button type="submit" className="w-full py-5 bg-white text-black font-black uppercase tracking-[0.4em] rounded-xl hover:bg-premium-accent transition-all text-xs">Submit Application</button>
                             </form>
                         )}
@@ -126,7 +123,6 @@ const PublicHome: React.FC = () => {
         )}
       </AnimatePresence>
 
-      {/* Philosophy Section */}
       <section className="py-32 md:py-60 px-6">
           <div className="max-w-[1200px] mx-auto text-center md:text-left">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-24 items-start">
@@ -147,7 +143,6 @@ const PublicHome: React.FC = () => {
           </div>
       </section>
 
-      {/* Grid Section */}
       <section className="bg-premium-black">
           <div className="grid grid-cols-1 lg:grid-cols-3">
               {[

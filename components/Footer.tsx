@@ -9,8 +9,8 @@ const Footer: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-20">
           
           <div className="lg:col-span-1">
-             <div className="flex items-center gap-4 mb-10">
-                <img src="https://advedasolutions.in/sc.png" alt="Shriya's" className="h-16 w-auto invert brightness-0" />
+             <div className="mb-10">
+                <img src="https://advedasolutions.in/sc.png" alt="Logo" className="h-20 w-auto invert brightness-0" />
              </div>
              <p className="text-[10px] font-bold uppercase tracking-[0.3em] leading-loose max-w-xs text-white/40">
                Excellence in Primary and Middle school education. Redefining academic standards through surgical precision in coaching.
@@ -64,10 +64,9 @@ const Footer: React.FC = () => {
               <a href="#" className="text-white/40 hover:text-premium-accent transition-colors"><Facebook size={20} strokeWidth={1} /></a>
            </div>
 
-           <p className="text-[9px] font-bold uppercase tracking-[0.6em] text-white/30">&copy; 2025 Shriya's Academic Group. All Rights Reserved.</p>
+           <p className="text-[9px] font-bold uppercase tracking-[0.6em] text-white/30">&copy; 2025. All Rights Reserved.</p>
 
            <a href="https://www.advedasolutions.in" target="_blank" rel="noreferrer" className="flex items-center gap-3 group opacity-50 hover:opacity-100 transition-opacity">
-              <span className="text-[9px] font-bold uppercase tracking-[0.4em] text-white/40">Propelled by</span>
               <img src="https://advedasolutions.in/logo.png" alt="Adveda" className="h-4 w-auto grayscale brightness-200" />
            </a>
         </div>
