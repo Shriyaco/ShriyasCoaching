@@ -46,15 +46,15 @@ const WhyUs: React.FC = () => {
   }, []);
 
   const pillars = [
-    { id: "01", title: "Gurukul Heritage", desc: "Mentor-shishya relationship where character and values are taught alongside subjects. Max 12 students per batch.", icon: Heart, color: "text-rose-400", bg: "bg-rose-400/10" },
-    { id: "02", title: "Life-long Learning", desc: "We prioritize 'Learning for Life' over memorization. Our 'Why' and 'How' approach fosters analytical thinking.", icon: Brain, color: "text-indigo-400", bg: "bg-indigo-400/10" },
-    { id: "03", title: "Customized Notes", desc: "Tailored educational material for CBSE, ICSE, and State Boards prepared by our core academic council.", icon: GraduationCap, color: "text-cyan-400", bg: "bg-cyan-400/10" },
-    { id: "04", title: "Modern SMS Tech", desc: "Live portal for homework, exams, and attendance. Total transparency for parents through technology.", icon: Zap, color: "text-amber-400", bg: "bg-amber-400/10" }
+    { id: "01", title: "Gurukul Heritage", desc: "Mentor-shishya relationship where character and values are taught alongside subjects. Max 12 students per batch.", icon: Heart, color: "text-rose-400" },
+    { id: "02", title: "Life-long Learning", desc: "We prioritize 'Learning for Life' over memorization. Our 'Why' and 'How' approach fosters analytical thinking.", icon: Brain, color: "text-indigo-400" },
+    { id: "03", title: "Customized Notes", desc: "Tailored educational material for CBSE, ICSE, and State Boards prepared by our core academic council.", icon: GraduationCap, color: "text-cyan-400" },
+    { id: "04", title: "Modern SMS Tech", desc: "Live portal for homework, exams, and attendance. Total transparency for parents through technology.", icon: Zap, color: "text-amber-400" }
   ];
 
   return (
     <div className="min-h-screen bg-premium-black text-white selection:bg-premium-accent selection:text-black overflow-x-hidden">
-      <section className="relative min-h-screen flex flex-col items-center justify-center pt-24 overflow-hidden">
+      <section className="relative min-h-[85vh] flex flex-col items-center justify-center pt-24 overflow-hidden">
         <div className="absolute inset-0 z-0">
           {webglSupported ? (
             <Canvas 
@@ -74,43 +74,43 @@ const WhyUs: React.FC = () => {
                 <div className="pseudo-3d-orb opacity-30 blur-[4px] scale-[3]" style={{ background: 'radial-gradient(circle at 30% 30%, #6366f1, #4f46e5 20%, #1a1a2e 50%, #000 100%)' }} />
             </div>
           )}
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px]" />
         </div>
         <div className="relative z-10 text-center px-6 max-w-5xl">
             <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1 }}>
-                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-500/10 border border-white/5 mb-8 backdrop-blur-xl">
+                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-500/10 border border-white/10 mb-8 backdrop-blur-xl">
                     <Sparkles size={14} className="text-indigo-400" />
-                    <span className="text-white/40 text-[9px] font-bold tracking-[0.4em] uppercase">The Shriya's Difference</span>
+                    <span className="text-white/40 text-[9px] font-black tracking-[0.4em] uppercase">The Difference</span>
                 </div>
-                <h1 className="text-7xl md:text-[9rem] font-light serif-font uppercase mb-8 leading-[0.85] tracking-tight luxury-text-gradient">
+                <h1 className="text-6xl md:text-[9rem] font-light serif-font uppercase mb-8 leading-[0.85] tracking-tight luxury-text-gradient">
                     Deep <br /> Integrity.
                 </h1>
-                <p className="text-sm md:text-lg text-white/50 max-w-3xl mx-auto leading-relaxed tracking-widest uppercase">
-                   Combining the ancient wisdom of the Gurukul tradition with the cutting-edge tech of tomorrow.
+                <p className="text-sm md:text-lg text-white/50 max-w-3xl mx-auto leading-relaxed tracking-[0.2em] uppercase font-bold">
+                   Combining ancient wisdom with the tech of tomorrow.
                 </p>
             </motion.div>
         </div>
       </section>
-      <section className="py-40 relative px-6">
+
+      <section className="py-24 md:py-32 relative px-6">
         <div className="max-w-7xl mx-auto relative z-10">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-24 items-center">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
                 <motion.div initial={{ opacity: 0, x: -30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}>
-                    <h2 className="text-4xl md:text-7xl font-light serif-font uppercase tracking-tight mb-10 leading-none">
+                    <h2 className="text-4xl md:text-7xl font-light serif-font uppercase tracking-tight mb-8 leading-none">
                         Our <br/><span className="text-premium-accent">Roots</span>
                     </h2>
-                    <p className="text-lg md:text-xl text-white/40 mb-10 font-light leading-loose">
-                        Unlike conventional centers, we follow a philosophy where the teacher is a mentor. We build character and discipline alongside academic excellence.
+                    <p className="text-lg md:text-xl text-white/40 mb-10 font-light leading-loose max-w-lg">
+                        Building character and discipline alongside academic excellence. Every child receives 1-on-1 guidance during critical years.
                     </p>
-                    <div className="space-y-4">
-                        <div className="flex gap-6 p-8 rounded-[40px] bg-white/5 border border-white/5 hover:border-premium-accent/30 transition-all">
-                            <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center text-premium-accent shrink-0"><Users size={32}/></div>
-                            <div><h4 className="font-bold text-xl mb-2 serif-font uppercase tracking-wider">Mentor-Shishya Ratio</h4><p className="text-sm text-white/40 leading-relaxed uppercase tracking-widest font-bold">Every child receives 1-on-1 guidance during their critical primary years.</p></div>
-                        </div>
+                    <div className="flex gap-6 p-8 rounded-[40px] bg-white/[0.02] border border-white/5 hover:border-premium-accent/20 transition-all max-w-md">
+                        <div className="w-14 h-14 bg-premium-accent/10 rounded-2xl flex items-center justify-center text-premium-accent shrink-0"><Users size={28}/></div>
+                        <div><h4 className="font-bold text-lg mb-1 serif-font uppercase tracking-wider">Shishya Ratio</h4><p className="text-[10px] text-white/30 uppercase tracking-widest font-black">Max 12 students per batch.</p></div>
                     </div>
                 </motion.div>
                 <div className="relative">
-                    <motion.div initial={{ scale: 0.9 }} whileInView={{ scale: 1 }} className="bg-gradient-to-br from-indigo-950/40 to-black rounded-[60px] p-16 text-white border border-white/5 shadow-2xl relative z-10 overflow-hidden">
+                    <motion.div initial={{ scale: 0.95, opacity: 0 }} whileInView={{ scale: 1, opacity: 1 }} className="bg-gradient-to-br from-indigo-950/20 to-black rounded-[60px] p-12 md:p-16 text-white border border-white/5 shadow-2xl relative z-10 overflow-hidden">
                         <Quote size={80} className="text-white/5 absolute -top-4 -left-4" />
-                        <p className="text-3xl md:text-5xl font-light serif-font leading-tight italic relative z-10">
+                        <p className="text-2xl md:text-4xl font-light serif-font leading-tight italic relative z-10 text-white/80">
                             "To transform each student by providing a culture of excellence and human values."
                         </p>
                     </motion.div>
@@ -118,14 +118,15 @@ const WhyUs: React.FC = () => {
             </div>
         </div>
       </section>
-      <section className="py-40 bg-premium-black relative">
+
+      <section className="py-24 md:py-32 bg-premium-black relative">
           <div className="max-w-7xl mx-auto px-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10">
                   {pillars.map((pillar, i) => (
-                      <motion.div key={i} whileHover={{ y: -10 }} className="p-12 bg-white/5 rounded-[50px] border border-white/5 hover:border-premium-accent/40 transition-all group relative overflow-hidden">
-                          <div className="w-20 h-20 bg-white/5 rounded-3xl flex items-center justify-center mb-10 text-premium-accent"><pillar.icon size={40} /></div>
-                          <h3 className="text-3xl font-light serif-font uppercase mb-6 tracking-tight">{pillar.title}</h3>
-                          <p className="text-sm text-white/40 uppercase tracking-[0.2em] font-bold leading-relaxed">{pillar.desc}</p>
+                      <motion.div key={i} whileHover={{ y: -5 }} className="p-10 bg-white/[0.02] rounded-[40px] border border-white/5 hover:border-premium-accent/20 transition-all group relative overflow-hidden">
+                          <div className={`w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center mb-8 ${pillar.color}`}><pillar.icon size={32} /></div>
+                          <h3 className="text-2xl font-bold serif-font uppercase mb-4 tracking-tight">{pillar.title}</h3>
+                          <p className="text-xs text-white/40 uppercase tracking-[0.1em] font-bold leading-relaxed">{pillar.desc}</p>
                       </motion.div>
                   ))}
               </div>

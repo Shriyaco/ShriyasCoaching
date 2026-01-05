@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Float, Environment, ContactShadows, Stars, PerspectiveCamera, Torus, Sphere, MeshDistortMaterial } from '@react-three/drei';
 import * as THREE from 'three';
-import { Target, Shield, Heart, Sparkles, BookOpen, Quote } from 'lucide-react';
+import { Target, Shield, Heart, Sparkles, BookOpen, Quote, HelpCircle } from 'lucide-react';
 import Footer from '../components/Footer';
 
 const VisionScene = () => {
@@ -49,8 +49,7 @@ const Vision: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-premium-black text-white overflow-x-hidden">
-      <section className="relative min-h-screen flex flex-col items-center justify-center pt-24 overflow-hidden">
-        {/* Background 3D Layer with subtle overlay */}
+      <section className="relative min-h-[85vh] flex flex-col items-center justify-center pt-24 overflow-hidden">
         <div className="absolute inset-0 z-0">
           {webglSupported ? (
             <Canvas onError={() => setWebglSupported(false)}>
@@ -68,24 +67,22 @@ const Vision: React.FC = () => {
           <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" />
         </div>
 
-        {/* Content Layer */}
         <div className="relative z-10 text-center px-6 max-w-5xl">
             <motion.div 
                 initial={{ opacity: 0, y: 20 }} 
                 animate={{ opacity: 1, y: 0 }} 
                 transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
             >
-                <div className="inline-flex items-center gap-2 px-6 py-2 rounded-full bg-cyan-500/5 border border-white/10 mb-8 md:mb-12 backdrop-blur-xl shadow-2xl">
+                <div className="inline-flex items-center gap-2 px-6 py-2 rounded-full bg-cyan-500/5 border border-white/10 mb-8 md:mb-12 backdrop-blur-xl">
                   <Sparkles size={14} className="text-cyan-400" />
                   <span className="text-white/60 text-[9px] font-black tracking-[0.5em] uppercase">The Visionary Core</span>
                 </div>
                 
-                <h1 className="text-5xl md:text-[9rem] font-light serif-font uppercase mb-8 md:mb-12 leading-[1.1] tracking-tight luxury-text-gradient drop-shadow-2xl">
+                <h1 className="text-5xl md:text-[9rem] font-light serif-font uppercase mb-8 md:mb-12 leading-[1.1] tracking-tight luxury-text-gradient">
                   Enlighten <br /> Future.
                 </h1>
                 
                 <div className="relative max-w-2xl mx-auto px-4">
-                    <Quote size={40} className="absolute -top-6 -left-4 text-white/5 md:size-[60px] md:-top-10 md:-left-12" />
                     <p className="text-lg md:text-2xl text-white/70 leading-relaxed font-light italic serif-font">
                       "To be the learning center that bridges ancient wisdom with global excellence."
                     </p>
@@ -94,43 +91,54 @@ const Vision: React.FC = () => {
         </div>
       </section>
 
-      {/* Pillars Section */}
-      <section className="py-32 md:py-48 relative px-6 bg-gradient-to-b from-transparent to-white/[0.02]">
-          <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
+      {/* Pillars Section - Tightened */}
+      <section className="py-24 md:py-32 relative px-6">
+          <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10">
               {missionPillars.map((pillar, i) => (
                   <motion.div 
                     key={i} 
-                    whileHover={{ y: -5, backgroundColor: 'rgba(255,255,255,0.05)' }} 
-                    className="flex flex-col md:flex-row gap-8 p-10 md:p-12 bg-white/[0.02] border border-white/5 rounded-[40px] md:rounded-[50px] transition-all group shadow-sm"
+                    whileHover={{ y: -5 }} 
+                    className="flex flex-col md:flex-row gap-6 p-8 md:p-10 bg-white/[0.03] border border-white/5 rounded-[32px] md:rounded-[40px] transition-all group shadow-sm"
                   >
-                      <div className={`shrink-0 w-20 h-20 md:w-24 md:h-24 bg-white/5 rounded-[28px] md:rounded-[32px] flex items-center justify-center ${pillar.color} shadow-inner`}>
-                        <pillar.icon size={40} md:size={48} strokeWidth={1} />
+                      <div className={`shrink-0 w-16 h-16 md:w-20 md:h-20 bg-white/5 rounded-2xl flex items-center justify-center ${pillar.color}`}>
+                        <pillar.icon size={32} md:size={40} strokeWidth={1.5} />
                       </div>
                       <div>
-                        <h4 className="text-2xl md:text-3xl font-light serif-font uppercase mb-4 tracking-wider">{pillar.title}</h4>
-                        <p className="text-xs md:text-sm text-white/40 uppercase tracking-[0.2em] font-bold leading-relaxed">{pillar.text}</p>
+                        <h4 className="text-xl md:text-2xl font-bold serif-font uppercase mb-2 tracking-wider">{pillar.title}</h4>
+                        <p className="text-xs md:text-sm text-white/40 uppercase tracking-[0.1em] font-bold leading-relaxed">{pillar.text}</p>
                       </div>
                   </motion.div>
               ))}
           </div>
       </section>
 
-      {/* Values Section */}
-      <section className="py-32 md:py-48 bg-white text-premium-black rounded-[60px] md:rounded-[100px] mx-4 md:mx-10 overflow-hidden mb-20">
-          <div className="max-w-7xl mx-auto px-6 text-center">
-              <h2 className="text-6xl md:text-[9rem] font-black leading-none tracking-tighter mb-20 opacity-5 select-none">VALUES</h2>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12 relative z-10 -mt-24 md:-mt-32">
-                   {[ { name: "Excellence", icon: Target }, { name: "Integrity", icon: Shield }, { name: "Curiosity", icon: Target }, { name: "Compassion", icon: Heart } ].map((v, i) => (
-                       <div key={i} className="flex flex-col items-center group">
-                           <div className="w-16 h-16 md:w-20 md:h-20 bg-premium-black text-white rounded-full flex items-center justify-center mb-6 transition-all group-hover:scale-110 shadow-2xl">
-                             <v.icon size={28} md:size={32} />
+      {/* Redesigned Values Container - Exact match to user screenshot layout */}
+      <section className="py-20 md:py-32 px-4 md:px-10 mb-20">
+          <div className="max-w-4xl mx-auto bg-white text-premium-black rounded-[60px] md:rounded-[100px] overflow-hidden relative shadow-[0_40px_100px_rgba(0,0,0,0.4)] py-20 md:py-32">
+              
+              {/* Background watermark text */}
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none overflow-hidden">
+                <h2 className="text-[12rem] md:text-[22rem] font-black tracking-tighter opacity-[0.03] transform scale-125 md:scale-110">VALUES</h2>
+              </div>
+
+              <div className="grid grid-cols-2 gap-y-16 md:gap-y-24 relative z-10">
+                   {[ 
+                      { name: "Excellence", icon: Target }, 
+                      { name: "Integrity", icon: Shield }, 
+                      { name: "Curiosity", icon: HelpCircle }, 
+                      { name: "Compassion", icon: Heart } 
+                   ].map((v, i) => (
+                       <div key={i} className="flex flex-col items-center justify-center text-center px-4">
+                           <div className="w-24 h-24 md:w-32 md:h-32 bg-black text-white rounded-full flex items-center justify-center mb-6 shadow-[0_20px_50px_rgba(0,0,0,0.3)] hover:scale-105 transition-transform duration-500">
+                             <v.icon size={40} md:size={56} strokeWidth={1.5} />
                            </div>
-                           <p className="text-[10px] md:text-xs font-black uppercase tracking-widest">{v.name}</p>
+                           <h4 className="text-sm md:text-lg font-black uppercase tracking-[0.3em] font-sans">{v.name}</h4>
                        </div>
                    ))}
               </div>
           </div>
       </section>
+
       <Footer />
     </div>
   );
