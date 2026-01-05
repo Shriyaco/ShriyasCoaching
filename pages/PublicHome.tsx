@@ -37,7 +37,11 @@ const PublicHome: React.FC = () => {
         const reasonContent = enquiryForm.hasCoaching 
           ? `Coaching: ${enquiryForm.coachingName}. Reason for shift: ${enquiryForm.shiftingReason}`
           : `Expectations: ${enquiryForm.expectations}`;
-        await db.addEnquiry({ ...enquiryForm, hasCoaching: enquiryForm.hasCoaching as boolean, reason: reasonContent }); 
+        await db.addEnquiry({ 
+          ...enquiryForm, 
+          hasCoaching: enquiryForm.hasCoaching as boolean, 
+          reason: reasonContent 
+        }); 
         setEnquirySubmitted(true); 
       } catch (error) { alert("Error submitting. Try again."); }
   };
@@ -93,7 +97,7 @@ const PublicHome: React.FC = () => {
         </div>
       </section>
 
-      {/* Philosophy Section - Tightened */}
+      {/* Philosophy Section */}
       <section className="py-24 md:py-32 px-6">
           <div className="max-w-[1200px] mx-auto text-center md:text-left">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-24 items-start">
@@ -114,7 +118,7 @@ const PublicHome: React.FC = () => {
           </div>
       </section>
 
-      {/* Board Grid Section - Optimized */}
+      {/* Board Grid Section */}
       <section className="bg-premium-black">
           <div className="grid grid-cols-1 lg:grid-cols-3">
               {[
@@ -122,7 +126,7 @@ const PublicHome: React.FC = () => {
                   { title: "ICSE", img: "https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?q=80&w=1000", path: "/icse" },
                   { title: "STATE", img: "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?q=80&w=1000", path: "/state-board" }
               ].map((vert, i) => (
-                  <Link to={vert.path} key={i} className="relative h-[60vh] md:h-[80vh] group overflow-hidden border-r last:border-0 border-white/5">
+                  <Link to={vert.path} key={i} className="relative h-[70vh] md:h-[80vh] group overflow-hidden border-r last:border-0 border-white/5">
                       <img src={vert.img} alt={vert.title} className="w-full h-full object-cover grayscale opacity-20 group-hover:scale-105 group-hover:grayscale-0 group-hover:opacity-40 transition-all duration-1000" />
                       <div className="absolute inset-0 bg-black/40 group-hover:bg-transparent transition-colors duration-700" />
                       <div className="absolute bottom-12 left-10">
@@ -138,7 +142,6 @@ const PublicHome: React.FC = () => {
 
       <Footer />
 
-      {/* ENROLLMENT MODAL remains unchanged as it is a specific separate component behavior */}
       <AnimatePresence>
         {isEnquiryModalOpen && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[200] flex items-center justify-center bg-black/95 p-4 backdrop-blur-xl">
@@ -156,10 +159,63 @@ const PublicHome: React.FC = () => {
                                 </div>
                                 <div className="grid grid-cols-2 gap-3">
                                     <div className="space-y-1"><label className="text-[9px] font-black uppercase text-white/20 ml-1 tracking-wider">Relation</label><select required className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-2.5 outline-none focus:border-premium-accent text-xs text-white appearance-none" value={enquiryForm.relation} onChange={e => setEnquiryForm({...enquiryForm, relation: e.target.value})}><option value="" className="bg-black">Select</option><option value="Father" className="bg-black">Father</option><option value="Mother" className="bg-black">Mother</option><option value="Guardian" className="bg-black">Guardian</option></select></div>
-                                    <div className="space-y-1"><label className="text-[9px] font-black uppercase text-white/20 ml-1 tracking-wider">Grade</label><input required placeholder="e.g. 5th" className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-2.5 outline-none focus:border-premium-accent text-xs text-white" value={enquiryForm.grade} onChange={e => setEnquiryForm({...enquiryForm, grade: e.target.value})} /></div>
+                                    <div className="space-y-1">
+                                      <label className="text-[9px] font-black uppercase text-white/20 ml-1 tracking-wider">Grade</label>
+                                      <select required className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-2.5 outline-none focus:border-premium-accent text-xs text-white appearance-none" value={enquiryForm.grade} onChange={e => setEnquiryForm({...enquiryForm, grade: e.target.value})}>
+                                        <option value="" className="bg-black">Select Grade</option>
+                                        {["1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th"].map(g => (
+                                          <option key={g} value={g} className="bg-black">{g} Grade</option>
+                                        ))}
+                                      </select>
+                                    </div>
                                 </div>
                                 <div className="space-y-1"><label className="text-[9px] font-black uppercase text-white/20 ml-1 tracking-wider">Current School</label><input required placeholder="Name of school" className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-2.5 outline-none focus:border-premium-accent text-xs text-white" value={enquiryForm.schoolName} onChange={e => setEnquiryForm({...enquiryForm, schoolName: e.target.value})} /></div>
-                                <div className="space-y-1"><label className="text-[9px] font-black uppercase text-white/20 ml-1 tracking-wider">Mobile Number</label><input required type="tel" placeholder="10-digit number" className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-2.5 outline-none focus:border-premium-accent text-xs text-white" value={enquiryForm.mobile} onChange={e => setEnquiryForm({...enquiryForm, mobile: e.target.value})} /></div>
+                                
+                                {/* Dynamic Coaching Question */}
+                                <div className="space-y-3 p-3 bg-white/[0.02] border border-white/[0.05] rounded-2xl">
+                                  <label className="text-[9px] font-black uppercase text-white/30 ml-1 tracking-widest">Attending any other coaching?</label>
+                                  <div className="flex gap-6 px-1 mt-1">
+                                      <label className="flex items-center gap-2 cursor-pointer group">
+                                          <input type="radio" name="coaching_main" checked={enquiryForm.hasCoaching === true} onChange={() => setEnquiryForm({...enquiryForm, hasCoaching: true})} className="hidden" />
+                                          <div className={`w-4 h-4 rounded-full border flex items-center justify-center transition-all ${enquiryForm.hasCoaching === true ? 'border-premium-accent bg-premium-accent' : 'border-white/20'}`}>
+                                              {enquiryForm.hasCoaching === true && <div className="w-1.5 h-1.5 bg-black rounded-full" />}
+                                          </div>
+                                          <span className="text-[10px] font-bold uppercase tracking-widest text-white/60 group-hover:text-white">Yes</span>
+                                      </label>
+                                      <label className="flex items-center gap-2 cursor-pointer group">
+                                          <input type="radio" name="coaching_main" checked={enquiryForm.hasCoaching === false} onChange={() => setEnquiryForm({...enquiryForm, hasCoaching: false})} className="hidden" />
+                                          <div className={`w-4 h-4 rounded-full border flex items-center justify-center transition-all ${enquiryForm.hasCoaching === false ? 'border-premium-accent bg-premium-accent' : 'border-white/20'}`}>
+                                              {enquiryForm.hasCoaching === false && <div className="w-1.5 h-1.5 bg-black rounded-full" />}
+                                          </div>
+                                          <span className="text-[10px] font-bold uppercase tracking-widest text-white/60 group-hover:text-white">No</span>
+                                      </label>
+                                  </div>
+                                  
+                                  <AnimatePresence mode="wait">
+                                    {enquiryForm.hasCoaching === true ? (
+                                      <motion.div key="yes" initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="pt-2 overflow-hidden space-y-2">
+                                         <div>
+                                           <label className="text-[8px] font-black uppercase text-white/20 ml-1 mb-1 block">Current Coaching Center Name</label>
+                                           <input required placeholder="Enter coaching name" className="w-full bg-white/5 border border-white/5 rounded-lg px-4 py-2 outline-none focus:border-premium-accent text-xs text-white" value={enquiryForm.coachingName} onChange={e => setEnquiryForm({...enquiryForm, coachingName: e.target.value})} />
+                                         </div>
+                                         <div>
+                                           <label className="text-[8px] font-black uppercase text-white/20 ml-1 mb-1 block">Reason for shifting current classes</label>
+                                           <input required placeholder="Reason for shift..." className="w-full bg-white/5 border border-white/5 rounded-lg px-4 py-2 outline-none focus:border-premium-accent text-xs text-white" value={enquiryForm.shiftingReason} onChange={e => setEnquiryForm({...enquiryForm, shiftingReason: e.target.value})} />
+                                         </div>
+                                      </motion.div>
+                                    ) : enquiryForm.hasCoaching === false ? (
+                                      <motion.div key="no" initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="pt-2 overflow-hidden">
+                                         <label className="text-[8px] font-black uppercase text-white/20 ml-1 mb-1 block">Expectations from us</label>
+                                         <input required placeholder="Your expectations..." className="w-full bg-white/5 border border-white/5 rounded-lg px-4 py-2 outline-none focus:border-premium-accent text-xs text-white" value={enquiryForm.expectations} onChange={e => setEnquiryForm({...enquiryForm, expectations: e.target.value})} />
+                                      </motion.div>
+                                    ) : null}
+                                  </AnimatePresence>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="space-y-1"><label className="text-[9px] font-black uppercase text-white/20 ml-1 tracking-wider">Mobile Number</label><input required type="tel" placeholder="10-digit number" className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-2.5 outline-none focus:border-premium-accent text-xs text-white" value={enquiryForm.mobile} onChange={e => setEnquiryForm({...enquiryForm, mobile: e.target.value})} /></div>
+                                    <div className="space-y-1"><label className="text-[9px] font-black uppercase text-white/20 ml-1 tracking-wider">Preferred Connect Time</label><select required className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-2.5 outline-none focus:border-premium-accent text-xs text-white appearance-none" value={enquiryForm.connectTime} onChange={e => setEnquiryForm({...enquiryForm, connectTime: e.target.value})}><option value="" className="bg-black">Select</option><option value="Morning" className="bg-black">Morning</option><option value="Afternoon" className="bg-black">Afternoon</option><option value="Evening" className="bg-black">Evening</option></select></div>
+                                </div>
                                 <button type="submit" className="w-full py-4 bg-white text-black font-black uppercase tracking-[0.4em] rounded-2xl hover:bg-premium-accent transition-all text-[10px] shadow-xl">Submit Application</button>
                             </form>
                         )}
