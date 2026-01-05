@@ -4,13 +4,16 @@ import ThreeHero from '../components/ThreeHero';
 import Footer from '../components/Footer';
 import { db } from '../services/db';
 import { Notice } from '../types';
-import { ArrowRight } from 'lucide-react';
-import { motion, useScroll, useTransform } from 'framer-motion';
+import { ArrowRight, X, Sparkles } from 'lucide-react';
+import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
 
 const PublicHome: React.FC = () => {
   const [notices, setNotices] = useState<Notice[]>([]);
+  const [isEnquiryModalOpen, setIsEnquiryModalOpen] = useState(false);
+  const [enquirySubmitted, setEnquirySubmitted] = useState(false);
+  const [enquiryForm, setEnquiryForm] = useState({ studentName: '', parentName: '', relation: '', grade: '', schoolName: '', hasCoaching: null as boolean | null, reason: '', mobile: '', connectTime: '' });
+
   const { scrollYProgress } = useScroll();
-  
   const opacityHero = useTransform(scrollYProgress, [0, 0.4], [1, 0]);
 
   useEffect(() => {
@@ -24,6 +27,18 @@ const PublicHome: React.FC = () => {
     }
     load();
   }, []);
+
+  const handleEnquirySubmit = async (e: React.FormEvent) => {
+      e.preventDefault();
+      try { 
+        await db.addEnquiry({ ...enquiryForm, hasCoaching: enquiryForm.hasCoaching ?? false }); 
+        setEnquirySubmitted(true); 
+      } catch (error) { 
+        alert("Error submitting. Try again."); 
+      }
+  };
+
+  const closeEnquiryModal = () => { setIsEnquiryModalOpen(false); setEnquirySubmitted(false); };
 
   const marqueeNotices = [...notices, ...notices, ...notices, ...notices];
 
@@ -43,21 +58,21 @@ const PublicHome: React.FC = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 1.5, ease: [0.77, 0, 0.175, 1] }}
              >
-                <h1 className="text-5xl md:text-[8rem] font-light leading-[1] tracking-tight serif-font uppercase mb-12 luxury-text-gradient">
+                {/* Headline moved further down using mt-20/mt-32 */}
+                <h1 className="mt-32 text-5xl md:text-[8rem] font-light leading-[1] tracking-tight serif-font uppercase mb-20 luxury-text-gradient">
                   Your Future <br /> Crafted Here.
                 </h1>
 
-                <p className="text-sm md:text-lg text-white/60 max-w-2xl mx-auto leading-relaxed tracking-widest uppercase mb-12">
-                  Premium academic coaching for the next generation of global leaders.
-                </p>
-
                 <div className="flex flex-col sm:flex-row justify-center items-center gap-6 md:gap-12 mb-20">
-                  <button className="group text-white text-[11px] font-bold uppercase tracking-[0.5em] flex items-center gap-4 hover:text-premium-accent transition-all">
-                    Discover More <ArrowRight size={14} className="group-hover:translate-x-2 transition-transform"/>
+                  <button 
+                    onClick={() => setIsEnquiryModalOpen(true)}
+                    className="group text-white text-[11px] font-bold uppercase tracking-[0.5em] flex items-center gap-4 hover:text-premium-accent transition-all bg-white/5 px-8 py-4 rounded-full border border-white/10 hover:border-premium-accent/40"
+                  >
+                    Enroll Now <ArrowRight size={14} className="group-hover:translate-x-2 transition-transform"/>
                   </button>
                 </div>
 
-                {/* Status Ticker - Moved to downside of Discover More */}
+                {/* Status Ticker */}
                 <div className="w-full max-w-4xl mx-auto border-y border-white/5 bg-black/20 backdrop-blur-sm py-5 overflow-hidden">
                      <div className="flex animate-marquee whitespace-nowrap">
                         {marqueeNotices.length > 0 ? marqueeNotices.map((notice, idx) => (
@@ -70,13 +85,46 @@ const PublicHome: React.FC = () => {
                         )) : (
                             <div className="flex items-center mx-16 text-white/30 text-[9px] uppercase font-bold tracking-[0.6em]">Academic Session 2024-25 • Admissions Open • Excellence Redefined</div>
                         )}
-                        {/* Duplicate for seamless loop if content is short */}
                         {!marqueeNotices.length && <div className="flex items-center mx-16 text-white/30 text-[9px] uppercase font-bold tracking-[0.6em]">Academic Session 2024-25 • Admissions Open • Excellence Redefined</div>}
                      </div>
                 </div>
              </motion.div>
         </div>
       </section>
+
+      {/* Enquiry Modal */}
+      <AnimatePresence>
+        {isEnquiryModalOpen && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[200] flex items-center justify-center bg-black/90 p-4 backdrop-blur-md">
+                <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9 }} className="bg-premium-black border border-white/10 rounded-[40px] w-full max-w-2xl overflow-hidden relative">
+                    <button onClick={closeEnquiryModal} className="absolute top-8 right-8 text-white/40 hover:text-white transition-colors z-20"><X size={24}/></button>
+                    <div className="p-12">
+                        {enquirySubmitted ? (
+                            <div className="text-center py-20"><h3 className="text-4xl serif-font uppercase mb-4 luxury-text-gradient">Thank You.</h3><p className="text-white/40 uppercase tracking-widest text-xs font-bold">We will connect with you shortly.</p></div>
+                        ) : (
+                            <form onSubmit={handleEnquirySubmit} className="space-y-6 text-left">
+                                <div className="inline-flex items-center gap-2 mb-2">
+                                  <Sparkles size={14} className="text-premium-accent" />
+                                  <span className="text-[10px] font-black uppercase tracking-widest text-white/30">Academic Session 2025</span>
+                                </div>
+                                <h3 className="text-3xl serif-font uppercase mb-8 luxury-text-gradient">Enquiry Form</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <input required placeholder="Student Name" className="w-full bg-white/5 border border-white/5 rounded-xl px-5 py-4 outline-none focus:border-premium-accent text-sm text-white" value={enquiryForm.studentName} onChange={e => setEnquiryForm({...enquiryForm, studentName: e.target.value})} />
+                                    <input required placeholder="Parent Name" className="w-full bg-white/5 border border-white/5 rounded-xl px-5 py-4 outline-none focus:border-premium-accent text-sm text-white" value={enquiryForm.parentName} onChange={e => setEnquiryForm({...enquiryForm, parentName: e.target.value})} />
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <input required placeholder="Grade/Class" className="w-full bg-white/5 border border-white/5 rounded-xl px-5 py-4 outline-none focus:border-premium-accent text-sm text-white" value={enquiryForm.grade} onChange={e => setEnquiryForm({...enquiryForm, grade: e.target.value})} />
+                                    <input required type="tel" placeholder="Mobile Number" className="w-full bg-white/5 border border-white/5 rounded-xl px-5 py-4 outline-none focus:border-premium-accent text-sm text-white" value={enquiryForm.mobile} onChange={e => setEnquiryForm({...enquiryForm, mobile: e.target.value})} />
+                                </div>
+                                <textarea placeholder="Any specific requirements?" className="w-full bg-white/5 border border-white/5 rounded-xl px-5 py-4 outline-none focus:border-premium-accent text-sm text-white h-24 resize-none" value={enquiryForm.reason} onChange={e => setEnquiryForm({...enquiryForm, reason: e.target.value})} />
+                                <button type="submit" className="w-full py-5 bg-white text-black font-black uppercase tracking-[0.4em] rounded-xl hover:bg-premium-accent transition-all text-xs">Submit Application</button>
+                            </form>
+                        )}
+                    </div>
+                </motion.div>
+            </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Philosophy Section */}
       <section className="py-32 md:py-60 px-6">
