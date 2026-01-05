@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { db } from '../services/db';
 import { Student, TabView, Grade, Subdivision, Teacher, FeeSubmission, SystemSettings, GatewayConfig, Enquiry, Product, Order, StudentNotification, Notice } from '../types';
@@ -530,15 +529,21 @@ const FeesModule = ({ fees, onNotify, refresh }: any) => {
 
 const NoticesModule = ({ notices, onNotify, refresh }: any) => {
     const [isAdding, setIsAdding] = useState(false);
-    const [form, setForm] = useState({ title: '', content: '', date: new Date().toISOString().split('T')[0], important: true });
+    const [form, setForm] = useState({ title: '', date: new Date().toISOString().split('T')[0], important: true });
 
     const handleAdd = async (e: any) => {
         e.preventDefault();
         try {
-            await db.addNotice(form);
+            // Content is identical to title for consistency since we only ask for heading now
+            await db.addNotice({ 
+                title: form.title, 
+                content: form.title, 
+                date: form.date, 
+                important: form.important 
+            });
             onNotify("Notice published to ticker!");
             setIsAdding(false);
-            setForm({ title: '', content: '', date: new Date().toISOString().split('T')[0], important: true });
+            setForm({ title: '', date: new Date().toISOString().split('T')[0], important: true });
             refresh();
         } catch (err) { alert("Failed to save notice."); }
     };
@@ -558,7 +563,7 @@ const NoticesModule = ({ notices, onNotify, refresh }: any) => {
                     <tbody className="divide-y divide-slate-100 text-sm">
                         {notices.map((n: Notice) => (
                             <tr key={n.id} className="hover:bg-slate-50/50">
-                                <td className="p-6"><p className="font-black text-slate-800 text-base">{n.title}</p><p className="text-xs text-slate-400 font-medium line-clamp-1 max-w-sm">{n.content}</p></td>
+                                <td className="p-6"><p className="font-black text-slate-800 text-base">{n.title}</p></td>
                                 <td className="p-6 text-slate-500 font-bold">{n.date}</td>
                                 <td className="p-6"><span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${n.important ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-100 text-slate-400'}`}>{n.important ? 'Ticker Active' : 'Draft'}</span></td>
                                 <td className="p-6 text-center"><button onClick={async () => { if(confirm("Remove this notice from the ticker?")) { await db.deleteNotice(n.id); refresh(); } }} className="text-rose-400 hover:text-rose-600 p-2 bg-rose-50 rounded-xl"><Trash2 size={16}/></button></td>
@@ -575,8 +580,10 @@ const NoticesModule = ({ notices, onNotify, refresh }: any) => {
                             <button onClick={() => setIsAdding(false)} className="absolute top-6 right-6 text-slate-400"><X/></button>
                             <h3 className="text-2xl font-black text-slate-800 mb-6">Broadcast News</h3>
                             <form onSubmit={handleAdd} className="space-y-6">
-                                <div className="space-y-1"><label className="text-[10px] font-black uppercase text-slate-500">Notice Heading</label><input required className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3.5 outline-none font-bold" value={form.title} onChange={e => setForm({...form, title: e.target.value})} placeholder="e.g. Admission 2024 Open" /></div>
-                                <div className="space-y-1"><label className="text-[10px] font-black uppercase text-slate-500">Short Content (Scrolling Text)</label><textarea required className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3.5 outline-none h-28 font-medium" value={form.content} onChange={e => setForm({...form, content: e.target.value})} placeholder="Details..." /></div>
+                                <div className="space-y-1">
+                                  <label className="text-[10px] font-black uppercase text-slate-500">Notice Heading</label>
+                                  <input required className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 outline-none font-bold" value={form.title} onChange={e => setForm({...form, title: e.target.value})} placeholder="e.g. Admission 2024 Open" />
+                                </div>
                                 <button type="submit" className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black text-xl shadow-xl">Post to Ticker</button>
                             </form>
                         </motion.div>
