@@ -79,11 +79,11 @@ const PublicHome: React.FC = () => {
                 transition={{ duration: 1.5, ease: [0.77, 0, 0.175, 1] }}
                 className="flex flex-col items-center"
              >
-                <h1 className="mt-20 text-5xl md:text-[8rem] font-light leading-[1] tracking-tight serif-font uppercase mb-16 luxury-text-gradient">
+                <h1 className="mt-12 text-5xl md:text-[8rem] font-light leading-[1] tracking-tight serif-font uppercase mb-12 luxury-text-gradient">
                   Your Future <br /> Crafted Here.
                 </h1>
 
-                <div className="mb-24">
+                <div className="mb-4">
                   <button 
                     onClick={() => setIsEnquiryModalOpen(true)}
                     className="group text-white text-[11px] font-bold uppercase tracking-[0.5em] flex items-center gap-3 hover:text-premium-accent transition-all"
@@ -91,23 +91,23 @@ const PublicHome: React.FC = () => {
                     Enroll Now <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform"/>
                   </button>
                 </div>
-             </motion.div>
-        </div>
 
-        {/* --- FULL WIDTH TICKER --- */}
-        <div className="absolute bottom-0 left-0 w-full border-y border-white/5 bg-black/40 backdrop-blur-md py-3 overflow-hidden z-20">
-             <div className="flex animate-marquee whitespace-nowrap">
-                {marqueeNotices.length > 0 ? marqueeNotices.map((notice, idx) => (
-                    <div key={idx} className="flex items-center mx-12">
-                         <span className="text-white/40 text-[8px] font-black tracking-[0.3em] uppercase mr-3">Alert</span>
-                         <span className="text-white/80 font-bold text-[10px] tracking-[0.1em] uppercase serif-font">
-                             {notice.title}
-                         </span>
-                    </div>
-                )) : (
-                    <div className="flex items-center mx-16 text-white/30 text-[9px] uppercase font-bold tracking-[0.6em]">Academic Session 2025-26 • Admissions Open • Excellence Redefined</div>
-                )}
-             </div>
+                {/* --- TICKER RELOCATED BELOW ENROLL BUTTON --- */}
+                <div className="mt-20 w-screen border-y border-white/5 bg-black/40 backdrop-blur-md py-4 overflow-hidden">
+                     <div className="flex animate-marquee whitespace-nowrap">
+                        {marqueeNotices.length > 0 ? marqueeNotices.map((notice, idx) => (
+                            <div key={idx} className="flex items-center mx-12">
+                                 <span className="text-white/40 text-[8px] font-black tracking-[0.3em] uppercase mr-3">Alert</span>
+                                 <span className="text-white/80 font-bold text-[10px] tracking-[0.1em] uppercase serif-font">
+                                     {notice.title}
+                                 </span>
+                            </div>
+                        )) : (
+                            <div className="flex items-center mx-16 text-white/30 text-[9px] uppercase font-bold tracking-[0.6em]">Academic Session 2025-26 • Admissions Open • Excellence Redefined</div>
+                        )}
+                     </div>
+                </div>
+             </motion.div>
         </div>
       </section>
 
@@ -132,10 +132,6 @@ const PublicHome: React.FC = () => {
                             </div>
                         ) : (
                             <form onSubmit={handleEnquirySubmit} className="space-y-4 text-left">
-                                <div className="inline-flex items-center gap-2">
-                                  <Sparkles size={12} className="text-premium-accent" />
-                                  <span className="text-[9px] font-black uppercase tracking-widest text-white/30">Session 2025-26 Enrollment</span>
-                                </div>
                                 <h3 className="text-2xl md:text-3xl serif-font uppercase mb-4 luxury-text-gradient">Enquiry Form</h3>
                                 
                                 <div className="grid grid-cols-2 gap-3">
