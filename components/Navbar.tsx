@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, ChevronDown } from 'lucide-react';
+import { Menu, X, ChevronDown, Heart } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const Navbar: React.FC = () => {
@@ -71,7 +71,6 @@ const Navbar: React.FC = () => {
         }`}
       >
         <div className="max-w-[1800px] mx-auto px-6 md:px-12 flex items-center justify-between">
-          {/* Main Logo */}
           <Link to="/" className="relative z-[110]">
             <img 
               src="https://advedasolutions.in/sc.png" 
@@ -81,7 +80,6 @@ const Navbar: React.FC = () => {
             />
           </Link>
 
-          {/* Desktop Links */}
           <div className="hidden lg:flex items-center space-x-12">
             {menuStructure.map((item) => (
               <div key={item.name} className="relative group">
@@ -120,7 +118,6 @@ const Navbar: React.FC = () => {
             </Link>
           </div>
 
-          {/* Hamburger Trigger (Only visible when closed) */}
           <div className="lg:hidden relative z-[110]">
             {!isOpen && (
               <button onClick={() => setIsOpen(true)} className="p-2 focus:outline-none">
@@ -131,43 +128,39 @@ const Navbar: React.FC = () => {
         </div>
       </nav>
 
-      {/* Fullscreen Mobile Menu Overlay */}
       <AnimatePresence>
         {isOpen && (
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[150] menu-bg-gradient flex flex-col h-[100dvh] overflow-hidden"
+            className="fixed inset-0 z-[200] menu-bg-gradient flex flex-col h-[100dvh] overflow-hidden"
           >
-            {/* High-Visibility Fixed Close Button */}
-            <div className="absolute top-8 right-6 z-[250]">
-              <button 
-                onClick={() => setIsOpen(false)} 
-                className="w-12 h-12 rounded-xl bg-white flex items-center justify-center shadow-[0_4px_0_#999,0_8px_15px_rgba(0,0,0,0.5)] active:translate-y-[2px] active:shadow-none transition-all"
-              >
-                <X size={26} className="text-black" strokeWidth={3} />
-              </button>
-            </div>
+            {/* Guaranteed Visibility Close Button */}
+            <button 
+              onClick={() => setIsOpen(false)} 
+              className="fixed top-8 right-6 w-12 h-12 rounded-xl bg-white flex items-center justify-center shadow-[0_4px_0_#999,0_8px_15px_rgba(0,0,0,0.5)] active:translate-y-[2px] active:shadow-none transition-all z-[300]"
+            >
+              <X size={26} className="text-black" strokeWidth={3} />
+            </button>
 
-            {/* Header Spacer */}
-            <div className="h-28 shrink-0" />
+            {/* Spacer for Header */}
+            <div className="h-24 shrink-0" />
 
-            {/* Scrollable Content Area - Optimized Spacing */}
             <motion.div 
               variants={menuVariants}
               initial="closed"
               animate="open"
               exit="closed"
-              className="flex-1 overflow-y-auto px-8 md:px-12 flex flex-col space-y-4 pb-6"
+              className="flex-1 overflow-y-auto px-8 md:px-12 flex flex-col space-y-4 pb-4"
             >
               {menuStructure.map((item) => (
-                <motion.div key={item.name} variants={itemVariants} className="flex flex-col items-start text-left">
+                <motion.div key={item.name} variants={itemVariants} className="flex flex-col items-start">
                   {item.submenu ? (
                     <>
                       <button 
                         onClick={() => toggleSubmenu(item.name)}
-                        className={`text-4xl md:text-5xl serif-font font-light tracking-tight transition-all duration-300 flex items-center gap-3 ${activeSubmenu === item.name ? 'text-premium-accent' : 'text-white/90'}`}
+                        className={`text-4xl md:text-5xl serif-font font-light tracking-tight flex items-center gap-3 transition-colors ${activeSubmenu === item.name ? 'text-premium-accent' : 'text-white/90'}`}
                       >
                         {item.name} 
                         <ChevronDown size={20} className={`transition-transform duration-500 ${activeSubmenu === item.name ? 'rotate-180' : ''}`} />
@@ -179,7 +172,7 @@ const Navbar: React.FC = () => {
                             initial={{ height: 0, opacity: 0 }}
                             animate={{ height: 'auto', opacity: 1 }}
                             exit={{ height: 0, opacity: 0 }}
-                            className="overflow-hidden flex flex-col items-start mt-2 space-y-2 pl-6 border-l border-white/10"
+                            className="overflow-hidden flex flex-col items-start mt-1 space-y-1.5 pl-6 border-l border-white/10"
                           >
                             {item.submenu.map((sub) => (
                               <Link 
@@ -199,7 +192,7 @@ const Navbar: React.FC = () => {
                     <Link 
                       to={item.path!} 
                       onClick={() => setIsOpen(false)}
-                      className={`text-4xl md:text-5xl serif-font font-light tracking-tight transition-all duration-300 ${location.pathname === item.path ? 'text-premium-accent' : 'text-white/90'}`}
+                      className={`text-4xl md:text-5xl serif-font font-light tracking-tight transition-colors ${location.pathname === item.path ? 'text-premium-accent' : 'text-white/90'}`}
                     >
                       {item.name}
                     </Link>
@@ -207,8 +200,7 @@ const Navbar: React.FC = () => {
                 </motion.div>
               ))}
               
-              {/* Stacked: Log in & Pay Fees (Tightized layout to reduce blank space) */}
-              <motion.div variants={itemVariants} className="pt-4 flex flex-col items-start gap-3 border-t border-white/5">
+              <motion.div variants={itemVariants} className="pt-4 flex flex-col items-start gap-4 border-t border-white/5">
                  <Link 
                    to="/login" 
                    onClick={() => setIsOpen(false)} 
@@ -227,17 +219,19 @@ const Navbar: React.FC = () => {
               </motion.div>
             </motion.div>
 
-            {/* Bottom Menu Footer (The user said this part is "perfect", just ensuring it's properly fixed at the bottom) */}
+            {/* Footer */}
             <div className="shrink-0 py-4 border-t border-white/5 bg-black/40 backdrop-blur-xl px-8 md:px-12">
-               <div className="flex items-center justify-between overflow-hidden">
-                  <div className="flex items-center gap-4 shrink-0">
+               <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
                     <span className="text-white/30 text-[8px] font-bold uppercase tracking-[0.15em]">Policy</span>
                     <span className="text-white/30 text-[8px] font-bold uppercase tracking-[0.15em]">T&C</span>
                   </div>
                   
-                  <div className="flex items-center gap-2 whitespace-nowrap ml-4">
-                    <span className="text-white/40 text-[8px] font-bold uppercase tracking-[0.15em]">Developed with ♥️ by</span>
-                    <div className="bg-white/10 p-1 rounded-md backdrop-blur-md">
+                  <div className="flex items-center gap-2">
+                    <span className="text-white/40 text-[8px] font-bold uppercase tracking-[0.15em]">Developed with</span>
+                    <Heart size={10} className="text-rose-500 fill-current" />
+                    <span className="text-white/40 text-[8px] font-bold uppercase tracking-[0.15em]">by</span>
+                    <div className="bg-white/10 p-1 rounded-md backdrop-blur-md ml-1">
                       <img 
                         src="https://advedasolutions.in/logo.png" 
                         alt="Adveda Solutions" 

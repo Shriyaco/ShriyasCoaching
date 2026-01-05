@@ -1,11 +1,10 @@
-
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import ThreeHero from '../components/ThreeHero';
 import Footer from '../components/Footer';
 import { db } from '../services/db';
 import { Notice } from '../types';
-import { ArrowRight, Star } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 
 const PublicHome: React.FC = () => {
@@ -16,8 +15,12 @@ const PublicHome: React.FC = () => {
 
   useEffect(() => {
     const load = async () => {
-        const all = await db.getNotices();
-        setNotices(all.filter(n => n.important));
+        try {
+            const all = await db.getNotices();
+            setNotices(all.filter(n => n.important));
+        } catch (e) {
+            console.error("Failed to load notices", e);
+        }
     }
     load();
   }, []);
@@ -31,7 +34,7 @@ const PublicHome: React.FC = () => {
       <section className="relative h-screen flex flex-col items-center justify-center overflow-hidden px-6">
         <motion.div style={{ opacity: opacityHero }} className="absolute inset-0 z-0">
           <ThreeHero />
-          <div className="absolute inset-0 bg-black/30" />
+          <div className="absolute inset-0 bg-black/40" />
         </motion.div>
         
         <div className="max-w-[1400px] w-full mx-auto relative z-10 text-center">
@@ -41,39 +44,41 @@ const PublicHome: React.FC = () => {
                 transition={{ duration: 1.5, ease: [0.77, 0, 0.175, 1] }}
              >
                 <h1 className="text-5xl md:text-[8rem] font-light leading-[1] tracking-tight serif-font uppercase mb-12 luxury-text-gradient">
-                  Your Future <br /> in the Sky.
+                  Your Future <br /> Crafted Here.
                 </h1>
 
                 <p className="text-sm md:text-lg text-white/60 max-w-2xl mx-auto leading-relaxed tracking-widest uppercase mb-12">
                   Premium academic coaching for the next generation of global leaders.
                 </p>
 
-                <div className="flex flex-col sm:flex-row justify-center items-center gap-6 md:gap-12">
+                <div className="flex flex-col sm:flex-row justify-center items-center gap-6 md:gap-12 mb-20">
                   <button className="group text-white text-[11px] font-bold uppercase tracking-[0.5em] flex items-center gap-4 hover:text-premium-accent transition-all">
                     Discover More <ArrowRight size={14} className="group-hover:translate-x-2 transition-transform"/>
                   </button>
                 </div>
-             </motion.div>
-        </div>
 
-        {/* Status Ticker - Minimalist */}
-        <div className="absolute bottom-0 w-full border-t border-white/5 bg-black/40 backdrop-blur-sm py-4 overflow-hidden">
-             <div className="flex animate-marquee whitespace-nowrap">
-                {marqueeNotices.length > 0 ? marqueeNotices.map((notice, idx) => (
-                    <div key={idx} className="flex items-center mx-16">
-                         <span className="text-white/40 text-[9px] font-bold tracking-[0.4em] uppercase mr-4">Update</span>
-                         <span className="text-white/80 font-light text-xs tracking-[0.2em] uppercase italic serif-font">
-                             {notice.content}
-                         </span>
-                    </div>
-                )) : (
-                    <div className="flex items-center mx-16 text-white/30 text-[9px] uppercase font-bold tracking-[0.6em]">Academic Session 2024-25 • Admissions Open • Excellence Delivered</div>
-                )}
-             </div>
+                {/* Status Ticker - Moved to downside of Discover More */}
+                <div className="w-full max-w-4xl mx-auto border-y border-white/5 bg-black/20 backdrop-blur-sm py-5 overflow-hidden">
+                     <div className="flex animate-marquee whitespace-nowrap">
+                        {marqueeNotices.length > 0 ? marqueeNotices.map((notice, idx) => (
+                            <div key={idx} className="flex items-center mx-16">
+                                 <span className="text-white/40 text-[9px] font-bold tracking-[0.4em] uppercase mr-4">Update</span>
+                                 <span className="text-white/80 font-light text-xs tracking-[0.2em] uppercase italic serif-font">
+                                     {notice.content}
+                                 </span>
+                            </div>
+                        )) : (
+                            <div className="flex items-center mx-16 text-white/30 text-[9px] uppercase font-bold tracking-[0.6em]">Academic Session 2024-25 • Admissions Open • Excellence Redefined</div>
+                        )}
+                        {/* Duplicate for seamless loop if content is short */}
+                        {!marqueeNotices.length && <div className="flex items-center mx-16 text-white/30 text-[9px] uppercase font-bold tracking-[0.6em]">Academic Session 2024-25 • Admissions Open • Excellence Redefined</div>}
+                     </div>
+                </div>
+             </motion.div>
         </div>
       </section>
 
-      {/* --- CONTENT SECTION 1: THE PHILOSOPHY --- */}
+      {/* Philosophy Section */}
       <section className="py-32 md:py-60 px-6">
           <div className="max-w-[1200px] mx-auto text-center md:text-left">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-24 items-start">
@@ -86,15 +91,15 @@ const PublicHome: React.FC = () => {
                       <p className="text-lg md:text-xl text-white/50 leading-relaxed font-light mb-10">
                         Created by a core team of academic experts, Shriya's Academic Group is the most sophisticated way to excel in your primary years. Our collective experience and tailored methodology elevate coaching to a whole new level.
                       </p>
-                      <button className="text-premium-accent text-[11px] font-bold uppercase tracking-[0.5em] border-b border-premium-accent/30 pb-1">
+                      <Link to="/why-us" className="text-premium-accent text-[11px] font-bold uppercase tracking-[0.5em] border-b border-premium-accent/30 pb-1">
                         Our Vision
-                      </button>
+                      </Link>
                   </motion.div>
               </div>
           </div>
       </section>
 
-      {/* --- IMAGE GRID SECTION: VERTICALS --- */}
+      {/* Grid Section */}
       <section className="bg-premium-black">
           <div className="grid grid-cols-1 lg:grid-cols-3">
               {[
@@ -103,8 +108,8 @@ const PublicHome: React.FC = () => {
                   { title: "STATE", img: "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?q=80&w=1000", path: "/state-board" }
               ].map((vert, i) => (
                   <Link to={vert.path} key={i} className="relative h-[70vh] md:h-[90vh] group overflow-hidden border-r last:border-0 border-white/5">
-                      <img src={vert.img} alt={vert.title} className="w-full h-full object-cover grayscale opacity-40 group-hover:scale-105 group-hover:grayscale-0 transition-all duration-1000" />
-                      <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors duration-700" />
+                      <img src={vert.img} alt={vert.title} className="w-full h-full object-cover grayscale opacity-30 group-hover:scale-105 group-hover:grayscale-0 group-hover:opacity-50 transition-all duration-1000" />
+                      <div className="absolute inset-0 bg-black/40 group-hover:bg-transparent transition-colors duration-700" />
                       <div className="absolute bottom-16 left-12">
                           <h3 className="text-5xl md:text-7xl font-light text-white uppercase tracking-tight serif-font mb-4">{vert.title}</h3>
                           <div className="text-white/40 text-[10px] font-bold uppercase tracking-[0.4em] group-hover:text-premium-accent transition-colors">
@@ -116,20 +121,6 @@ const PublicHome: React.FC = () => {
           </div>
       </section>
 
-      {/* --- QUOTE SECTION --- */}
-      <section className="py-40 md:py-60 px-6 text-center">
-          <div className="max-w-[1000px] mx-auto">
-              <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }}>
-                  <p className="text-2xl md:text-5xl serif-font font-light italic leading-snug luxury-text-gradient mb-12">
-                    "The PC-24 truly is a unicorn, there is no other platform which comes remotely close to the growth at Shriya's."
-                  </p>
-                  <p className="text-xs font-bold uppercase tracking-[0.6em] text-white/30">
-                    S. Mehta, Academic Lead
-                  </p>
-              </motion.div>
-          </div>
-      </section>
-      
       <Footer />
     </div>
   );

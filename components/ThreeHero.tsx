@@ -1,6 +1,5 @@
-
 // @ts-nocheck
-import React, { useRef, Suspense } from 'react';
+import React, { useRef, Suspense, useState } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Stars, Sparkles, Float, Sphere, MeshDistortMaterial, Environment } from '@react-three/drei';
 import * as THREE from 'three';
@@ -37,9 +36,38 @@ const CinematicHorizon = () => {
 };
 
 const ThreeHero: React.FC = () => {
+  // Synchronous WebGL support check to prevent crashing before first paint
+  const [webglSupported] = useState(() => {
+    try {
+      const canvas = document.createElement('canvas');
+      const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+      return !!gl;
+    } catch (e) {
+      return false;
+    }
+  });
+
+  if (!webglSupported) {
+    return (
+      <div className="absolute inset-0 z-0 bg-[#050505] overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-[#1a0505] via-black to-[#0a0a0a] opacity-80" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white/5 to-transparent" />
+      </div>
+    );
+  }
+
   return (
     <div className="absolute inset-0 z-0 bg-premium-black">
-      <Canvas camera={{ position: [0, 0, 10], fov: 45 }} dpr={[1, 2]}>
+      <Canvas 
+        camera={{ position: [0, 0, 10], fov: 45 }} 
+        dpr={[1, 1.5]}
+        onCreated={({ gl }) => {
+          gl.setClearColor('#050505');
+        }}
+        onError={(e) => {
+           console.warn("WebGL initialization failed", e);
+        }}
+      >
         <Suspense fallback={null}>
             <fog attach="fog" args={['#050505', 8, 30]} />
             <ambientLight intensity={0.1} />
