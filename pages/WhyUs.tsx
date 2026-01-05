@@ -18,10 +18,10 @@ const WisdomScene = () => {
   return (
     <group ref={group}>
       <Float speed={2} rotationIntensity={0.8} floatIntensity={1}>
-        <Cylinder args={[1.2, 1.5, 4, 32]} position={[0, 0, 0]}>
+        <Cylinder args={[1.2, 1.5, 4, 16]} position={[0, 0, 0]}>
            <meshStandardMaterial color="#6366f1" metalness={0.9} roughness={0.1} wireframe emissive="#4f46e5" emissiveIntensity={0.5} />
         </Cylinder>
-        <TorusKnot args={[0.8, 0.2, 128, 32]} position={[0, 0, 0]}>
+        <TorusKnot args={[0.8, 0.2, 64, 16]} position={[0, 0, 0]}>
            <MeshWobbleMaterial color="#00E5FF" speed={2} factor={0.6} metalness={0.8} />
         </TorusKnot>
       </Float>
@@ -37,7 +37,9 @@ const WhyUs: React.FC = () => {
   useEffect(() => {
     try {
       const canvas = document.createElement('canvas');
-      setWebglSupported(!!(canvas.getContext('webgl') || canvas.getContext('experimental-webgl')));
+      const gl = canvas.getContext('webgl', { powerPreference: 'high-performance' }) || 
+                 canvas.getContext('experimental-webgl', { powerPreference: 'high-performance' });
+      setWebglSupported(!!gl);
     } catch (e) {
       setWebglSupported(false);
     }
@@ -55,17 +57,22 @@ const WhyUs: React.FC = () => {
       <section className="relative min-h-screen flex flex-col items-center justify-center pt-24 overflow-hidden">
         <div className="absolute inset-0 z-0">
           {webglSupported ? (
-            <Canvas onError={() => setWebglSupported(false)}>
+            <Canvas 
+               gl={{ antialias: false, powerPreference: 'high-performance' }}
+               onError={() => setWebglSupported(false)}
+            >
               <Suspense fallback={null}>
                   <PerspectiveCamera makeDefault position={[0, 0, 10]} />
                   <ambientLight intensity={0.5} />
                   <pointLight position={[10, 10, 10]} intensity={1.5} color="#6366f1" />
                   <WisdomScene />
-                  <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
+                  <Stars radius={100} depth={50} count={2000} factor={4} saturation={0} fade speed={1} />
               </Suspense>
             </Canvas>
           ) : (
-            <div className="absolute inset-0 bg-gradient-to-tr from-indigo-950/30 to-black" />
+            <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-tr from-indigo-950/30 to-black">
+                <div className="pseudo-3d-orb opacity-30 blur-[4px] scale-[3]" style={{ background: 'radial-gradient(circle at 30% 30%, #6366f1, #4f46e5 20%, #1a1a2e 50%, #000 100%)' }} />
+            </div>
           )}
         </div>
         <div className="relative z-10 text-center px-6 max-w-5xl">

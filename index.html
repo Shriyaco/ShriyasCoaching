@@ -31,7 +31,34 @@
         -webkit-text-fill-color: transparent;
       }
       .menu-bg-gradient {
-        background: #1a0505; /* Deep burgundy from the video */
+        background: #1a0505;
+      }
+      
+      /* Fail-proof Alternative: CSS Animated Orb */
+      .pseudo-3d-orb {
+        width: 300px;
+        height: 300px;
+        border-radius: 50%;
+        background: radial-gradient(circle at 30% 30%, #fff, #888 20%, #222 50%, #000 100%);
+        box-shadow: inset -20px -20px 50px rgba(0,0,0,0.5), 0 0 50px rgba(255,255,255,0.1);
+        position: relative;
+        filter: blur(1px);
+        animation: floatOrb 6s ease-in-out infinite;
+      }
+      .pseudo-3d-orb::after {
+        content: '';
+        position: absolute;
+        top: 10%;
+        left: 10%;
+        width: 80%;
+        height: 80%;
+        border-radius: 50%;
+        background: radial-gradient(circle at 50% 50%, rgba(255,255,255,0.1), transparent 70%);
+        filter: blur(10px);
+      }
+      @keyframes floatOrb {
+        0%, 100% { transform: translateY(0) scale(1); }
+        50% { transform: translateY(-20px) scale(1.05); }
       }
     </style>
     <script>

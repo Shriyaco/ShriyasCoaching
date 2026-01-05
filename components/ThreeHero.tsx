@@ -18,7 +18,7 @@ const CinematicHorizon = () => {
   return (
     <group>
         <Float speed={1.5} rotationIntensity={0.2} floatIntensity={0.5}>
-            <Sphere ref={coreRef} args={[3, 128, 128]}>
+            <Sphere ref={coreRef} args={[3, 64, 64]}>
                 <MeshDistortMaterial 
                     color="#ffffff" 
                     emissive="#111111"
@@ -30,7 +30,7 @@ const CinematicHorizon = () => {
                 />
             </Sphere>
         </Float>
-        <Sparkles count={80} scale={15} size={2} speed={0.2} opacity={0.3} color="#ffffff" />
+        <Sparkles count={40} scale={15} size={2} speed={0.2} opacity={0.3} color="#ffffff" />
     </group>
   );
 };
@@ -42,7 +42,8 @@ const ThreeHero: React.FC = () => {
     const check = () => {
       try {
         const canvas = document.createElement('canvas');
-        const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+        const gl = canvas.getContext('webgl', { powerPreference: 'high-performance' }) || 
+                   canvas.getContext('experimental-webgl', { powerPreference: 'high-performance' });
         setWebglSupported(!!gl);
       } catch (e) {
         setWebglSupported(false);
@@ -51,37 +52,42 @@ const ThreeHero: React.FC = () => {
     check();
   }, []);
 
+  // "Anyhow" implantation: If WebGL fails, show the pseudo-3D CSS Orb
   if (webglSupported === false) {
     return (
-      <div className="absolute inset-0 z-0 bg-[#050505] overflow-hidden">
+      <div className="absolute inset-0 z-0 bg-[#050505] overflow-hidden flex items-center justify-center">
         <div className="absolute inset-0 bg-gradient-to-br from-[#111111] via-[#050505] to-[#1a1a1a] opacity-90" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white/5 to-transparent" />
+        <div className="pseudo-3d-orb opacity-40 blur-[2px] scale-[2.5]" />
       </div>
     );
   }
 
   return (
     <div className="absolute inset-0 z-0 bg-premium-black">
-      {webglSupported && (
-        <Canvas 
-          camera={{ position: [0, 0, 10], fov: 45 }} 
-          dpr={[1, 1.5]}
-          onCreated={({ gl }) => {
-            gl.setClearColor('#050505');
-          }}
-          onError={() => setWebglSupported(false)}
-        >
-          <Suspense fallback={null}>
-              <fog attach="fog" args={['#050505', 8, 30]} />
-              <ambientLight intensity={0.5} />
-              <pointLight position={[10, 10, 10]} intensity={1.5} color="#fff" />
-              <spotLight position={[-10, 10, 10]} angle={0.4} penumbra={1} intensity={2} color="#ffffff" />
-              <CinematicHorizon />
-              <Environment preset="night" />
-              <Stars radius={100} depth={50} count={3000} factor={6} saturation={0} fade speed={1} />
-          </Suspense>
-        </Canvas>
-      )}
+      <Canvas 
+        camera={{ position: [0, 0, 10], fov: 45 }} 
+        dpr={Math.min(window.devicePixelRatio, 1.5)}
+        gl={{ 
+          antialias: false, 
+          powerPreference: "high-performance",
+          stencil: false,
+          depth: true
+        }}
+        onCreated={({ gl }) => {
+          gl.setClearColor('#050505');
+        }}
+        onError={() => setWebglSupported(false)}
+      >
+        <Suspense fallback={null}>
+            <fog attach="fog" args={['#050505', 8, 30]} />
+            <ambientLight intensity={0.5} />
+            <pointLight position={[10, 10, 10]} intensity={1.5} color="#fff" />
+            <spotLight position={[-10, 10, 10]} angle={0.4} penumbra={1} intensity={2} color="#ffffff" />
+            <CinematicHorizon />
+            <Environment preset="night" />
+            <Stars radius={100} depth={50} count={1000} factor={6} saturation={0} fade speed={1} />
+        </Suspense>
+      </Canvas>
     </div>
   );
 };

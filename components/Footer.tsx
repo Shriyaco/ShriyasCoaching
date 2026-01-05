@@ -65,7 +65,7 @@ const Footer: React.FC = () => {
            </div>
 
            <p className="text-[9px] font-bold uppercase tracking-[0.6em] text-white/30 flex items-center gap-2">
-                &copy; 2025 Shriya's Academic Group. All Rights Reserved.
+                &copy; 2023. All Rights Reserved and copyrighted
            </p>
 
            <a href="https://www.advedasolutions.in" target="_blank" rel="noreferrer" className="flex items-center gap-3 group opacity-50 hover:opacity-100 transition-opacity">

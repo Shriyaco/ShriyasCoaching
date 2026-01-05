@@ -1,11 +1,10 @@
-import React, { useRef, Suspense } from 'react';
-// Added missing Link import from react-router-dom
+import React, { useRef, Suspense, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Float, Box, Sphere, MeshDistortMaterial, Environment, ContactShadows, Stars, PerspectiveCamera } from '@react-three/drei';
 import * as THREE from 'three';
-import { Palette, Microscope, CheckCircle2, Zap, Book, Brain, GraduationCap, Target } from 'lucide-react';
+import { Palette, Microscope, Zap, Book, Brain, Target, GraduationCap } from 'lucide-react';
 import Footer from '../components/Footer';
 
 const CBSEScene = () => {
@@ -27,10 +26,35 @@ const CBSEScene = () => {
 };
 
 const CBSEBoard: React.FC = () => {
+  const [webglSupported, setWebglSupported] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    try {
+      const canvas = document.createElement('canvas');
+      const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+      setWebglSupported(!!gl);
+    } catch (e) {
+      setWebglSupported(false);
+    }
+  }, []);
+
   return (
     <div className="min-h-screen bg-premium-black text-white selection:bg-premium-accent overflow-x-hidden">
       <section className="relative min-h-screen flex flex-col items-center justify-center pt-24 overflow-hidden">
-        <div className="absolute inset-0 z-0"><Canvas><Suspense fallback={null}><PerspectiveCamera makeDefault position={[0, 0, 8]} /><ambientLight intensity={0.5} /><CBSEScene /><Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} /></Suspense></Canvas></div>
+        <div className="absolute inset-0 z-0">
+          {webglSupported ? (
+            <Canvas onError={() => setWebglSupported(false)}>
+              <Suspense fallback={null}>
+                <PerspectiveCamera makeDefault position={[0, 0, 8]} />
+                <ambientLight intensity={0.5} />
+                <CBSEScene />
+                <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
+              </Suspense>
+            </Canvas>
+          ) : (
+            <div className="absolute inset-0 bg-gradient-to-tr from-cyan-900/20 to-black" />
+          )}
+        </div>
         <div className="relative z-10 text-center px-6 max-w-5xl">
             <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
                 <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-500/10 border border-white/5 mb-8 backdrop-blur-xl"><Zap size={14} className="text-[#00E5FF]" /><span className="text-white/40 text-[9px] font-bold tracking-[0.4em] uppercase">National Excellence</span></div>
@@ -40,7 +64,6 @@ const CBSEBoard: React.FC = () => {
         </div>
       </section>
 
-      {/* New Pedagogy Section */}
       <section className="py-40 px-6 bg-white/5">
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-24 items-center">
@@ -89,7 +112,6 @@ const CBSEBoard: React.FC = () => {
           </div>
       </section>
 
-      {/* Added Final Section for CBSE */}
       <section className="py-40 border-t border-white/5">
         <div className="max-w-4xl mx-auto text-center px-6">
           <GraduationCap size={64} className="mx-auto text-premium-accent mb-10 opacity-20" />

@@ -40,34 +40,39 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    // Log the error to console for production debugging
     console.error("FATAL ERROR CAUGHT BY BOUNDARY:", error, errorInfo);
+    // If it's a WebGL error, we might want to reload silently once
+    if (error.message.includes('WebGL')) {
+      console.warn("Detected WebGL crash. Attempting component-level recovery...");
+    }
   }
 
   render() {
     if (this.state.hasError) {
+      // If WebGL fails, we show a simplified recovery page
+      const isWebGL = this.state.error?.message.includes('WebGL');
+      
       return (
-        <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-[#020617] text-slate-800 dark:text-white p-4 font-sans">
+        <div className="min-h-screen flex items-center justify-center bg-[#050505] text-white p-4 font-sans">
           <div className="text-center max-w-md">
-            <AlertCircle className="w-16 h-16 mx-auto text-red-500 mb-6" />
-            <h1 className="text-3xl font-black mb-4 font-[Poppins]">Something went wrong</h1>
-            <p className="text-slate-500 dark:text-gray-400 mb-8 leading-relaxed">
-              The application encountered an unexpected error. This usually happens due to a temporary connection glitch or a 3D rendering timeout.
+            <AlertCircle className="w-16 h-16 mx-auto text-[#C5A059] mb-6" />
+            <h1 className="text-3xl font-black mb-4 font-[Poppins] uppercase">System Notice</h1>
+            <p className="text-gray-400 mb-8 leading-relaxed">
+              {isWebGL 
+                ? "The high-performance 3D engine encountered a limitation on this device. We recommend refreshing or using a modern browser."
+                : "The application encountered an unexpected error."}
             </p>
-            {this.state.error && (
-              <pre className="text-[10px] bg-red-50 dark:bg-red-950/20 p-4 rounded-xl mb-8 overflow-auto max-h-32 text-left border border-red-100 dark:border-red-900/30 text-red-400">
-                {this.state.error.message}
-              </pre>
-            )}
             <button 
               onClick={() => {
-                // Clear any potentially corrupted storage and reload
-                try {
-                  sessionStorage.removeItem('sc_user');
-                } catch(e) {}
-                window.location.href = '/';
+                window.location.reload();
               }} 
-              className="px-8 py-4 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20 active:scale-95"
+              className="px-8 py-4 bg-[#C5A059] text-black rounded-2xl font-bold hover:brightness-110 transition-all shadow-xl active:scale-95 uppercase tracking-widest text-xs"
+            >
+              Refresh Experience
+            </button>
+            <button 
+              onClick={() => window.location.href = '/'}
+              className="block w-full mt-4 text-xs font-bold text-gray-500 uppercase tracking-widest hover:text-white"
             >
               Return to Home
             </button>
@@ -113,7 +118,7 @@ export default function App() {
       <ThemeProvider>
         <Router>
           <Navbar />
-          <Suspense fallback={<div className="min-h-screen bg-[#020617] flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500"></div></div>}>
+          <Suspense fallback={<div className="min-h-screen bg-[#050505] flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#C5A059]"></div></div>}>
             <Routes>
               <Route path="/" element={<PublicHome />} />
               <Route path="/contact" element={<ContactUs />} />

@@ -1,4 +1,4 @@
-import React, { useRef, Suspense } from 'react';
+import React, { useRef, Suspense, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Float, Environment, ContactShadows, Stars, PerspectiveCamera, Torus, Sphere, MeshDistortMaterial } from '@react-three/drei';
@@ -31,6 +31,17 @@ const VisionScene = () => {
 };
 
 const Vision: React.FC = () => {
+  const [webglSupported, setWebglSupported] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    try {
+      const canvas = document.createElement('canvas');
+      setWebglSupported(!!(canvas.getContext('webgl') || canvas.getContext('experimental-webgl')));
+    } catch (e) {
+      setWebglSupported(false);
+    }
+  }, []);
+
   const missionPillars = [
     { title: "Empowering Minds", text: "Ensuring deep conceptual understanding across all boards.", icon: BookOpen, color: "text-blue-400" },
     { title: "Holistic Growth", text: "Focusing on 360-degree intellectual and ethical development.", icon: Heart, color: "text-rose-400" }
@@ -39,7 +50,21 @@ const Vision: React.FC = () => {
   return (
     <div className="min-h-screen bg-premium-black text-white overflow-x-hidden">
       <section className="relative min-h-screen flex flex-col items-center justify-center pt-24 overflow-hidden">
-        <div className="absolute inset-0 z-0"><Canvas><Suspense fallback={null}><PerspectiveCamera makeDefault position={[0, 0, 8]} /><ambientLight intensity={0.5} /><pointLight position={[10, 10, 10]} intensity={1.5} color="#00E5FF" /><VisionScene /><Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} /></Suspense></Canvas></div>
+        <div className="absolute inset-0 z-0">
+          {webglSupported ? (
+            <Canvas onError={() => setWebglSupported(false)}>
+              <Suspense fallback={null}>
+                <PerspectiveCamera makeDefault position={[0, 0, 8]} />
+                <ambientLight intensity={0.5} />
+                <pointLight position={[10, 10, 10]} intensity={1.5} color="#00E5FF" />
+                <VisionScene />
+                <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
+              </Suspense>
+            </Canvas>
+          ) : (
+            <div className="absolute inset-0 bg-gradient-to-br from-cyan-900/30 to-black" />
+          )}
+        </div>
         <div className="relative z-10 text-center px-6 max-w-5xl">
             <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 1.5 }}>
                 <div className="inline-flex items-center gap-2 px-6 py-2 rounded-full bg-cyan-500/10 border border-white/5 mb-12 backdrop-blur-xl"><Sparkles size={16} className="text-cyan-400" /><span className="text-white/40 text-[9px] font-bold tracking-[0.5em] uppercase">The Visionary Core</span></div>
