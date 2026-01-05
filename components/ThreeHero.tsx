@@ -20,17 +20,17 @@ const CinematicHorizon = () => {
         <Float speed={1.5} rotationIntensity={0.2} floatIntensity={0.5}>
             <Sphere ref={coreRef} args={[3, 128, 128]}>
                 <MeshDistortMaterial 
-                    color="#C5A059" 
-                    emissive="#1a0505"
-                    emissiveIntensity={1.2}
-                    distort={0.25}
+                    color="#ffffff" 
+                    emissive="#111111"
+                    emissiveIntensity={0.5}
+                    distort={0.2}
                     speed={2}
-                    roughness={0.1}
-                    metalness={0.9}
+                    roughness={0.2}
+                    metalness={0.8}
                 />
             </Sphere>
         </Float>
-        <Sparkles count={80} scale={15} size={2} speed={0.2} opacity={0.4} color="#C5A059" />
+        <Sparkles count={80} scale={15} size={2} speed={0.2} opacity={0.3} color="#ffffff" />
     </group>
   );
 };
@@ -54,8 +54,8 @@ const ThreeHero: React.FC = () => {
   if (webglSupported === false) {
     return (
       <div className="absolute inset-0 z-0 bg-[#050505] overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-[#2a0a0a] via-[#050505] to-[#1a0505] opacity-90" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-[#C5A059]/10 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-br from-[#111111] via-[#050505] to-[#1a1a1a] opacity-90" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white/5 to-transparent" />
       </div>
     );
   }
@@ -74,8 +74,8 @@ const ThreeHero: React.FC = () => {
           <Suspense fallback={null}>
               <fog attach="fog" args={['#050505', 8, 30]} />
               <ambientLight intensity={0.5} />
-              <pointLight position={[10, 10, 10]} intensity={2} color="#fff" />
-              <spotLight position={[-10, 10, 10]} angle={0.4} penumbra={1} intensity={3} color="#C5A059" />
+              <pointLight position={[10, 10, 10]} intensity={1.5} color="#fff" />
+              <spotLight position={[-10, 10, 10]} angle={0.4} penumbra={1} intensity={2} color="#ffffff" />
               <CinematicHorizon />
               <Environment preset="night" />
               <Stars radius={100} depth={50} count={3000} factor={6} saturation={0} fade speed={1} />

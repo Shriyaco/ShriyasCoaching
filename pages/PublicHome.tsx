@@ -4,7 +4,7 @@ import ThreeHero from '../components/ThreeHero';
 import Footer from '../components/Footer';
 import { db } from '../services/db';
 import { Notice } from '../types';
-import { ArrowRight, X, Sparkles, User, School, MessageSquare, Clock, Phone } from 'lucide-react';
+import { ArrowRight, X, Sparkles, CheckCircle2 } from 'lucide-react';
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
 
 const PublicHome: React.FC = () => {
@@ -18,6 +18,7 @@ const PublicHome: React.FC = () => {
     grade: '', 
     schoolName: '', 
     hasCoaching: null as boolean | null, 
+    coachingName: '',
     reason: '', 
     mobile: '', 
     connectTime: '' 
@@ -42,7 +43,11 @@ const PublicHome: React.FC = () => {
       e.preventDefault();
       if (enquiryForm.hasCoaching === null) { alert("Please select coaching status."); return; }
       try { 
-        await db.addEnquiry({ ...enquiryForm, hasCoaching: enquiryForm.hasCoaching as boolean }); 
+        await db.addEnquiry({ 
+          ...enquiryForm, 
+          hasCoaching: enquiryForm.hasCoaching as boolean,
+          reason: enquiryForm.hasCoaching ? `Coaching: ${enquiryForm.coachingName}. ${enquiryForm.reason}` : enquiryForm.reason
+        }); 
         setEnquirySubmitted(true); 
       } catch (error) { 
         alert("Error submitting. Try again."); 
@@ -76,9 +81,9 @@ const PublicHome: React.FC = () => {
                 <div className="mb-16">
                   <button 
                     onClick={() => setIsEnquiryModalOpen(true)}
-                    className="group bg-white text-black px-10 py-5 rounded-full font-black text-xs uppercase tracking-[0.4em] hover:bg-premium-accent transition-all flex items-center gap-4 shadow-2xl"
+                    className="group text-white text-[11px] font-bold uppercase tracking-[0.5em] flex items-center gap-3 hover:text-premium-accent transition-all"
                   >
-                    Enroll Now <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform"/>
+                    Enroll Now <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform"/>
                   </button>
                 </div>
 
@@ -101,7 +106,7 @@ const PublicHome: React.FC = () => {
         </div>
       </section>
 
-      {/* --- ENROLLMENT MODAL (Full Yesterday Version) --- */}
+      {/* --- ENROLLMENT MODAL (Optimized and Tighter) --- */}
       <AnimatePresence>
         {isEnquiryModalOpen && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[200] flex items-center justify-center bg-black/95 p-4 backdrop-blur-xl">
@@ -109,40 +114,40 @@ const PublicHome: React.FC = () => {
                     initial={{ scale: 0.9, y: 20 }} 
                     animate={{ scale: 1, y: 0 }} 
                     exit={{ scale: 0.9 }} 
-                    className="bg-[#0A0A0A] border border-white/10 rounded-[40px] w-full max-w-2xl overflow-hidden relative shadow-2xl"
+                    className="bg-[#0A0A0A] border border-white/10 rounded-[32px] w-full max-w-xl overflow-hidden relative shadow-2xl"
                 >
-                    <button onClick={closeEnquiryModal} className="absolute top-8 right-8 text-white/40 hover:text-white transition-colors z-20 p-2"><X size={28}/></button>
+                    <button onClick={closeEnquiryModal} className="absolute top-6 right-6 text-white/40 hover:text-white transition-colors z-20 p-2"><X size={24}/></button>
                     
-                    <div className="p-10 md:p-14 max-h-[90vh] overflow-y-auto custom-scrollbar">
+                    <div className="p-8 md:p-10 max-h-[90vh] overflow-y-auto custom-scrollbar">
                         {enquirySubmitted ? (
-                            <div className="text-center py-20 animate-fade-in">
-                                <CheckCircle2 className="mx-auto text-premium-accent mb-6" size={60} />
-                                <h3 className="text-4xl serif-font uppercase mb-4 luxury-text-gradient">Thank You.</h3>
-                                <p className="text-white/40 uppercase tracking-widest text-xs font-bold">We will connect with you shortly for the next steps.</p>
+                            <div className="text-center py-10 animate-fade-in">
+                                <CheckCircle2 className="mx-auto text-premium-accent mb-4" size={48} />
+                                <h3 className="text-3xl serif-font uppercase mb-2 luxury-text-gradient">Thank You.</h3>
+                                <p className="text-white/40 uppercase tracking-widest text-[10px] font-bold">We will connect with you shortly.</p>
                             </div>
                         ) : (
-                            <form onSubmit={handleEnquirySubmit} className="space-y-8">
-                                <div className="inline-flex items-center gap-2 mb-2">
-                                  <Sparkles size={14} className="text-premium-accent" />
-                                  <span className="text-[10px] font-black uppercase tracking-widest text-white/30">Session 2025-26 Enrollment</span>
+                            <form onSubmit={handleEnquirySubmit} className="space-y-5 text-left">
+                                <div className="inline-flex items-center gap-2">
+                                  <Sparkles size={12} className="text-premium-accent" />
+                                  <span className="text-[9px] font-black uppercase tracking-widest text-white/30">Session 2025-26 Enrollment</span>
                                 </div>
-                                <h3 className="text-3xl md:text-4xl serif-font uppercase mb-8 luxury-text-gradient">Enquiry Application</h3>
+                                <h3 className="text-2xl md:text-3xl serif-font uppercase mb-4 luxury-text-gradient">Enquiry Application</h3>
                                 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-1">
-                                        <label className="text-[10px] font-black uppercase text-white/30 ml-1">Student Name</label>
-                                        <input required placeholder="Enter name" className="w-full bg-white/5 border border-white/5 rounded-2xl px-5 py-4 outline-none focus:border-premium-accent text-sm text-white" value={enquiryForm.studentName} onChange={e => setEnquiryForm({...enquiryForm, studentName: e.target.value})} />
+                                        <label className="text-[9px] font-black uppercase text-white/20 ml-1 tracking-wider">Student Name</label>
+                                        <input required placeholder="Enter name" className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-3 outline-none focus:border-premium-accent text-xs text-white" value={enquiryForm.studentName} onChange={e => setEnquiryForm({...enquiryForm, studentName: e.target.value})} />
                                     </div>
                                     <div className="space-y-1">
-                                        <label className="text-[10px] font-black uppercase text-white/30 ml-1">Parent Name</label>
-                                        <input required placeholder="Enter name" className="w-full bg-white/5 border border-white/5 rounded-2xl px-5 py-4 outline-none focus:border-premium-accent text-sm text-white" value={enquiryForm.parentName} onChange={e => setEnquiryForm({...enquiryForm, parentName: e.target.value})} />
+                                        <label className="text-[9px] font-black uppercase text-white/20 ml-1 tracking-wider">Parent Name</label>
+                                        <input required placeholder="Enter name" className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-3 outline-none focus:border-premium-accent text-xs text-white" value={enquiryForm.parentName} onChange={e => setEnquiryForm({...enquiryForm, parentName: e.target.value})} />
                                     </div>
                                 </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-1">
-                                        <label className="text-[10px] font-black uppercase text-white/30 ml-1">Relation</label>
-                                        <select required className="w-full bg-white/5 border border-white/5 rounded-2xl px-5 py-4 outline-none focus:border-premium-accent text-sm text-white appearance-none" value={enquiryForm.relation} onChange={e => setEnquiryForm({...enquiryForm, relation: e.target.value})}>
+                                        <label className="text-[9px] font-black uppercase text-white/20 ml-1 tracking-wider">Relation</label>
+                                        <select required className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-3 outline-none focus:border-premium-accent text-xs text-white appearance-none" value={enquiryForm.relation} onChange={e => setEnquiryForm({...enquiryForm, relation: e.target.value})}>
                                             <option value="" className="bg-black">Select Relation</option>
                                             <option value="Father" className="bg-black">Father</option>
                                             <option value="Mother" className="bg-black">Mother</option>
@@ -150,49 +155,58 @@ const PublicHome: React.FC = () => {
                                         </select>
                                     </div>
                                     <div className="space-y-1">
-                                        <label className="text-[10px] font-black uppercase text-white/30 ml-1">Grade / Class</label>
-                                        <input required placeholder="e.g. 7th Grade" className="w-full bg-white/5 border border-white/5 rounded-2xl px-5 py-4 outline-none focus:border-premium-accent text-sm text-white" value={enquiryForm.grade} onChange={e => setEnquiryForm({...enquiryForm, grade: e.target.value})} />
+                                        <label className="text-[9px] font-black uppercase text-white/20 ml-1 tracking-wider">Grade / Class</label>
+                                        <select required className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-3 outline-none focus:border-premium-accent text-xs text-white appearance-none" value={enquiryForm.grade} onChange={e => setEnquiryForm({...enquiryForm, grade: e.target.value})}>
+                                            <option value="" className="bg-black">Select Grade</option>
+                                            {["1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th"].map(g => (
+                                              <option key={g} value={g} className="bg-black">{g} Grade</option>
+                                            ))}
+                                        </select>
                                     </div>
                                 </div>
 
                                 <div className="space-y-1">
-                                    <label className="text-[10px] font-black uppercase text-white/30 ml-1">Current School Name</label>
-                                    <input required placeholder="Name of institution" className="w-full bg-white/5 border border-white/5 rounded-2xl px-5 py-4 outline-none focus:border-premium-accent text-sm text-white" value={enquiryForm.schoolName} onChange={e => setEnquiryForm({...enquiryForm, schoolName: e.target.value})} />
+                                    <label className="text-[9px] font-black uppercase text-white/20 ml-1 tracking-wider">Current School Name</label>
+                                    <input required placeholder="Name of institution" className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-3 outline-none focus:border-premium-accent text-xs text-white" value={enquiryForm.schoolName} onChange={e => setEnquiryForm({...enquiryForm, schoolName: e.target.value})} />
                                 </div>
 
-                                <div className="space-y-3">
-                                    <label className="text-[10px] font-black uppercase text-white/30 ml-1">Attending any other coaching?</label>
-                                    <div className="flex gap-6 px-1">
+                                <div className="space-y-3 p-3 bg-white/[0.02] border border-white/[0.05] rounded-2xl">
+                                    <label className="text-[9px] font-black uppercase text-white/30 ml-1 tracking-widest">Attending any other coaching?</label>
+                                    <div className="flex gap-6 px-1 mt-1">
                                         <label className="flex items-center gap-2 cursor-pointer group">
-                                            <input type="radio" name="coaching" checked={enquiryForm.hasCoaching === true} onChange={() => setEnquiryForm({...enquiryForm, hasCoaching: true})} className="hidden" />
-                                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${enquiryForm.hasCoaching === true ? 'border-premium-accent bg-premium-accent' : 'border-white/20'}`}>
-                                                {enquiryForm.hasCoaching === true && <div className="w-2 h-2 bg-black rounded-full" />}
+                                            <input type="radio" name="coaching_main" checked={enquiryForm.hasCoaching === true} onChange={() => setEnquiryForm({...enquiryForm, hasCoaching: true})} className="hidden" />
+                                            <div className={`w-4 h-4 rounded-full border flex items-center justify-center transition-all ${enquiryForm.hasCoaching === true ? 'border-premium-accent bg-premium-accent' : 'border-white/20'}`}>
+                                                {enquiryForm.hasCoaching === true && <div className="w-1.5 h-1.5 bg-black rounded-full" />}
                                             </div>
-                                            <span className="text-sm font-bold uppercase tracking-widest text-white/60 group-hover:text-white">Yes</span>
+                                            <span className="text-[10px] font-bold uppercase tracking-widest text-white/60 group-hover:text-white">Yes</span>
                                         </label>
                                         <label className="flex items-center gap-2 cursor-pointer group">
-                                            <input type="radio" name="coaching" checked={enquiryForm.hasCoaching === false} onChange={() => setEnquiryForm({...enquiryForm, hasCoaching: false})} className="hidden" />
-                                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${enquiryForm.hasCoaching === false ? 'border-premium-accent bg-premium-accent' : 'border-white/20'}`}>
-                                                {enquiryForm.hasCoaching === false && <div className="w-2 h-2 bg-black rounded-full" />}
+                                            <input type="radio" name="coaching_main" checked={enquiryForm.hasCoaching === false} onChange={() => setEnquiryForm({...enquiryForm, hasCoaching: false})} className="hidden" />
+                                            <div className={`w-4 h-4 rounded-full border flex items-center justify-center transition-all ${enquiryForm.hasCoaching === false ? 'border-premium-accent bg-premium-accent' : 'border-white/20'}`}>
+                                                {enquiryForm.hasCoaching === false && <div className="w-1.5 h-1.5 bg-black rounded-full" />}
                                             </div>
-                                            <span className="text-sm font-bold uppercase tracking-widest text-white/60 group-hover:text-white">No</span>
+                                            <span className="text-[10px] font-bold uppercase tracking-widest text-white/60 group-hover:text-white">No</span>
                                         </label>
                                     </div>
+                                    
+                                    <AnimatePresence>
+                                      {enquiryForm.hasCoaching === true && (
+                                        <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="pt-2 overflow-hidden">
+                                           <label className="text-[8px] font-black uppercase text-white/20 ml-1 mb-1 block">Current Coaching Center Name</label>
+                                           <input required placeholder="Enter coaching name" className="w-full bg-white/5 border border-white/5 rounded-lg px-4 py-2.5 outline-none focus:border-premium-accent text-xs text-white" value={enquiryForm.coachingName} onChange={e => setEnquiryForm({...enquiryForm, coachingName: e.target.value})} />
+                                        </motion.div>
+                                      )}
+                                    </AnimatePresence>
                                 </div>
 
-                                <div className="space-y-1">
-                                    <label className="text-[10px] font-black uppercase text-white/30 ml-1">Why are you looking for coaching?</label>
-                                    <textarea required placeholder="Brief reason..." className="w-full bg-white/5 border border-white/5 rounded-2xl px-5 py-4 outline-none focus:border-premium-accent text-sm text-white h-24 resize-none" value={enquiryForm.reason} onChange={e => setEnquiryForm({...enquiryForm, reason: e.target.value})} />
-                                </div>
-
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-1">
-                                        <label className="text-[10px] font-black uppercase text-white/30 ml-1">Mobile Number</label>
-                                        <input required type="tel" placeholder="10-digit number" className="w-full bg-white/5 border border-white/5 rounded-2xl px-5 py-4 outline-none focus:border-premium-accent text-sm text-white" value={enquiryForm.mobile} onChange={e => setEnquiryForm({...enquiryForm, mobile: e.target.value})} />
+                                        <label className="text-[9px] font-black uppercase text-white/20 ml-1 tracking-wider">Mobile Number</label>
+                                        <input required type="tel" placeholder="10-digit number" className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-3 outline-none focus:border-premium-accent text-xs text-white" value={enquiryForm.mobile} onChange={e => setEnquiryForm({...enquiryForm, mobile: e.target.value})} />
                                     </div>
                                     <div className="space-y-1">
-                                        <label className="text-[10px] font-black uppercase text-white/30 ml-1">Best Time to Connect</label>
-                                        <select required className="w-full bg-white/5 border border-white/5 rounded-2xl px-5 py-4 outline-none focus:border-premium-accent text-sm text-white appearance-none" value={enquiryForm.connectTime} onChange={e => setEnquiryForm({...enquiryForm, connectTime: e.target.value})}>
+                                        <label className="text-[9px] font-black uppercase text-white/20 ml-1 tracking-wider">Best Time to Connect</label>
+                                        <select required className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-3 outline-none focus:border-premium-accent text-xs text-white appearance-none" value={enquiryForm.connectTime} onChange={e => setEnquiryForm({...enquiryForm, connectTime: e.target.value})}>
                                             <option value="" className="bg-black">Select Time</option>
                                             <option value="Morning" className="bg-black">Morning (9AM - 12PM)</option>
                                             <option value="Afternoon" className="bg-black">Afternoon (12PM - 4PM)</option>
@@ -201,7 +215,12 @@ const PublicHome: React.FC = () => {
                                     </div>
                                 </div>
 
-                                <button type="submit" className="w-full py-6 bg-white text-black font-black uppercase tracking-[0.5em] rounded-2xl hover:bg-premium-accent transition-all text-xs shadow-xl active:scale-[0.98]">Launch Application</button>
+                                <div className="space-y-1">
+                                    <label className="text-[9px] font-black uppercase text-white/20 ml-1 tracking-wider">Reason for enquiry</label>
+                                    <textarea required placeholder="Brief reason..." className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-3 outline-none focus:border-premium-accent text-xs text-white h-16 resize-none" value={enquiryForm.reason} onChange={e => setEnquiryForm({...enquiryForm, reason: e.target.value})} />
+                                </div>
+
+                                <button type="submit" className="w-full py-5 bg-white text-black font-black uppercase tracking-[0.4em] rounded-2xl hover:bg-premium-accent transition-all text-[10px] shadow-xl active:scale-[0.98]">Submit Application</button>
                             </form>
                         )}
                     </div>
@@ -257,11 +276,5 @@ const PublicHome: React.FC = () => {
     </div>
   );
 };
-
-const CheckCircle2 = ({ className, size }: { className?: string, size?: number }) => (
-    <div className={`rounded-full flex items-center justify-center ${className}`}>
-        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
-    </div>
-);
 
 export default PublicHome;
