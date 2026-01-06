@@ -1,51 +1,57 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../services/db';
-import { Student, Exam, Homework, Notice, TimetableEntry, User, StudentQuery, Subdivision, AttendanceRecord } from '../types';
-import { Rocket, Sword, Scroll, Radio, Zap, Shield, Star, Menu, X, LogOut, MessageCircle, Clock, Bell, CheckCircle2, AlertTriangle, Send, Target, Map, Battery, User as UserIcon, HelpCircle } from 'lucide-react';
+import { Student, Exam, Homework, Notice, TimetableEntry, StudentQuery, Subdivision, AttendanceRecord } from '../types';
+import { Rocket, Sword, Gamepad2, Radio, Zap, Bell, MessageCircle, Clock, Settings, LogOut, CheckCircle2, Target, Trophy, Flame, Lock, Save, RefreshCw, Send } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import JitsiMeeting from '../components/JitsiMeeting';
 
 // --- GAMIFIED COMPONENTS ---
 
-const PowerLevel = ({ attendance }: { attendance: AttendanceRecord[] }) => {
+const XPBar = ({ attendance }: { attendance: AttendanceRecord[] }) => {
     const total = attendance.length;
     const present = attendance.filter(a => a.status === 'Present').length;
-    const percentage = total === 0 ? 100 : Math.round((present / total) * 100);
-    const level = Math.floor(present / 5) + 1; // Level up every 5 days present
+    const percentage = total === 0 ? 0 : Math.round((present / total) * 100);
+    const level = Math.floor(present / 5) + 1;
 
     return (
-        <div className="flex items-center gap-4 bg-slate-800/50 border border-indigo-500/30 px-4 py-2 rounded-full backdrop-blur-md">
-            <div className="relative">
-                <Battery className="text-emerald-400 fill-emerald-400/20" size={24} />
-                <div className="absolute inset-0 bg-emerald-400/20 blur-sm rounded-full" />
+        <div className="bg-black/40 backdrop-blur-xl border-2 border-yellow-400/50 p-4 rounded-3xl flex items-center gap-4 relative overflow-hidden group">
+            <div className="absolute inset-0 bg-yellow-400/5 group-hover:bg-yellow-400/10 transition-colors" />
+            <div className="relative z-10 w-16 h-16 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-2xl flex flex-col items-center justify-center border-4 border-black shadow-xl transform group-hover:rotate-6 transition-transform">
+                <span className="text-[10px] font-black uppercase text-black">Lvl</span>
+                <span className="text-2xl font-black text-black leading-none">{level}</span>
             </div>
-            <div>
-                <p className="text-[9px] font-black uppercase text-indigo-300 tracking-widest">Power Level {level}</p>
-                <div className="w-24 h-1.5 bg-slate-700 rounded-full mt-1 overflow-hidden">
+            <div className="flex-1">
+                <div className="flex justify-between mb-1">
+                    <span className="text-[10px] font-black uppercase text-yellow-400 tracking-widest">XP Progress</span>
+                    <span className="text-[10px] font-black text-white">{percentage}%</span>
+                </div>
+                <div className="h-3 bg-black/50 rounded-full border border-white/10 overflow-hidden">
                     <motion.div 
                         initial={{ width: 0 }} 
                         animate={{ width: `${percentage}%` }} 
-                        className="h-full bg-gradient-to-r from-emerald-400 to-cyan-400" 
-                    />
+                        className="h-full bg-gradient-to-r from-yellow-400 to-orange-500 relative"
+                    >
+                        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20"></div>
+                    </motion.div>
                 </div>
             </div>
         </div>
     );
 };
 
-const HolographicCard = ({ subdivision, studentName }: { subdivision: Subdivision, studentName: string }) => {
+const PortalCard = ({ subdivision, studentName }: { subdivision: Subdivision, studentName: string }) => {
     const [isMeetingOpen, setIsMeetingOpen] = useState(false);
 
     if (!subdivision?.isLive) return (
-        <div className="p-1 bg-slate-800/30 rounded-[32px] border border-white/5 opacity-60 grayscale transition-all hover:grayscale-0 hover:opacity-100">
-            <div className="bg-[#0f172a] rounded-[28px] p-8 flex items-center justify-between">
-                <div>
-                    <h3 className="text-white/40 font-black uppercase text-xs tracking-[0.3em] mb-2">Transmission Offline</h3>
-                    <p className="text-indigo-400 text-lg font-bold font-sans">No Active Signal</p>
-                </div>
-                <Radio size={40} className="text-white/20" />
+        <div className="bg-black/40 border-2 border-dashed border-white/10 rounded-[32px] p-8 flex items-center gap-6 opacity-60 grayscale">
+            <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center">
+                <Radio size={32} className="text-white/20" />
+            </div>
+            <div>
+                <h3 className="text-xl font-black text-white/40 uppercase tracking-widest">Portal Offline</h3>
+                <p className="text-xs font-bold text-white/20 mt-1">No active warp signatures detected.</p>
             </div>
         </div>
     );
@@ -53,23 +59,23 @@ const HolographicCard = ({ subdivision, studentName }: { subdivision: Subdivisio
     return (
         <>
             <motion.div 
-                whileHover={{ scale: 1.02 }}
-                className="relative group cursor-pointer"
+                whileHover={{ scale: 1.02, rotate: -1 }}
+                whileTap={{ scale: 0.98 }}
                 onClick={() => setIsMeetingOpen(true)}
+                className="bg-gradient-to-r from-violet-600 to-indigo-600 rounded-[32px] p-1 cursor-pointer shadow-[0_0_40px_rgba(124,58,237,0.5)] relative overflow-hidden group"
             >
-                <div className="absolute -inset-1 bg-gradient-to-r from-rose-500 via-purple-500 to-cyan-500 rounded-[35px] blur opacity-75 group-hover:opacity-100 animate-pulse transition duration-1000"></div>
-                <div className="relative bg-slate-900 rounded-[32px] p-8 border border-white/10 flex items-center justify-between overflow-hidden">
-                    <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/diagmonds-light.png')] opacity-10"></div>
-                    <div className="relative z-10">
+                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/diagmonds-light.png')] opacity-20 animate-pulse"></div>
+                <div className="bg-black/20 backdrop-blur-sm rounded-[28px] p-8 flex items-center justify-between relative z-10 h-full">
+                    <div>
                         <div className="flex items-center gap-2 mb-2">
-                            <span className="w-2 h-2 bg-rose-500 rounded-full animate-ping" />
-                            <span className="text-rose-400 font-black uppercase text-[9px] tracking-[0.3em]">Live Transmission</span>
+                            <span className="w-3 h-3 bg-red-500 rounded-full animate-ping" />
+                            <span className="text-white font-black text-[10px] uppercase tracking-[0.2em] bg-red-500/20 px-2 py-1 rounded">Live Event</span>
                         </div>
-                        <h3 className="text-2xl font-black text-white italic tracking-wide">CLASSROOM ACTIVE</h3>
-                        <p className="text-indigo-300 text-xs font-bold mt-2">Tap to Establish Link</p>
+                        <h3 className="text-3xl font-black text-white italic tracking-wide drop-shadow-lg">WARP GATE OPEN</h3>
+                        <p className="text-indigo-100 text-xs font-bold mt-2 opacity-80">Tap to teleport to class</p>
                     </div>
-                    <div className="relative z-10 w-16 h-16 bg-rose-500/20 rounded-full flex items-center justify-center text-rose-400 border border-rose-500/50 group-hover:bg-rose-500 group-hover:text-white transition-all shadow-[0_0_30px_rgba(244,63,94,0.4)]">
-                        <Zap size={32} fill="currentColor" />
+                    <div className="w-20 h-20 bg-white text-indigo-600 rounded-full flex items-center justify-center border-4 border-indigo-400 shadow-xl group-hover:scale-110 transition-transform duration-500">
+                        <Zap size={36} fill="currentColor" className="animate-bounce" />
                     </div>
                 </div>
             </motion.div>
@@ -84,68 +90,114 @@ const HolographicCard = ({ subdivision, studentName }: { subdivision: Subdivisio
     );
 };
 
-const MissionCard = ({ homework }: { homework: Homework }) => (
+const QuestCard = ({ homework }: { homework: Homework }) => (
     <motion.div 
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         whileHover={{ y: -5 }}
-        className="bg-slate-800/40 backdrop-blur-md border border-indigo-500/20 p-6 rounded-3xl group relative overflow-hidden"
+        className="bg-[#1a1a1a] border-2 border-gray-800 p-6 rounded-3xl group relative overflow-hidden hover:border-emerald-400 transition-colors"
     >
-        <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-            <Target size={80} />
+        <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+            <Target size={100} />
         </div>
-        <span className="inline-block px-3 py-1 rounded-lg bg-indigo-500/20 text-indigo-300 text-[9px] font-black uppercase tracking-widest mb-4 border border-indigo-500/30">
-            {homework.subject}
-        </span>
-        <h4 className="text-lg font-bold text-white mb-2 line-clamp-2">"{homework.task}"</h4>
-        <div className="flex items-center gap-2 text-slate-400 text-xs mt-4">
-            <Clock size={14} className="text-amber-400" />
-            <span className="font-mono font-bold text-amber-100">Deadline: {homework.dueDate}</span>
+        <div className="flex justify-between items-start mb-4">
+            <span className="px-3 py-1 rounded-lg bg-emerald-400/10 text-emerald-400 text-[10px] font-black uppercase tracking-widest border border-emerald-400/20">
+                {homework.subject}
+            </span>
+            <Trophy size={20} className="text-emerald-500/20 group-hover:text-emerald-500 transition-colors" />
+        </div>
+        <h4 className="text-lg font-bold text-white mb-2 line-clamp-2 group-hover:text-emerald-300 transition-colors">"{homework.task}"</h4>
+        <div className="mt-4 pt-4 border-t border-white/5 flex items-center gap-2">
+            <Clock size={14} className="text-emerald-400" />
+            <span className="text-xs font-mono font-bold text-white/40">Complete by: {homework.dueDate}</span>
         </div>
     </motion.div>
 );
 
-const BossBattleCard = ({ exam }: { exam: Exam }) => (
+const RaidCard = ({ exam }: { exam: Exam }) => (
     <motion.div 
         whileHover={{ scale: 1.02 }}
-        className="bg-gradient-to-br from-rose-900/40 to-slate-900 border border-rose-500/30 p-8 rounded-[32px] relative overflow-hidden group"
+        className="bg-gradient-to-br from-rose-600 to-orange-600 p-1 rounded-[32px] shadow-2xl relative group"
     >
-        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20"></div>
-        <div className="relative z-10 flex flex-col h-full justify-between">
-            <div>
-                <div className="flex justify-between items-start mb-4">
-                    <span className="text-rose-400 font-black text-[10px] uppercase tracking-[0.3em]">Boss Battle</span>
-                    <Sword size={24} className="text-rose-500" />
-                </div>
-                <h3 className="text-2xl font-black text-white italic uppercase tracking-wider mb-2">{exam.subject}</h3>
-                <p className="text-rose-200/60 text-sm font-bold">{exam.title}</p>
+        <div className="bg-black/90 rounded-[28px] p-8 h-full relative overflow-hidden">
+            <div className="absolute -right-10 -top-10 text-rose-500/10 group-hover:text-rose-500/20 transition-colors">
+                <Sword size={150} />
             </div>
-            <div className="mt-8 flex gap-4">
-                <div className="bg-black/40 px-4 py-2 rounded-xl border border-rose-500/20">
-                    <p className="text-[9px] text-rose-400 font-black uppercase">Date</p>
-                    <p className="text-white font-mono text-xs">{exam.examDate}</p>
+            
+            <div className="relative z-10">
+                <div className="flex justify-between items-start mb-6">
+                    <span className="text-rose-400 font-black text-[10px] uppercase tracking-[0.3em] bg-rose-500/10 px-3 py-1 rounded border border-rose-500/20">Boss Raid</span>
+                    <Flame size={24} className="text-orange-500 animate-pulse" fill="currentColor" />
                 </div>
-                <div className="bg-black/40 px-4 py-2 rounded-xl border border-rose-500/20">
-                    <p className="text-[9px] text-rose-400 font-black uppercase">Time</p>
-                    <p className="text-white font-mono text-xs">{exam.startTime}</p>
+                
+                <h3 className="text-2xl font-black text-white italic uppercase tracking-wider mb-2">{exam.subject}</h3>
+                <p className="text-white/60 text-sm font-bold mb-8">{exam.title}</p>
+                
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-white/5 rounded-xl p-3 border border-white/5 text-center">
+                        <p className="text-[9px] text-orange-400 font-black uppercase">Battle Date</p>
+                        <p className="text-white font-mono text-xs font-bold">{exam.examDate}</p>
+                    </div>
+                    <div className="bg-white/5 rounded-xl p-3 border border-white/5 text-center">
+                        <p className="text-[9px] text-orange-400 font-black uppercase">Start Time</p>
+                        <p className="text-white font-mono text-xs font-bold">{exam.startTime}</p>
+                    </div>
                 </div>
             </div>
         </div>
     </motion.div>
 );
 
-const IntelCard = ({ notice }: { notice: Notice }) => (
-    <div className="bg-slate-800/40 border border-cyan-500/20 p-6 rounded-3xl relative overflow-hidden">
-        {notice.important && (
-            <div className="absolute top-0 right-0 bg-rose-500 text-white text-[8px] font-black uppercase px-3 py-1 rounded-bl-xl tracking-widest">
-                Priority Alpha
+const SettingsPanel = ({ student, refresh }: { student: Student, refresh: () => void }) => {
+    const [form, setForm] = useState({ current: '', new: '', confirm: '' });
+    const [loading, setLoading] = useState(false);
+
+    const handleUpdate = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (form.new !== form.confirm) return alert("New passwords do not match!");
+        setLoading(true);
+        try {
+            await db.changePassword(student.id, 'student', form.current, form.new);
+            alert("Secret identity updated successfully!");
+            setForm({ current: '', new: '', confirm: '' });
+        } catch (e: any) {
+            alert(e.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <div className="max-w-md mx-auto py-10">
+            <div className="bg-[#111] p-10 rounded-[40px] border border-white/10 text-center relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-cyan-500 to-blue-500" />
+                <div className="w-20 h-20 bg-cyan-500/10 rounded-full flex items-center justify-center mx-auto mb-8 text-cyan-400 border border-cyan-500/30">
+                    <Lock size={32} />
+                </div>
+                <h3 className="text-2xl font-black text-white mb-8 uppercase tracking-widest">Secret Config</h3>
+                
+                <form onSubmit={handleUpdate} className="space-y-4">
+                    <div className="space-y-1 text-left">
+                        <label className="text-[9px] font-black uppercase text-white/30 ml-2">Current Passcode</label>
+                        <input type="password" required value={form.current} onChange={e => setForm({...form, current:e.target.value})} className="w-full bg-black border border-white/10 rounded-2xl px-6 py-4 text-xs text-white outline-none focus:border-cyan-500 transition-all font-mono" />
+                    </div>
+                    <div className="space-y-1 text-left">
+                        <label className="text-[9px] font-black uppercase text-white/30 ml-2">New Passcode</label>
+                        <input type="password" required value={form.new} onChange={e => setForm({...form, new:e.target.value})} className="w-full bg-black border border-white/10 rounded-2xl px-6 py-4 text-xs text-white outline-none focus:border-cyan-500 transition-all font-mono" />
+                    </div>
+                    <div className="space-y-1 text-left">
+                        <label className="text-[9px] font-black uppercase text-white/30 ml-2">Verify Passcode</label>
+                        <input type="password" required value={form.confirm} onChange={e => setForm({...form, confirm:e.target.value})} className="w-full bg-black border border-white/10 rounded-2xl px-6 py-4 text-xs text-white outline-none focus:border-cyan-500 transition-all font-mono" />
+                    </div>
+                    
+                    <button disabled={loading} className="w-full py-5 bg-gradient-to-r from-cyan-600 to-blue-600 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:shadow-lg hover:shadow-cyan-500/20 transition-all mt-6 disabled:opacity-50">
+                        {loading ? 'Encrypting...' : 'Save Configuration'}
+                    </button>
+                </form>
             </div>
-        )}
-        <p className="text-cyan-400 text-[9px] font-black uppercase tracking-widest mb-3">{notice.date}</p>
-        <h4 className="text-white font-bold text-lg mb-2">{notice.title}</h4>
-        <p className="text-slate-400 text-sm leading-relaxed">{notice.content}</p>
-    </div>
-);
+        </div>
+    );
+};
 
 // --- MAIN DASHBOARD ---
 
@@ -173,17 +225,14 @@ export default function StudentDashboard() {
             if (user.role !== 'student') { navigate('/'); return; }
 
             try {
-                // Parallel Fetching for Speed
                 const [me] = await Promise.all([db.getStudentById(user.id)]);
                 
                 if (me) {
                     setStudent(me);
-                    // Fetch subdivision for Live status
                     const subs = await db.getSubdivisions(me.gradeId);
                     const mySub = subs.find(s => s.id === me.subdivisionId);
                     setSubdivision(mySub || null);
 
-                    // Fetch Dashboard Data
                     const [att, hw, ex, not, tt, q] = await Promise.all([
                         db.getAttendance(me.id),
                         db.getHomeworkForStudent(me.gradeId, me.subdivisionId),
@@ -220,48 +269,53 @@ export default function StudentDashboard() {
 
     const handleLogout = () => { sessionStorage.removeItem('sc_user'); navigate('/'); };
 
-    if (loading) return <div className="min-h-screen bg-[#0f172a] flex items-center justify-center"><div className="w-12 h-12 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin"></div></div>;
+    if (loading) return (
+        <div className="min-h-screen bg-[#050505] flex flex-col items-center justify-center gap-4">
+            <div className="w-16 h-16 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>
+            <p className="text-cyan-500 font-black uppercase text-xs tracking-[0.5em]">Loading Interface...</p>
+        </div>
+    );
+    
     if (!student) return null;
 
     const navItems = [
-        { id: 'command', label: 'Command', icon: Rocket },
-        { id: 'missions', label: 'Missions', icon: Target },
-        { id: 'challenges', label: 'Battles', icon: Sword },
-        { id: 'schedule', label: 'Schedule', icon: Clock },
+        { id: 'command', label: 'Base', icon: Gamepad2 },
+        { id: 'missions', label: 'Quests', icon: Target },
+        { id: 'challenges', label: 'Raids', icon: Sword },
+        { id: 'schedule', label: 'Time', icon: Clock },
         { id: 'intel', label: 'Intel', icon: Bell },
-        { id: 'doubts', label: 'Doubt', icon: HelpCircle }, // Renamed Label to Doubt as requested
+        { id: 'doubts', label: 'Comms', icon: MessageCircle },
+        { id: 'settings', label: 'Config', icon: Settings },
     ];
 
     return (
-        <div className="min-h-screen bg-[#0f172a] text-white font-sans selection:bg-cyan-500/30 overflow-x-hidden pb-32 md:pb-0 relative">
-            {/* Cosmic Background */}
-            <div className="fixed inset-0 z-0 pointer-events-none">
-                <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-indigo-600/20 rounded-full blur-[120px]" />
-                <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-cyan-600/20 rounded-full blur-[100px]" />
-                <div className="absolute top-[20%] right-[10%] w-[20%] h-[20%] bg-rose-600/10 rounded-full blur-[80px]" />
+        <div className="min-h-screen bg-[#0a0a0a] text-white font-sans selection:bg-cyan-500/30 overflow-x-hidden pb-32 md:pb-0 relative">
+            {/* Playful Background */}
+            <div className="fixed inset-0 z-0 pointer-events-none bg-[#050505]">
+                <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-900/40 via-[#050505] to-[#050505]" />
+                <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-cyan-600/10 rounded-full blur-[100px]" />
+                <div className="absolute top-20 left-20 w-[300px] h-[300px] bg-purple-600/10 rounded-full blur-[80px]" />
             </div>
 
-            {/* Header / Command Deck */}
-            <header className="sticky top-0 z-40 bg-[#0f172a]/80 backdrop-blur-xl border-b border-white/5 px-6 py-4 flex items-center justify-between">
+            {/* Header / Hero Profile */}
+            <header className="sticky top-0 z-40 bg-[#0a0a0a]/80 backdrop-blur-xl border-b border-white/5 px-6 py-4 flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 p-[2px]">
-                        <div className="w-full h-full bg-[#0f172a] rounded-xl flex items-center justify-center">
-                            {student.imageUrl ? <img src={student.imageUrl} className="w-full h-full object-cover rounded-xl" /> : <UserIcon className="text-indigo-400" />}
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-600 p-[2px] shadow-lg shadow-cyan-500/20">
+                        <div className="w-full h-full bg-black rounded-[10px] overflow-hidden">
+                            {student.imageUrl ? <img src={student.imageUrl} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center font-black text-cyan-400">{student.name.charAt(0)}</div>}
                         </div>
                     </div>
                     <div>
-                        <h2 className="text-lg font-black italic tracking-wide text-white">{student.name.split(' ')[0]}</h2>
-                        <p className="text-[9px] font-bold text-indigo-400 uppercase tracking-widest">Grade {student.gradeId} • Div {student.subdivisionId}</p>
+                        <h2 className="text-sm font-black italic tracking-wide text-white uppercase">{student.name.split(' ')[0]}</h2>
+                        <div className="flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                            <p className="text-[9px] font-bold text-white/40 uppercase tracking-widest">Online</p>
+                        </div>
                     </div>
                 </div>
-                <div className="flex items-center gap-4">
-                    <div className="hidden md:block">
-                        <PowerLevel attendance={attendance} />
-                    </div>
-                    <button onClick={handleLogout} className="p-3 bg-rose-500/10 text-rose-400 rounded-xl hover:bg-rose-500 hover:text-white transition-all">
-                        <LogOut size={18} />
-                    </button>
-                </div>
+                <button onClick={handleLogout} className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center text-rose-500 hover:bg-rose-500 hover:text-white transition-all">
+                    <LogOut size={18} />
+                </button>
             </header>
 
             {/* Main Content */}
@@ -269,40 +323,53 @@ export default function StudentDashboard() {
                 <AnimatePresence mode="wait">
                     
                     {activeTab === 'command' && (
-                        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-10">
-                            {subdivision && <HolographicCard subdivision={subdivision} studentName={student.name} />}
-                            
-                            <div className="md:hidden">
-                                <PowerLevel attendance={attendance} />
+                        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="space-y-10">
+                            {/* Hero Section */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                                <XPBar attendance={attendance} />
+                                {subdivision && <PortalCard subdivision={subdivision} studentName={student.name} />}
                             </div>
 
+                            {/* Stats Grid */}
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                <div className="bg-slate-800/50 p-6 rounded-3xl border border-white/5 text-center">
-                                    <h3 className="text-3xl font-black text-cyan-400 mb-1">{missions.length}</h3>
-                                    <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Active Missions</p>
+                                <div className="bg-[#151515] p-5 rounded-3xl border border-white/5 flex flex-col items-center justify-center gap-2 group hover:border-cyan-500/50 transition-colors">
+                                    <div className="w-10 h-10 bg-cyan-500/10 rounded-full flex items-center justify-center text-cyan-400 mb-1"><Target size={20}/></div>
+                                    <h3 className="text-2xl font-black text-white">{missions.length}</h3>
+                                    <p className="text-[8px] font-black uppercase tracking-widest text-white/30">Active Quests</p>
                                 </div>
-                                <div className="bg-slate-800/50 p-6 rounded-3xl border border-white/5 text-center">
-                                    <h3 className="text-3xl font-black text-rose-400 mb-1">{challenges.length}</h3>
-                                    <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Boss Battles</p>
+                                <div className="bg-[#151515] p-5 rounded-3xl border border-white/5 flex flex-col items-center justify-center gap-2 group hover:border-rose-500/50 transition-colors">
+                                    <div className="w-10 h-10 bg-rose-500/10 rounded-full flex items-center justify-center text-rose-400 mb-1"><Sword size={20}/></div>
+                                    <h3 className="text-2xl font-black text-white">{challenges.length}</h3>
+                                    <p className="text-[8px] font-black uppercase tracking-widest text-white/30">Raids Pending</p>
                                 </div>
-                                <div className="bg-slate-800/50 p-6 rounded-3xl border border-white/5 text-center">
-                                    <h3 className="text-3xl font-black text-amber-400 mb-1">{intel.length}</h3>
-                                    <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Intel Logs</p>
+                                <div className="bg-[#151515] p-5 rounded-3xl border border-white/5 flex flex-col items-center justify-center gap-2 group hover:border-yellow-500/50 transition-colors">
+                                    <div className="w-10 h-10 bg-yellow-500/10 rounded-full flex items-center justify-center text-yellow-400 mb-1"><Bell size={20}/></div>
+                                    <h3 className="text-2xl font-black text-white">{intel.length}</h3>
+                                    <p className="text-[8px] font-black uppercase tracking-widest text-white/30">New Intel</p>
                                 </div>
-                                <div className="bg-slate-800/50 p-6 rounded-3xl border border-white/5 text-center">
-                                    <h3 className="text-3xl font-black text-emerald-400 mb-1">100%</h3>
-                                    <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Shield Integrity</p>
+                                <div className="bg-[#151515] p-5 rounded-3xl border border-white/5 flex flex-col items-center justify-center gap-2 group hover:border-emerald-500/50 transition-colors">
+                                    <div className="w-10 h-10 bg-emerald-500/10 rounded-full flex items-center justify-center text-emerald-400 mb-1"><Trophy size={20}/></div>
+                                    <h3 className="text-2xl font-black text-white">98%</h3>
+                                    <p className="text-[8px] font-black uppercase tracking-widest text-white/30">Reputation</p>
                                 </div>
                             </div>
 
+                            {/* Recent Missions */}
                             <div>
-                                <div className="flex justify-between items-end mb-6">
-                                    <h3 className="text-xl font-black italic tracking-wide text-white">PRIORITY MISSIONS</h3>
-                                    <button onClick={() => setActiveTab('missions')} className="text-[10px] font-bold uppercase tracking-widest text-cyan-400 hover:text-white transition-colors">View All</button>
+                                <div className="flex justify-between items-end mb-6 px-2">
+                                    <h3 className="text-xl font-black italic tracking-wide text-white uppercase flex items-center gap-2">
+                                        <Rocket size={20} className="text-purple-500"/> Priority Quests
+                                    </h3>
+                                    <button onClick={() => setActiveTab('missions')} className="text-[10px] font-bold uppercase tracking-widest text-purple-400 hover:text-white transition-colors">View All</button>
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    {missions.slice(0, 2).map(m => <MissionCard key={m.id} homework={m} />)}
-                                    {missions.length === 0 && <div className="col-span-full p-8 border border-dashed border-white/10 rounded-3xl text-center text-white/20 font-black uppercase text-xs tracking-widest">No Active Missions</div>}
+                                    {missions.slice(0, 2).map(m => <QuestCard key={m.id} homework={m} />)}
+                                    {missions.length === 0 && (
+                                        <div className="col-span-full py-16 bg-white/5 rounded-[32px] border border-dashed border-white/10 text-center">
+                                            <CheckCircle2 size={48} className="mx-auto text-emerald-500 mb-4 opacity-50"/>
+                                            <p className="text-white/20 font-black uppercase text-xs tracking-widest">All Objectives Cleared</p>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </motion.div>
@@ -310,21 +377,31 @@ export default function StudentDashboard() {
 
                     {activeTab === 'missions' && (
                         <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {missions.map(m => <MissionCard key={m.id} homework={m} />)}
-                            {missions.length === 0 && <div className="col-span-full text-center py-20 text-white/20 font-black uppercase tracking-widest">All Missions Complete</div>}
+                            {missions.map(m => <QuestCard key={m.id} homework={m} />)}
+                            {missions.length === 0 && <div className="col-span-full text-center py-40 text-white/20 font-black uppercase tracking-widest">Quest Log Empty</div>}
                         </motion.div>
                     )}
 
                     {activeTab === 'challenges' && (
                         <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            {challenges.map(c => <BossBattleCard key={c.id} exam={c} />)}
-                            {challenges.length === 0 && <div className="col-span-full text-center py-20 text-white/20 font-black uppercase tracking-widest">No Boss Battles Detected</div>}
+                            {challenges.map(c => <RaidCard key={c.id} exam={c} />)}
+                            {challenges.length === 0 && <div className="col-span-full text-center py-40 text-white/20 font-black uppercase tracking-widest">No Raids Detected</div>}
                         </motion.div>
                     )}
 
                     {activeTab === 'intel' && (
                         <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6 max-w-3xl mx-auto">
-                            {intel.map(n => <IntelCard key={n.id} notice={n} />)}
+                            {intel.map(n => (
+                                <div key={n.id} className="bg-[#111] border-l-4 border-cyan-500 p-8 rounded-r-3xl relative overflow-hidden group">
+                                    <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity"><Bell size={40}/></div>
+                                    <div className="flex justify-between items-start mb-4">
+                                        <h4 className="text-xl font-bold text-white group-hover:text-cyan-400 transition-colors">{n.title}</h4>
+                                        {n.important && <span className="bg-rose-500 text-white text-[8px] font-black uppercase px-2 py-1 rounded">Urgent</span>}
+                                    </div>
+                                    <p className="text-white/50 text-sm leading-relaxed">{n.content}</p>
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-white/20 mt-6">{n.date}</p>
+                                </div>
+                            ))}
                         </motion.div>
                     )}
 
@@ -333,12 +410,12 @@ export default function StudentDashboard() {
                             {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map(day => {
                                 const entries = timetable.filter(t => t.day === day);
                                 return (
-                                    <div key={day} className="bg-slate-800/40 border border-white/5 rounded-3xl p-6">
-                                        <h4 className="text-indigo-400 font-black uppercase tracking-widest text-xs mb-4 border-b border-white/5 pb-2">{day}</h4>
+                                    <div key={day} className="bg-[#111] border border-white/5 rounded-3xl p-6 hover:border-purple-500/30 transition-colors">
+                                        <h4 className="text-purple-400 font-black uppercase tracking-widest text-xs mb-4 border-b border-white/5 pb-2">{day}</h4>
                                         <div className="space-y-3">
                                             {entries.length > 0 ? entries.map(t => (
                                                 <div key={t.id} className="flex gap-4 items-center">
-                                                    <div className="px-3 py-1 bg-white/5 rounded-lg text-[10px] font-mono font-bold text-slate-300 w-20 text-center">{t.startTime}</div>
+                                                    <div className="px-3 py-1 bg-white/5 rounded-lg text-[10px] font-mono font-bold text-purple-200 w-20 text-center">{t.startTime}</div>
                                                     <div className="text-sm font-bold text-white">{t.subject}</div>
                                                 </div>
                                             )) : <p className="text-white/10 text-[10px] uppercase font-bold tracking-widest italic">Rest Cycle</p>}
@@ -354,12 +431,12 @@ export default function StudentDashboard() {
                             <div className="flex-1 overflow-y-auto space-y-6 mb-6 pr-2 scrollbar-hide">
                                 {doubts.map(d => (
                                     <div key={d.id} className="flex flex-col gap-2">
-                                        <div className="self-end bg-indigo-600 text-white p-4 rounded-2xl rounded-tr-sm max-w-[80%] shadow-lg">
-                                            <p className="text-[10px] font-black uppercase text-indigo-200 mb-1 tracking-widest">{d.subject}</p>
+                                        <div className="self-end bg-gradient-to-br from-indigo-600 to-blue-600 text-white p-5 rounded-2xl rounded-tr-sm max-w-[80%] shadow-lg">
+                                            <p className="text-[9px] font-black uppercase text-indigo-200 mb-2 tracking-widest">{d.subject}</p>
                                             <p className="text-sm font-medium">{d.queryText}</p>
                                         </div>
                                         {d.status === 'Answered' && (
-                                            <div className="self-start bg-slate-800 border border-white/10 p-4 rounded-2xl rounded-tl-sm max-w-[80%]">
+                                            <div className="self-start bg-[#1a1a1a] border border-white/10 p-5 rounded-2xl rounded-tl-sm max-w-[80%]">
                                                 <div className="flex items-center gap-2 mb-2">
                                                     <span className="w-2 h-2 bg-emerald-400 rounded-full" />
                                                     <span className="text-[9px] font-black uppercase text-emerald-400 tracking-widest">Faculty Response</span>
@@ -369,30 +446,33 @@ export default function StudentDashboard() {
                                         )}
                                     </div>
                                 ))}
-                                {doubts.length === 0 && <div className="text-center py-20 opacity-20 font-black uppercase tracking-[0.3em] text-xs">Comms Channel Quiet</div>}
+                                {doubts.length === 0 && <div className="text-center py-40 opacity-20 font-black uppercase tracking-[0.3em] text-xs">Secure Channel Open</div>}
                             </div>
-                            <form onSubmit={handleDoubtSubmit} className="bg-slate-800/80 backdrop-blur-md p-2 rounded-[24px] border border-white/10 flex gap-2">
-                                <input required placeholder="Subject..." value={doubtForm.subject} onChange={e => setDoubtForm({...doubtForm, subject: e.target.value})} className="w-1/3 bg-transparent px-4 py-3 text-xs font-bold text-white outline-none border-r border-white/10 placeholder:text-white/20" />
-                                <input required placeholder="Type your doubt..." value={doubtForm.queryText} onChange={e => setDoubtForm({...doubtForm, queryText: e.target.value})} className="flex-1 bg-transparent px-4 py-3 text-sm text-white outline-none placeholder:text-white/20" />
-                                <button className="bg-indigo-600 text-white p-3 rounded-[20px] hover:bg-indigo-500 transition-all shadow-lg active:scale-95"><Send size={20} /></button>
+                            <form onSubmit={handleDoubtSubmit} className="bg-[#111] p-2 rounded-[24px] border border-white/10 flex gap-2 shadow-2xl">
+                                <input required placeholder="Subject..." value={doubtForm.subject} onChange={e => setDoubtForm({...doubtForm, subject: e.target.value})} className="w-1/3 bg-transparent px-6 py-4 text-xs font-bold text-white outline-none border-r border-white/10 placeholder:text-white/20" />
+                                <input required placeholder="Transmission content..." value={doubtForm.queryText} onChange={e => setDoubtForm({...doubtForm, queryText: e.target.value})} className="flex-1 bg-transparent px-6 py-4 text-sm text-white outline-none placeholder:text-white/20" />
+                                <button className="bg-indigo-600 text-white p-4 rounded-[20px] hover:bg-indigo-500 transition-all shadow-lg active:scale-95"><Send size={20} /></button>
                             </form>
                         </motion.div>
                     )}
 
+                    {activeTab === 'settings' && <SettingsPanel student={student} refresh={() => {}} />}
+
                 </AnimatePresence>
             </main>
 
-            {/* Navigation Bar */}
-            <nav className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-[#0f172a]/90 backdrop-blur-xl border border-white/10 rounded-full p-2 flex items-center gap-1 shadow-2xl z-50 max-w-[95vw] overflow-x-auto scrollbar-hide">
+            {/* Floating Nav Dock */}
+            <nav className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-[#1a1a1a]/90 backdrop-blur-2xl border border-white/10 rounded-[32px] p-2 flex items-center gap-2 shadow-2xl z-50 max-w-[95vw] overflow-x-auto scrollbar-hide">
                 {navItems.map(item => (
                     <button
                         key={item.id}
                         onClick={() => setActiveTab(item.id)}
-                        className={`relative px-6 py-3 rounded-full flex flex-col items-center gap-1 transition-all min-w-[70px] ${activeTab === item.id ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+                        className={`relative w-14 h-14 rounded-2xl flex flex-col items-center justify-center gap-1 transition-all ${activeTab === item.id ? 'bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-lg scale-110 -translate-y-2' : 'text-white/40 hover:text-white hover:bg-white/5'}`}
                     >
                         <item.icon size={20} strokeWidth={activeTab === item.id ? 2.5 : 2} />
-                        <span className="text-[8px] font-black uppercase tracking-widest">{item.label}</span>
-                        {activeTab === item.id && <motion.div layoutId="nav-glow" className="absolute inset-0 rounded-full shadow-[0_0_20px_rgba(79,70,229,0.5)]" />}
+                        {activeTab === item.id && (
+                            <motion.span layoutId="active-dot" className="absolute -bottom-2 w-1 h-1 bg-white rounded-full" />
+                        )}
                     </button>
                 ))}
             </nav>
