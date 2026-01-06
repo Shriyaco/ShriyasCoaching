@@ -1,15 +1,16 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../services/db';
-import { Subdivision, Student, User, Grade, Homework, Exam, StudentQuery, AttendanceRecord, StudyNote, HomeworkSubmission } from '../types';
+import { Subdivision, Student, User, Grade, Homework, Exam, StudentQuery, AttendanceRecord, StudyNote, HomeworkSubmission, StudentOwnExam, LeaveApplication } from '../types';
 import JitsiMeeting from '../components/JitsiMeeting';
-import { LogOut, Calendar, BookOpen, PenTool, Plus, Trash2, Award, ClipboardCheck, X, MessageSquare, Clock, Settings, Lock, Radio, Power, ChevronRight, LayoutDashboard, FileText, UserCheck, Menu, Loader2 } from 'lucide-react';
+import { LogOut, Calendar, BookOpen, PenTool, Plus, Trash2, Award, ClipboardCheck, X, MessageSquare, Clock, Settings, Lock, Radio, Power, ChevronRight, LayoutDashboard, FileText, UserCheck, Menu, Loader2, Check, ExternalLink } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const TeacherDashboard: React.FC = () => {
     const navigate = useNavigate();
     const [user, setUser] = useState<User | null>(null);
-    const [activeTab, setActiveTab] = useState<'attendance' | 'live' | 'homework' | 'notes' | 'exams' | 'grading' | 'queries' | 'settings'>('attendance');
+    const [activeTab, setActiveTab] = useState<'attendance' | 'live' | 'homework' | 'notes' | 'exams' | 'grading' | 'queries' | 'student-exams' | 'leaves' | 'settings'>('attendance');
     
     const [grades, setGrades] = useState<Grade[]>([]);
     const [availableSubdivisions, setAvailableSubdivisions] = useState<Subdivision[]>([]);
@@ -56,6 +57,8 @@ const TeacherDashboard: React.FC = () => {
         { id: 'notes', label: 'Resources', icon: FileText },
         { id: 'exams', label: 'Assessments', icon: PenTool },
         { id: 'grading', label: 'Review', icon: Award },
+        { id: 'student-exams', label: 'Student Exams', icon: Calendar },
+        { id: 'leaves', label: 'Leave Req.', icon: Clock },
         { id: 'queries', label: 'Queries', icon: MessageSquare },
         { id: 'settings', label: 'Settings', icon: Settings }
     ];
@@ -139,6 +142,8 @@ const TeacherDashboard: React.FC = () => {
                                 {activeTab === 'notes' && <NotesModule gradeId={selectedGradeId} divisionId={selectedDivisionId} teacherId={user?.id || ''} />}
                                 {activeTab === 'exams' && <ExamBuilderModule gradeId={selectedGradeId} divisionId={selectedDivisionId} teacherId={user?.id || ''} />}
                                 {activeTab === 'grading' && <GradingModule />}
+                                {activeTab === 'student-exams' && <StudentExamsView gradeId={selectedGradeId} divisionId={selectedDivisionId} />}
+                                {activeTab === 'leaves' && <LeaveRequestsView gradeId={selectedGradeId} divisionId={selectedDivisionId} />}
                                 {activeTab === 'queries' && <QueriesModule />}
                                 {activeTab === 'settings' && <SettingsSection user={user!} />}
                             </motion.div>
@@ -447,15 +452,97 @@ const GradingModule = () => {
             <h3 className="text-4xl font-light serif-font pb-8 border-b border-white/5">Submissions Queue</h3>
             <div className="space-y-4">
                 {subs.map(sub => (
-                    <div key={sub.id} className="bg-[#0A0A0A] p-10 rounded-[40px] border border-white/5 flex flex-col md:flex-row justify-between items-center gap-10 hover:border-white/10 transition-all">
-                        <div className="flex-1">
-                            <p className="text-[9px] text-white/10 font-black uppercase tracking-[0.5em] mb-6">Entry ID: {sub.studentId.slice(0,8)}</p>
-                            <p className="text-2xl italic text-white/70 leading-relaxed font-serif tracking-tight">"{sub.submissionText}"</p>
+                    <div key={sub.id} className="bg-[#0A0A0A] p-10 rounded-[40px] border border-white/5 flex flex-col items-start gap-6 hover:border-white/10 transition-all">
+                        <div className="flex justify-between w-full">
+                            <p className="text-[9px] text-white/10 font-black uppercase tracking-[0.5em]">Entry ID: {sub.studentId.slice(0,8)}</p>
+                            <p className="text-[9px] text-white/20 font-black uppercase">{sub.submittedAt}</p>
                         </div>
-                        <button onClick={async ()=>{await db.updateHomeworkStatus(sub.id, 'Reviewed'); load();}} className="bg-white/5 border border-white/10 px-10 py-3.5 rounded-xl font-black text-[10px] uppercase tracking-[0.3em] hover:text-emerald-400 hover:border-emerald-400/30 transition-all shrink-0">Validate Entry</button>
+                        <p className="text-2xl italic text-white/70 leading-relaxed font-serif tracking-tight">"{sub.submissionText}"</p>
+                        {sub.imageUrl && (
+                            <div className="w-full mt-2 bg-black border border-white/5 rounded-2xl p-4">
+                                <p className="text-[9px] font-black uppercase text-white/20 mb-4 tracking-widest">Attachment</p>
+                                <img src={sub.imageUrl} className="max-w-xs rounded-lg border border-white/10" alt="Submission" />
+                            </div>
+                        )}
+                        <button onClick={async ()=>{await db.updateHomeworkStatus(sub.id, 'Reviewed'); load();}} className="w-full mt-4 bg-white/5 border border-white/10 py-4 rounded-xl font-black text-[10px] uppercase tracking-[0.3em] hover:text-emerald-400 hover:border-emerald-400/30 transition-all">Validate Entry</button>
                     </div>
                 ))}
                 {subs.length === 0 && <div className="py-32 text-center border-2 border-dashed border-white/5 rounded-[48px] text-white/10 font-black uppercase text-[11px] tracking-[0.5em] opacity-40">Queue Clear</div>}
+            </div>
+        </div>
+    );
+};
+
+const StudentExamsView = ({ gradeId, divisionId }: { gradeId: string, divisionId: string }) => {
+    const [exams, setExams] = useState<StudentOwnExam[]>([]);
+    
+    useEffect(() => {
+        if(gradeId && divisionId) {
+            db.getStudentExams(undefined, gradeId, divisionId).then(setExams);
+        }
+    }, [gradeId, divisionId]);
+
+    return (
+        <div className="max-w-4xl mx-auto space-y-12">
+            <h3 className="text-4xl font-light serif-font pb-8 border-b border-white/5">Upcoming Student Exams</h3>
+            <div className="grid grid-cols-1 gap-4">
+                {exams.map(ex => (
+                    <div key={ex.id} className="bg-[#0A0A0A] p-8 rounded-[32px] border border-white/5 flex items-center justify-between hover:border-white/10">
+                        <div>
+                            <div className="flex gap-4 items-center mb-2">
+                                <h4 className="text-xl font-bold text-white">{ex.subject}</h4>
+                                <span className="text-[10px] font-black bg-indigo-500/10 text-indigo-400 px-3 py-1 rounded-full uppercase tracking-wider">{ex.studentName}</span>
+                            </div>
+                            <p className="text-sm text-white/40">{ex.description}</p>
+                        </div>
+                        <div className="text-right">
+                            <p className="text-[10px] font-black uppercase text-white/20 tracking-widest mb-1">Date</p>
+                            <p className="text-lg font-mono text-white/90">{ex.examDate}</p>
+                        </div>
+                    </div>
+                ))}
+                {exams.length === 0 && <div className="py-20 text-center text-white/10 font-black uppercase text-[10px] tracking-widest">No Student Exams Found</div>}
+            </div>
+        </div>
+    );
+};
+
+const LeaveRequestsView = ({ gradeId, divisionId }: { gradeId: string, divisionId: string }) => {
+    const [leaves, setLeaves] = useState<LeaveApplication[]>([]);
+    const load = useCallback(() => {
+        if(gradeId && divisionId) db.getLeaveApplications(undefined, gradeId, divisionId).then(setLeaves);
+    }, [gradeId, divisionId]);
+
+    useEffect(() => { load(); }, [load]);
+
+    const handleAction = async (id: string, status: 'Approved' | 'Rejected') => {
+        await db.updateLeaveStatus(id, status);
+        load();
+    };
+
+    return (
+        <div className="max-w-4xl mx-auto space-y-12">
+            <h3 className="text-4xl font-light serif-font pb-8 border-b border-white/5">Leave Requests</h3>
+            <div className="space-y-6">
+                {leaves.map(l => (
+                    <div key={l.id} className="bg-[#0A0A0A] p-8 rounded-[32px] border border-white/5 flex flex-col md:flex-row justify-between gap-6 hover:border-white/10">
+                        <div>
+                            <div className="flex gap-4 items-center mb-3">
+                                <h4 className="text-lg font-bold text-white">{l.studentName}</h4>
+                                <span className={`text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-wider ${l.status === 'Approved' ? 'bg-emerald-500/10 text-emerald-400' : l.status === 'Rejected' ? 'bg-rose-500/10 text-rose-400' : 'bg-amber-500/10 text-amber-400'}`}>{l.status}</span>
+                            </div>
+                            <p className="text-sm text-white/60 mb-2">"{l.reason}"</p>
+                            <p className="text-[10px] text-white/20 font-mono uppercase tracking-widest">{l.startDate} <span className="mx-2">to</span> {l.endDate}</p>
+                        </div>
+                        {l.status === 'Pending' && (
+                            <div className="flex gap-2 self-start md:self-center">
+                                <button onClick={() => handleAction(l.id, 'Approved')} className="p-3 rounded-xl bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all"><Check size={18}/></button>
+                                <button onClick={() => handleAction(l.id, 'Rejected')} className="p-3 rounded-xl bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white transition-all"><X size={18}/></button>
+                            </div>
+                        )}
+                    </div>
+                ))}
+                {leaves.length === 0 && <div className="py-20 text-center text-white/10 font-black uppercase text-[10px] tracking-widest">No Active Requests</div>}
             </div>
         </div>
     );

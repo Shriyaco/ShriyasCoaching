@@ -119,6 +119,7 @@ export interface HomeworkSubmission {
     homeworkId: string;
     studentId: string;
     submissionText: string;
+    imageUrl?: string; // Added optional image
     submittedAt: string;
     status: 'Submitted' | 'Reviewed';
 }
@@ -240,3 +241,28 @@ export interface StudentNotification {
 }
 
 export type TabView = 'dashboard' | 'students' | 'notices' | 'timetable' | 'grades' | 'teachers' | 'fees' | 'settings' | 'enquiries' | 'shop' | 'products' | 'broadcast' | 'homework' | 'exams';
+
+// --- NEW MODULE TYPES ---
+
+export interface StudentOwnExam {
+    id: string;
+    studentId: string;
+    studentName: string;
+    gradeId: string;
+    subdivisionId: string;
+    subject: string;
+    examDate: string;
+    description: string;
+}
+
+export interface LeaveApplication {
+    id: string;
+    studentId: string;
+    studentName: string;
+    gradeId: string;
+    subdivisionId: string;
+    startDate: string;
+    endDate: string;
+    reason: string;
+    status: 'Pending' | 'Approved' | 'Rejected';
+}

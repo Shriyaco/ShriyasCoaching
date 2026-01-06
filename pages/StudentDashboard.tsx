@@ -2,8 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../services/db';
-import { Student, Exam, Homework, Notice, TimetableEntry, StudentQuery, Subdivision, AttendanceRecord } from '../types';
-import { Gamepad2, Radio, Zap, Bell, Settings, LogOut, CheckCircle2, Target, Trophy, Flame, Lock, Send, X, CalendarDays, ShoppingBag, CreditCard, BookOpen, PenTool, HelpCircle, AlertTriangle, ChevronRight, ChevronLeft, Star, Sparkles } from 'lucide-react';
+import { Student, Exam, Homework, Notice, TimetableEntry, StudentQuery, Subdivision, AttendanceRecord, StudentOwnExam, LeaveApplication } from '../types';
+import { Gamepad2, Radio, Zap, Bell, Settings, LogOut, CheckCircle2, Target, Trophy, Flame, Lock, Send, X, CalendarDays, ShoppingBag, CreditCard, BookOpen, PenTool, HelpCircle, AlertTriangle, ChevronRight, ChevronLeft, Star, Sparkles, Upload, FileText, Calendar } from 'lucide-react';
 import { motion, AnimatePresence, Variants } from 'framer-motion';
 import JitsiMeeting from '../components/JitsiMeeting';
 
@@ -174,28 +174,81 @@ const StatCard = ({ title, value, label, icon: Icon, colorClass, borderClass }: 
     </motion.div>
 );
 
-const HomeworkCard = ({ homework }: { homework: Homework }) => (
-    <motion.div 
-        variants={itemVariants}
-        whileHover={{ y: -5 }}
-        className="bg-[#0a0a0a] border border-white/5 p-8 rounded-[40px] group relative overflow-hidden hover:border-emerald-500/30 transition-all shadow-lg hover:shadow-emerald-900/10"
-    >
-        <div className="absolute top-0 right-0 p-6 opacity-[0.03] group-hover:opacity-10 transition-opacity duration-500">
-            <BookOpen size={120} />
-        </div>
-        <div className="flex justify-between items-start mb-6 relative z-10">
-            <span className="px-4 py-1.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-black uppercase tracking-widest border border-emerald-500/20 shadow-[0_0_10px_rgba(16,185,129,0.1)]">
-                {homework.subject}
-            </span>
-            <Target size={20} className="text-white/10 group-hover:text-emerald-500 transition-colors" />
-        </div>
-        <h4 className="text-xl font-bold text-white mb-3 line-clamp-2 leading-tight group-hover:text-emerald-200 transition-colors relative z-10">"{homework.task}"</h4>
-        <div className="mt-6 pt-6 border-t border-white/5 flex items-center gap-3 relative z-10">
-            <CalendarDays size={16} className="text-emerald-500" />
-            <span className="text-xs font-mono font-bold text-white/40 group-hover:text-white/60 transition-colors">Due: {homework.dueDate}</span>
-        </div>
-    </motion.div>
-);
+// Expanded Homework Card with Submission Logic
+const HomeworkCard = ({ homework, studentId, onSubmission }: { homework: Homework, studentId: string, onSubmission: () => void }) => {
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isOpen, setIsOpen] = useState(false);
+    const [text, setText] = useState('');
+    const [image, setImage] = useState('');
+
+    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => setImage(reader.result as string);
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const submit = async () => {
+        if (!text) return alert("Submission text required.");
+        setIsSubmitting(true);
+        await db.submitHomework(homework.id, studentId, text, image);
+        setIsSubmitting(false);
+        setIsOpen(false);
+        onSubmission();
+        alert("Homework Submitted!");
+    };
+
+    return (
+        <>
+            <motion.div 
+                variants={itemVariants}
+                whileHover={{ y: -5 }}
+                onClick={() => setIsOpen(true)}
+                className="bg-[#0a0a0a] border border-white/5 p-8 rounded-[40px] group relative overflow-hidden hover:border-emerald-500/30 transition-all shadow-lg hover:shadow-emerald-900/10 cursor-pointer"
+            >
+                <div className="absolute top-0 right-0 p-6 opacity-[0.03] group-hover:opacity-10 transition-opacity duration-500">
+                    <BookOpen size={120} />
+                </div>
+                <div className="flex justify-between items-start mb-6 relative z-10">
+                    <span className="px-4 py-1.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-black uppercase tracking-widest border border-emerald-500/20 shadow-[0_0_10px_rgba(16,185,129,0.1)]">
+                        {homework.subject}
+                    </span>
+                    <Target size={20} className="text-white/10 group-hover:text-emerald-500 transition-colors" />
+                </div>
+                <h4 className="text-xl font-bold text-white mb-3 line-clamp-2 leading-tight group-hover:text-emerald-200 transition-colors relative z-10">"{homework.task}"</h4>
+                <div className="mt-6 pt-6 border-t border-white/5 flex items-center gap-3 relative z-10">
+                    <CalendarDays size={16} className="text-emerald-500" />
+                    <span className="text-xs font-mono font-bold text-white/40 group-hover:text-white/60 transition-colors">Due: {homework.dueDate}</span>
+                </div>
+            </motion.div>
+
+            <AnimatePresence>
+                {isOpen && (
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+                        <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} className="bg-[#111] p-8 rounded-[40px] w-full max-w-md border border-white/10 shadow-2xl relative">
+                            <button onClick={(e) => { e.stopPropagation(); setIsOpen(false); }} className="absolute top-6 right-6 text-white/40 hover:text-white"><X/></button>
+                            <h3 className="text-2xl font-black text-white mb-6 flex items-center gap-2"><BookOpen className="text-emerald-500"/> Submit Work</h3>
+                            <div className="space-y-4">
+                                <textarea placeholder="Type your answer or notes here..." className="w-full bg-black border border-white/10 rounded-2xl p-4 text-sm text-white outline-none focus:border-emerald-500 h-32 resize-none" value={text} onChange={e => setText(e.target.value)} />
+                                <div className="border-2 border-dashed border-white/10 rounded-2xl p-4 text-center hover:bg-white/5 transition-all relative">
+                                    <input type="file" accept="image/*" onChange={handleImageUpload} className="absolute inset-0 opacity-0 cursor-pointer" />
+                                    <Upload className="mx-auto text-emerald-500 mb-2" size={24} />
+                                    <p className="text-[10px] font-bold uppercase text-white/40">Upload Image (Optional)</p>
+                                    {image && <p className="text-[10px] text-emerald-400 mt-2 font-black">Image Selected</p>}
+                                </div>
+                                <button onClick={submit} disabled={isSubmitting} className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:bg-emerald-500 transition-all shadow-xl">
+                                    {isSubmitting ? 'Uploading...' : 'Confirm Submission'}
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </>
+    );
+};
 
 const ExamCard = ({ exam }: { exam: Exam }) => (
     <motion.div 
@@ -298,7 +351,13 @@ export default function StudentDashboard() {
     const [challenges, setChallenges] = useState<Exam[]>([]);
     const [intel, setIntel] = useState<Notice[]>([]);
     const [doubts, setDoubts] = useState<StudentQuery[]>([]);
+    const [myExams, setMyExams] = useState<StudentOwnExam[]>([]);
+    const [leaves, setLeaves] = useState<LeaveApplication[]>([]);
     const [doubtForm, setDoubtForm] = useState({ subject: '', queryText: '' });
+    
+    // Forms for new modules
+    const [examForm, setExamForm] = useState({ subject: '', examDate: '', description: '' });
+    const [leaveForm, setLeaveForm] = useState({ startDate: '', endDate: '', reason: '' });
 
     useEffect(() => {
         const init = async () => {
@@ -316,12 +375,14 @@ export default function StudentDashboard() {
                     const mySub = subs.find(s => s.id === me.subdivisionId);
                     setSubdivision(mySub || null);
 
-                    const [att, hw, ex, not, q] = await Promise.all([
+                    const [att, hw, ex, not, q, myEx, lv] = await Promise.all([
                         db.getAttendance(me.id),
                         db.getHomeworkForStudent(me.gradeId, me.subdivisionId),
                         db.getExamsForStudent(me.gradeId, me.subdivisionId),
                         db.getNotices(),
-                        db.getQueries(me.id)
+                        db.getQueries(me.id),
+                        db.getStudentExams(me.id),
+                        db.getLeaveApplications(me.id)
                     ]);
 
                     setAttendance(att);
@@ -329,6 +390,8 @@ export default function StudentDashboard() {
                     setChallenges(ex);
                     setIntel(not);
                     setDoubts(q);
+                    setMyExams(myEx);
+                    setLeaves(lv);
                 }
             } catch (e) {
                 console.error("Dashboard Load Error", e);
@@ -346,6 +409,24 @@ export default function StudentDashboard() {
         setDoubtForm({ subject: '', queryText: '' });
         const q = await db.getQueries(student.id);
         setDoubts(q);
+    };
+
+    const handleExamSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if(!student) return;
+        await db.addStudentExam({ studentId: student.id, studentName: student.name, gradeId: student.gradeId, subdivisionId: student.subdivisionId, ...examForm });
+        setExamForm({ subject: '', examDate: '', description: '' });
+        const ex = await db.getStudentExams(student.id);
+        setMyExams(ex);
+    };
+
+    const handleLeaveSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if(!student) return;
+        await db.addLeaveApplication({ studentId: student.id, studentName: student.name, gradeId: student.gradeId, subdivisionId: student.subdivisionId, ...leaveForm });
+        setLeaveForm({ startDate: '', endDate: '', reason: '' });
+        const lv = await db.getLeaveApplications(student.id);
+        setLeaves(lv);
     };
 
     const handleLogout = () => { sessionStorage.removeItem('sc_user'); navigate('/'); };
@@ -367,9 +448,9 @@ export default function StudentDashboard() {
         { id: 'command', label: 'Base', icon: Gamepad2 },
         { id: 'homework', label: 'Homework', icon: BookOpen },
         { id: 'exams', label: 'Exam', icon: PenTool },
+        { id: 'my-exams', label: 'My Exams', icon: Calendar },
+        { id: 'leave', label: 'Leave', icon: FileText },
         { id: 'doubts', label: 'Doubt', icon: HelpCircle },
-        { id: 'shop', label: 'Shop', icon: ShoppingBag, action: () => navigate('/shop') },
-        { id: 'fees', label: 'Fees', icon: CreditCard, action: () => navigate('/pay-fees') },
         { id: 'settings', label: 'Config', icon: Settings },
     ];
 
@@ -530,7 +611,7 @@ export default function StudentDashboard() {
 
                     {activeTab === 'homework' && (
                         <motion.div variants={containerVariants} initial="hidden" animate="visible" exit="exit" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {missions.map(m => <HomeworkCard key={m.id} homework={m} />)}
+                            {missions.map(m => <HomeworkCard key={m.id} homework={m} studentId={student.id} onSubmission={() => {}} />)}
                             {missions.length === 0 && <div className="col-span-full text-center py-40 text-white/20 font-black uppercase tracking-[0.5em] border border-dashed border-white/10 rounded-[40px]">Log Empty</div>}
                         </motion.div>
                     )}
@@ -539,6 +620,69 @@ export default function StudentDashboard() {
                         <motion.div variants={containerVariants} initial="hidden" animate="visible" exit="exit" className="grid grid-cols-1 md:grid-cols-2 gap-8">
                             {challenges.map(c => <ExamCard key={c.id} exam={c} />)}
                             {challenges.length === 0 && <div className="col-span-full text-center py-40 text-white/20 font-black uppercase tracking-[0.5em] border border-dashed border-white/10 rounded-[40px]">No Active Raids</div>}
+                        </motion.div>
+                    )}
+
+                    {activeTab === 'my-exams' && (
+                        <motion.div variants={containerVariants} initial="hidden" animate="visible" exit="exit" className="max-w-4xl mx-auto h-[calc(100vh-200px)] flex flex-col pb-32">
+                            <div className="flex-1 overflow-y-auto space-y-6 mb-6 pr-2 scrollbar-hide">
+                                {myExams.map(ex => (
+                                    <motion.div key={ex.id} layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-[#111] border border-white/10 p-6 rounded-[28px] flex justify-between items-center group hover:border-white/20 transition-all">
+                                        <div>
+                                            <h4 className="text-lg font-bold text-white mb-1">{ex.subject}</h4>
+                                            <p className="text-xs text-white/40">{ex.description}</p>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="text-[10px] font-black uppercase text-premium-accent tracking-widest bg-premium-accent/5 px-3 py-1 rounded-full border border-premium-accent/10">{ex.examDate}</p>
+                                        </div>
+                                    </motion.div>
+                                ))}
+                                {myExams.length === 0 && <div className="text-center py-40 opacity-20 font-black uppercase tracking-[0.3em] text-xs">No Upcoming Exams Registered</div>}
+                            </div>
+                            <form onSubmit={handleExamSubmit} className="bg-[#0a0a0a] p-6 rounded-[32px] border border-white/10 shadow-2xl relative z-20 space-y-4">
+                                <h3 className="text-sm font-bold text-white/60 uppercase tracking-widest mb-2">Register Upcoming Exam</h3>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <input required placeholder="Subject Name" value={examForm.subject} onChange={e => setExamForm({...examForm, subject: e.target.value})} className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-3 text-xs font-bold text-white outline-none focus:border-indigo-500 transition-all" />
+                                    <input required type="date" value={examForm.examDate} onChange={e => setExamForm({...examForm, examDate: e.target.value})} className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-3 text-xs font-bold text-white outline-none focus:border-indigo-500 transition-all" />
+                                </div>
+                                <input required placeholder="Syllabus / Notes..." value={examForm.description} onChange={e => setExamForm({...examForm, description: e.target.value})} className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-3 text-xs font-bold text-white outline-none focus:border-indigo-500 transition-all" />
+                                <button className="w-full bg-white text-black p-4 rounded-xl hover:bg-indigo-400 hover:text-white transition-all shadow-lg font-black text-xs uppercase tracking-[0.2em]">Notify Teacher</button>
+                            </form>
+                        </motion.div>
+                    )}
+
+                    {activeTab === 'leave' && (
+                        <motion.div variants={containerVariants} initial="hidden" animate="visible" exit="exit" className="max-w-4xl mx-auto h-[calc(100vh-200px)] flex flex-col pb-32">
+                            <div className="flex-1 overflow-y-auto space-y-6 mb-6 pr-2 scrollbar-hide">
+                                {leaves.map(l => (
+                                    <motion.div key={l.id} layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-[#111] border border-white/10 p-6 rounded-[28px] flex justify-between items-start group hover:border-white/20 transition-all">
+                                        <div>
+                                            <div className="flex gap-2 items-center mb-2">
+                                                <span className={`w-2 h-2 rounded-full ${l.status === 'Approved' ? 'bg-emerald-500' : l.status === 'Rejected' ? 'bg-rose-500' : 'bg-amber-500'}`} />
+                                                <span className="text-[10px] font-black uppercase text-white/40 tracking-widest">{l.status}</span>
+                                            </div>
+                                            <p className="text-sm font-bold text-white mb-1">Reason: {l.reason}</p>
+                                            <p className="text-xs text-white/40 font-mono">{l.startDate} to {l.endDate}</p>
+                                        </div>
+                                    </motion.div>
+                                ))}
+                                {leaves.length === 0 && <div className="text-center py-40 opacity-20 font-black uppercase tracking-[0.3em] text-xs">No Leave History</div>}
+                            </div>
+                            <form onSubmit={handleLeaveSubmit} className="bg-[#0a0a0a] p-6 rounded-[32px] border border-white/10 shadow-2xl relative z-20 space-y-4">
+                                <h3 className="text-sm font-bold text-white/60 uppercase tracking-widest mb-2">Request Leave</h3>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-1">
+                                        <label className="text-[9px] font-black uppercase text-white/20 ml-1">From</label>
+                                        <input required type="date" value={leaveForm.startDate} onChange={e => setLeaveForm({...leaveForm, startDate: e.target.value})} className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-3 text-xs font-bold text-white outline-none focus:border-rose-500 transition-all" />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[9px] font-black uppercase text-white/20 ml-1">To</label>
+                                        <input required type="date" value={leaveForm.endDate} onChange={e => setLeaveForm({...leaveForm, endDate: e.target.value})} className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-3 text-xs font-bold text-white outline-none focus:border-rose-500 transition-all" />
+                                    </div>
+                                </div>
+                                <input required placeholder="Reason for leave..." value={leaveForm.reason} onChange={e => setLeaveForm({...leaveForm, reason: e.target.value})} className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-3 text-xs font-bold text-white outline-none focus:border-rose-500 transition-all" />
+                                <button className="w-full bg-white text-black p-4 rounded-xl hover:bg-rose-400 hover:text-white transition-all shadow-lg font-black text-xs uppercase tracking-[0.2em]">Submit Request</button>
+                            </form>
                         </motion.div>
                     )}
 
@@ -577,6 +721,10 @@ export default function StudentDashboard() {
                 </AnimatePresence>
             </main>
 
+            <AnimatePresence>
+                {/* Removed AttendanceModal call as it was part of the old design flow, if needed re-add */}
+            </AnimatePresence>
+
             {/* Enhanced Floating Dock */}
             <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50">
                 <nav className="bg-[#0a0a0a]/80 backdrop-blur-2xl border border-white/10 rounded-[32px] p-2 flex items-center gap-1 shadow-[0_20px_50px_rgba(0,0,0,0.5)] max-w-[95vw] overflow-x-auto scrollbar-hide">
@@ -584,8 +732,7 @@ export default function StudentDashboard() {
                         <button
                             key={item.id}
                             onClick={() => { 
-                                if(item.action) item.action();
-                                else setActiveTab(item.id); 
+                                setActiveTab(item.id); 
                             }}
                             className={`relative min-w-[64px] h-[64px] rounded-[24px] flex flex-col items-center justify-center gap-1 transition-all duration-300 group ${activeTab === item.id ? 'bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-lg scale-105 -translate-y-2' : 'text-white/40 hover:text-white hover:bg-white/5'}`}
                         >

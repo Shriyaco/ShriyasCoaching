@@ -1,6 +1,7 @@
+
 import { supabase } from './supabase';
 import { RealtimeChannel } from '@supabase/supabase-js';
-import { Student, Grade, Subdivision, Notice, User, Teacher, TimetableEntry, FeeSubmission, SystemSettings, GatewayConfig, AttendanceRecord, Homework, Exam, ExamResult, HomeworkSubmission, ExamSubmission, StudentQuery, Enquiry, Product, Order, StudyNote, StudentNotification } from '../types';
+import { Student, Grade, Subdivision, Notice, User, Teacher, TimetableEntry, FeeSubmission, SystemSettings, GatewayConfig, AttendanceRecord, Homework, Exam, ExamResult, HomeworkSubmission, ExamSubmission, StudentQuery, Enquiry, Product, Order, StudyNote, StudentNotification, LeaveApplication, StudentOwnExam } from '../types';
 
 const mapStudent = (s: any): Student => ({
     id: s.id,
@@ -85,6 +86,29 @@ const mapNotification = (n: any): StudentNotification => ({
     title: n.title,
     message: n.message,
     createdAt: n.created_at
+});
+
+const mapLeave = (l: any): LeaveApplication => ({
+    id: l.id,
+    studentId: l.student_id,
+    studentName: l.student_name,
+    gradeId: l.grade_id,
+    subdivisionId: l.subdivision_id,
+    startDate: l.start_date,
+    endDate: l.end_date,
+    reason: l.reason,
+    status: l.status
+});
+
+const mapStudentExam = (e: any): StudentOwnExam => ({
+    id: e.id,
+    studentId: e.student_id,
+    studentName: e.student_name,
+    gradeId: e.grade_id,
+    subdivisionId: e.subdivision_id,
+    subject: e.subject,
+    examDate: e.exam_date,
+    description: e.description
 });
 
 class DatabaseService {
@@ -495,13 +519,13 @@ class DatabaseService {
       const { data } = await supabase.from('homework_submissions').select('*').eq('homework_id', homeworkId).eq('student_id', studentId).single();
       if (!data) return undefined;
       return {
-          id: data.id, homeworkId: data.homework_id, studentId: data.student_id, submissionText: data.submission_text, submittedAt: data.submitted_at, status: data.status as any
+          id: data.id, homeworkId: data.homework_id, studentId: data.student_id, submissionText: data.submission_text, imageUrl: data.image_url, submittedAt: data.submitted_at, status: data.status as any
       };
   }
 
-  async submitHomework(homeworkId: string, studentId: string, text: string) {
+  async submitHomework(homeworkId: string, studentId: string, text: string, imageUrl?: string) {
       await supabase.from('homework_submissions').insert({
-          homework_id: homeworkId, student_id: studentId, submission_text: text, submitted_at: new Date().toISOString().split('T')[0], status: 'Submitted'
+          homework_id: homeworkId, student_id: studentId, submission_text: text, image_url: imageUrl, submitted_at: new Date().toISOString().split('T')[0], status: 'Submitted'
       });
   }
 
@@ -512,6 +536,7 @@ class DatabaseService {
         homeworkId: s.homework_id,
         studentId: s.student_id,
         submissionText: s.submission_text,
+        imageUrl: s.image_url,
         submittedAt: s.submitted_at,
         status: s.status as any
     }));
@@ -763,6 +788,55 @@ class DatabaseService {
           .or(`target_type.eq.all,and(target_type.eq.grade,target_id.eq.${student.gradeId}),and(target_type.eq.division,target_id.eq.${student.subdivisionId}),and(target_type.eq.student,target_id.eq.${student.id})`)
           .order('created_at', { ascending: false });
       return (data || []).map(mapNotification);
+  }
+
+  // --- NEW METHODS FOR LEAVE & STUDENT EXAMS ---
+
+  async addLeaveApplication(data: Omit<LeaveApplication, 'id' | 'status'>) {
+      await supabase.from('leave_applications').insert({
+          student_id: data.studentId,
+          student_name: data.studentName,
+          grade_id: data.gradeId,
+          subdivision_id: data.subdivisionId,
+          start_date: data.startDate,
+          end_date: data.endDate,
+          reason: data.reason,
+          status: 'Pending'
+      });
+  }
+
+  async getLeaveApplications(studentId?: string, gradeId?: string, divisionId?: string): Promise<LeaveApplication[]> {
+      let query = supabase.from('leave_applications').select('*');
+      if (studentId) query = query.eq('student_id', studentId);
+      if (gradeId) query = query.eq('grade_id', gradeId);
+      if (divisionId) query = query.eq('subdivision_id', divisionId);
+      const { data } = await query.order('start_date', { ascending: false });
+      return (data || []).map(mapLeave);
+  }
+
+  async updateLeaveStatus(id: string, status: 'Approved' | 'Rejected') {
+      await supabase.from('leave_applications').update({ status }).eq('id', id);
+  }
+
+  async addStudentExam(data: Omit<StudentOwnExam, 'id'>) {
+      await supabase.from('student_exams').insert({
+          student_id: data.studentId,
+          student_name: data.studentName,
+          grade_id: data.gradeId,
+          subdivision_id: data.subdivisionId,
+          subject: data.subject,
+          exam_date: data.examDate,
+          description: data.description
+      });
+  }
+
+  async getStudentExams(studentId?: string, gradeId?: string, divisionId?: string): Promise<StudentOwnExam[]> {
+      let query = supabase.from('student_exams').select('*');
+      if (studentId) query = query.eq('student_id', studentId);
+      if (gradeId) query = query.eq('grade_id', gradeId);
+      if (divisionId) query = query.eq('subdivision_id', divisionId);
+      const { data } = await query.order('exam_date', { ascending: true });
+      return (data || []).map(mapStudentExam);
   }
 }
 
