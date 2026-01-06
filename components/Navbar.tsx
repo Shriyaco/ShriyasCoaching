@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, ChevronDown, Heart, Sun, Moon } from 'lucide-react';
+import { Menu, X, ChevronDown, Heart, Sun, Moon, User as UserIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from '../App';
 
@@ -135,7 +135,7 @@ const Navbar: React.FC = () => {
             </div>
           </div>
 
-          {/* Mobile Actions Header - Match Screenshot */}
+          {/* Mobile Actions Header */}
           <div className="lg:hidden relative z-[110] flex items-center gap-2 sm:gap-4">
             <button 
               onClick={toggleTheme}
@@ -243,14 +243,13 @@ const Navbar: React.FC = () => {
                 </motion.div>
               ))}
               
-              {/* Footer Links in Menu */}
               <motion.div variants={itemVariants} className="pt-8 flex flex-col items-start gap-6 border-t border-slate-100 dark:border-white/5">
                  <Link 
                    to="/pay-fees" 
                    onClick={() => setIsOpen(false)} 
                    className="text-premium-accent text-[14px] font-black uppercase tracking-[0.4em] hover:brightness-125 transition-all"
                  >
-                    Pay Fees
+                    Financial Hub
                  </Link>
               </motion.div>
             </motion.div>
@@ -264,14 +263,21 @@ const Navbar: React.FC = () => {
                   </div>
                   
                   <div className="flex items-center gap-2">
-                    <span className="text-slate-500 dark:text-white/40 text-[8px] font-bold uppercase tracking-[0.15em]">Designed by</span>
-                    <div className="bg-slate-200 dark:bg-white/10 p-1 rounded-md ml-1">
+                    <span className="text-slate-500 dark:text-white/40 text-[8px] font-bold uppercase tracking-[0.15em] flex items-center gap-1">
+                      Developed with <Heart size={8} className="inline text-rose-500 fill-current" /> by
+                    </span>
+                    <a 
+                      href="https://www.advedasolutions.in" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="bg-slate-200 dark:bg-white/10 p-1 rounded-md ml-1 hover:scale-105 transition-transform"
+                    >
                       <img 
                         src="https://advedasolutions.in/logo.png" 
                         alt="Adveda Solutions" 
-                        className="h-3 w-auto object-contain dark:invert" 
+                        className="h-3.5 w-auto object-contain" 
                       />
-                    </div>
+                    </a>
                   </div>
                </div>
             </div>
