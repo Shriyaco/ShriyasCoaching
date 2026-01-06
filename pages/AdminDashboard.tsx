@@ -1,8 +1,8 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { db } from '../services/db';
-import { Student, TabView, Grade, Subdivision, Teacher, FeeSubmission, SystemSettings, GatewayConfig, Enquiry, Product, Order, StudentNotification, Notice, Homework, Exam } from '../types';
-import { Users, Settings, LogOut, Plus, Edit2, Search, Briefcase, CreditCard, Save, Layers, UserPlus, Lock, ShieldAlert, Key, Power, X, Trash2, GraduationCap, TrendingUp, DollarSign, RefreshCw, Menu, Check, Upload, Calendar, MessageCircle, Phone, Clock, ShoppingBag, Send, MapPin, Truck, Megaphone, Bell, Info, AlertTriangle, User, UserCheck, AlertCircle, Globe, Smartphone, QrCode, Package, Image as ImageIcon, Filter, CheckCircle2, Wand2, Eye, FileText, BookOpen } from 'lucide-react';
+import { Student, TabView, Grade, Subdivision, Teacher, FeeSubmission, SystemSettings, Enquiry, Product, Order, Notice, Homework, Exam } from '../types';
+import { Users, Settings, LogOut, Plus, Edit2, Search, Briefcase, CreditCard, Save, Layers, UserPlus, Lock, Key, Power, X, Trash2, TrendingUp, DollarSign, RefreshCw, Menu, Check, MessageCircle, Phone, ShoppingBag, Send, MapPin, Megaphone, Bell, Image as ImageIcon, Package, FileText, BookOpen, Wand2, Eye, UserCheck, QrCode, Smartphone } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -31,7 +31,6 @@ export default function AdminDashboard() {
 
   const refreshData = useCallback(async () => {
     try {
-        // We use allSettled to prevent one failed request from blocking the entire dashboard
         const results = await Promise.allSettled([
             db.getStudents(),
             db.getGrades(),
@@ -47,14 +46,14 @@ export default function AdminDashboard() {
             db.getExams()
         ]);
 
-        const [s, g, sd, t, f, set, enq, p, o, n, hw, ex] = results;
+        const [s, g, sd, t, f, settingsRes, enq, p, o, n, hw, ex] = results;
 
         if (s.status === 'fulfilled') setStudents(s.value);
         if (g.status === 'fulfilled') setGrades(g.value);
         if (sd.status === 'fulfilled') setSubdivisions(sd.value);
         if (t.status === 'fulfilled') setTeachers(t.value);
         if (f.status === 'fulfilled') setFees(f.value);
-        if (set.status === 'fulfilled') setSettings(set.value);
+        if (settingsRes.status === 'fulfilled') setSettings(settingsRes.value);
         if (enq.status === 'fulfilled') setEnquiries(enq.value);
         if (p.status === 'fulfilled') setProducts(p.value);
         if (o.status === 'fulfilled') setOrders(o.value);

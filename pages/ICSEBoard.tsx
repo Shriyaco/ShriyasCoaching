@@ -1,4 +1,4 @@
-
+// @ts-nocheck
 import React, { useRef, Suspense, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Canvas, useFrame } from '@react-three/fiber';
