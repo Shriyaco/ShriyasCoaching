@@ -169,6 +169,17 @@ const Shop: React.FC = () => {
 
     const currentGateway = settings && selectedGatewayKey ? settings.gateways[selectedGatewayKey] : null;
 
+    // --- DYNAMIC QR GENERATION FOR SHOP ---
+    // Extracted VPA from user's provided reference image: 9724111369@ptsbi
+    const getDynamicQR = () => {
+        // Preference: Database VPA > Provided Reference VPA
+        const upiID = currentGateway?.credentials.upiId || "9724111369@ptsbi";
+        const name = "SHRIYA BRAHMBHATT";
+        const am = activeOrder?.finalPrice || "0";
+        const upiLink = `upi://pay?pa=${upiID}&pn=${encodeURIComponent(name)}&am=${am}&cu=INR&mode=02&purpose=00`;
+        return `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(upiLink)}`;
+    };
+
     return (
         <div className="min-h-screen bg-[#050505] text-white font-sans pt-24 pb-12 relative overflow-x-hidden transition-colors duration-300">
             <ThreeOrb className="absolute top-0 left-0 w-[600px] h-[600px] opacity-10 pointer-events-none -translate-x-1/2 -translate-y-1/2" color="#C5A059" />
@@ -495,16 +506,20 @@ const Shop: React.FC = () => {
                                     <div className="flex-1 flex flex-col justify-center animate-fade-in">
                                         <div className="flex justify-center mb-10">
                                             <div className="p-6 bg-white rounded-[40px] shadow-[0_0_60px_rgba(255,255,255,0.05)]">
-                                                <img src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(`upi://pay?pa=${currentGateway.credentials.upiId || ''}&pn=ShriyasBoutique&am=${activeOrder.finalPrice}&cu=INR`)}`} className="w-48 h-48 md:w-56 md:h-56" alt="UPI QR" />
+                                                <img 
+                                                    src={getDynamicQR()} 
+                                                    className="w-48 h-48 md:w-56 md:h-56 object-contain" 
+                                                    alt="UPI QR" 
+                                                />
                                             </div>
                                         </div>
                                         
                                         <div className="bg-white/5 border border-white/10 p-5 rounded-[24px] flex items-center justify-between mb-10">
                                             <div>
                                                 <p className="text-[8px] font-black uppercase text-white/20 tracking-[0.4em] mb-1">Corporate VPA</p>
-                                                <p className="font-mono text-sm text-white/80 font-bold">{currentGateway.credentials.upiId}</p>
+                                                <p className="font-mono text-sm text-white/80 font-bold">{currentGateway.credentials.upiId || "9724111369@ptsbi"}</p>
                                             </div>
-                                            <button onClick={() => handleCopy(currentGateway.credentials.upiId || '')} className="p-3 text-white/20 hover:text-white"><Copy size={20} /></button>
+                                            <button onClick={() => handleCopy(currentGateway.credentials.upiId || '9724111369@ptsbi')} className="p-3 text-white/20 hover:text-white"><Copy size={20} /></button>
                                         </div>
 
                                         <form onSubmit={handlePaymentRefSubmit} className="mt-auto">

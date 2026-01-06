@@ -110,6 +110,16 @@ export default function PayFees() {
 
     const currentGateway = selectedGatewayKey ? settings.gateways[selectedGatewayKey] : null;
 
+    // --- DYNAMIC QR GENERATION ---
+    const getDynamicQR = () => {
+        if (!currentGateway?.credentials.upiId) return "https://advedasolutions.in/qr.jpg"; // Fallback
+        const upiID = currentGateway.credentials.upiId;
+        const name = "Shriyas Gurukul";
+        const am = amount || "0";
+        const upiLink = `upi://pay?pa=${upiID}&pn=${encodeURIComponent(name)}&am=${am}&cu=INR`;
+        return `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(upiLink)}`;
+    };
+
     return (
         <div className="min-h-screen bg-slate-900 text-white relative font-sans pt-32 pb-16 px-4 flex justify-center">
              <ThreeOrb className="absolute top-0 right-0 w-[600px] h-[600px] opacity-20 pointer-events-none" color="#00E5FF" />
@@ -249,9 +259,9 @@ export default function PayFees() {
                                             <div className="flex justify-center">
                                                 <div className="p-4 bg-white border-4 border-slate-50 rounded-3xl shadow-xl">
                                                     <img 
-                                                        src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(`upi://pay?pa=${currentGateway.credentials.upiId || ''}&pn=ShriyasCoaching&am=${amount}&cu=INR`)}`}
+                                                        src={getDynamicQR()}
                                                         alt="UPI QR Code" 
-                                                        className="w-48 h-48 md:w-56 md:h-56"
+                                                        className="w-48 h-48 md:w-56 md:h-56 object-contain"
                                                     />
                                                 </div>
                                             </div>
