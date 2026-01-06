@@ -17,7 +17,9 @@ import ICSEBoard from './pages/ICSEBoard';
 import StateBoard from './pages/StateBoard';
 import WhyUs from './pages/WhyUs';
 import Vision from './pages/Vision';
+import SuperAdminDashboard from './pages/SuperAdminDashboard';
 import { AlertCircle } from 'lucide-react';
+import { db } from './services/db';
 
 // --- Error Boundary ---
 interface ErrorBoundaryProps {
@@ -113,11 +115,56 @@ const ThemeProvider = ({ children }: { children?: React.ReactNode }) => {
     );
 };
 
+// --- Global Scripts Loader ---
+const GlobalScripts = () => {
+  useEffect(() => {
+    const loadScripts = async () => {
+      try {
+        const config = await db.getPageContent('global_config');
+        if (config) {
+          // Google Analytics
+          if (config.gaMeasurementId) {
+            const script = document.createElement('script');
+            script.async = true;
+            script.src = `https://www.googletagmanager.com/gtag/js?id=${config.gaMeasurementId}`;
+            document.head.appendChild(script);
+
+            const script2 = document.createElement('script');
+            script2.innerHTML = `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', '${config.gaMeasurementId}');
+            `;
+            document.head.appendChild(script2);
+          }
+
+          // Google Search Console Verification
+          if (config.gscVerificationCode) {
+            let meta = document.querySelector("meta[name='google-site-verification']");
+            if (!meta) {
+              meta = document.createElement('meta');
+              meta.setAttribute('name', 'google-site-verification');
+              document.head.appendChild(meta);
+            }
+            meta.setAttribute('content', config.gscVerificationCode);
+          }
+        }
+      } catch (e) {
+        console.error("Failed to load global config", e);
+      }
+    };
+    loadScripts();
+  }, []);
+  return null;
+};
+
 export default function App() {
   return (
     <ErrorBoundary>
       <ThemeProvider>
         <Router>
+          <GlobalScripts />
           <CustomCursor />
           <Navbar />
           <WhatsAppSupport />
@@ -136,6 +183,7 @@ export default function App() {
               <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/student" element={<StudentDashboard />} />
               <Route path="/teacher" element={<TeacherDashboard />} />
+              <Route path="/pratikmanage" element={<SuperAdminDashboard />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </Suspense>

@@ -18,11 +18,29 @@ const PublicHome: React.FC = () => {
     expectations: '', mobile: '', connectTime: '' 
   });
 
+  // Dynamic Content State with Defaults
+  const [content, setContent] = useState<any>({
+      heroTitle1: 'Future',
+      heroTitle2: 'Crafted here.',
+      heroTagline: 'The Zenith of Learning',
+      tickerText: 'ADMISSION OPENS FOR 2026-27. LIMITED SEATS AVAILABLE.',
+      philHeading: 'Precision \n Mastery.',
+      philDesc: "The most sophisticated coaching environment for primary years. Our collective experience and tailored methodology elevate education to a whole new level. We don't just teach; we sculpt intellects.",
+      philImage: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1000"
+  });
+
   useEffect(() => {
     const load = async () => {
         try {
             const all = await db.getNotices();
             setNotices(all.filter(n => n.important));
+            
+            // Fetch CMS Content
+            const cmsData = await db.getPageContent('home');
+            if (cmsData) {
+                // Merge with defaults to ensure no keys are missing
+                setContent((prev: any) => ({ ...prev, ...cmsData }));
+            }
         } catch (e) { console.error(e); }
     }
     load();
@@ -72,16 +90,13 @@ const PublicHome: React.FC = () => {
     <div className="min-h-screen bg-black text-white selection:bg-premium-accent overflow-x-hidden">
       
       {/* --- HERO SECTION --- */}
-      {/* Added pt-32 to push content down visually so it clears the navbar comfortably */}
       <section className="relative h-screen flex flex-col items-center justify-center overflow-hidden pt-32">
-        {/* Background Animation */}
         <div className="absolute inset-0 z-0">
           <ThreeHero />
           <div className="absolute inset-0 bg-black/50" />
         </div>
         
         <div className="relative z-10 w-full max-w-7xl mx-auto px-6 flex flex-col items-center justify-center text-center">
-            {/* Ultra Modern High-Contrast Heading */}
             <motion.div
               initial="hidden"
               animate="visible"
@@ -89,19 +104,18 @@ const PublicHome: React.FC = () => {
               className="flex flex-col items-center mb-10"
             >
               <span className="text-[11px] font-black uppercase tracking-[0.8em] text-premium-accent mb-8 block opacity-90">
-                The Zenith of Learning
+                {content.heroTagline}
               </span>
               <h1 className="flex flex-col items-center">
                 <span className="text-7xl md:text-[9rem] font-black uppercase tracking-tighter leading-none luxury-text-gradient font-[Montserrat]">
-                  Future
+                  {content.heroTitle1}
                 </span>
                 <span className="text-5xl md:text-[7.5rem] font-light serif-font italic leading-none text-white/90 -mt-2 md:-mt-6">
-                  Crafted here.
+                  {content.heroTitle2}
                 </span>
               </h1>
             </motion.div>
 
-            {/* Styled Small Enroll Now Button */}
             <motion.button 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -113,7 +127,6 @@ const PublicHome: React.FC = () => {
               <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" strokeWidth={2.5} />
             </motion.button>
 
-            {/* Integrated Ticker (Now below Enroll button) */}
             <motion.div 
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -133,7 +146,7 @@ const PublicHome: React.FC = () => {
                            <span className="text-premium-accent text-[10px] font-black uppercase tracking-[0.4em]">ALERT</span>
                         </div>
                         <p className="text-white/80 text-[11px] md:text-[13px] font-bold uppercase tracking-[0.2em]">
-                            ADMISSION OPENS FOR 2026-27. LIMITED SEATS AVAILABLE.
+                            {content.tickerText}
                         </p>
                         <div className="w-1.5 h-1.5 bg-white/20 rounded-full" />
                       </div>
@@ -143,7 +156,6 @@ const PublicHome: React.FC = () => {
             </motion.div>
         </div>
 
-        {/* Scroll Indicator */}
         <motion.div 
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -171,9 +183,9 @@ const PublicHome: React.FC = () => {
       <section className="py-32 px-6 bg-[#050505]">
           <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-24 items-center">
               <div className="space-y-8">
-                  <h2 className="text-5xl md:text-7xl font-light serif-font uppercase leading-tight">Precision <br /> Mastery.</h2>
+                  <h2 className="text-5xl md:text-7xl font-light serif-font uppercase leading-tight whitespace-pre-line">{content.philHeading}</h2>
                   <p className="text-lg text-white/40 leading-relaxed font-light">
-                      The most sophisticated coaching environment for primary years. Our collective experience and tailored methodology elevate education to a whole new level. We don't just teach; we sculpt intellects.
+                      {content.philDesc}
                   </p>
                   <Link to="/why-us" className="inline-block text-premium-accent text-[11px] font-black uppercase tracking-[0.5em] border-b border-premium-accent/20 pb-1 hover:border-premium-accent transition-all">
                     OUR VISION
@@ -181,7 +193,7 @@ const PublicHome: React.FC = () => {
               </div>
               <div className="h-[500px] bg-white/5 rounded-[60px] border border-white/5 overflow-hidden relative group">
                 <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-60 z-10" />
-                <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1000" className="w-full h-full object-cover opacity-50 grayscale group-hover:grayscale-0 group-hover:opacity-80 transition-all duration-1000 transform group-hover:scale-105" />
+                <img src={content.philImage} className="w-full h-full object-cover opacity-50 grayscale group-hover:grayscale-0 group-hover:opacity-80 transition-all duration-1000 transform group-hover:scale-105" />
                 <div className="absolute bottom-10 left-10 z-20">
                     <p className="text-white text-3xl serif-font italic">"Excellence is a habit."</p>
                 </div>
@@ -189,7 +201,7 @@ const PublicHome: React.FC = () => {
           </div>
       </section>
 
-      {/* --- NEW SECTION: ACADEMIC PATHWAYS --- */}
+      {/* --- ACADEMIC PATHWAYS --- */}
       <section className="py-32 px-6 bg-[#030303] border-t border-white/5">
           <div className="max-w-7xl mx-auto">
               <div className="mb-20 text-center md:text-left">
@@ -242,7 +254,7 @@ const PublicHome: React.FC = () => {
           </div>
       </section>
 
-      {/* --- NEW SECTION: HALL OF FAME --- */}
+      {/* --- HALL OF FAME --- */}
       <section className="py-24 px-6 bg-premium-black relative overflow-hidden">
           <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-premium-accent/5 rounded-full blur-[120px] pointer-events-none" />
           <div className="max-w-7xl mx-auto relative z-10">
@@ -267,7 +279,7 @@ const PublicHome: React.FC = () => {
           </div>
       </section>
 
-      {/* --- FOUNDER / MENTOR SECTION --- */}
+      {/* --- FOUNDER SECTION --- */}
       <section className="py-32 px-6 bg-[#050505] border-t border-white/5">
           <div className="max-w-6xl mx-auto flex flex-col md:flex-row gap-20 items-center">
               <div className="md:w-2/5">
@@ -297,41 +309,6 @@ const PublicHome: React.FC = () => {
                           <p className="text-[9px] font-black uppercase tracking-[0.2em] text-white/30">Education</p>
                       </div>
                   </div>
-              </div>
-          </div>
-      </section>
-
-      {/* --- TESTIMONIALS --- */}
-      <section className="py-32 px-6 bg-white/[0.02]">
-          <div className="max-w-7xl mx-auto">
-              <div className="flex flex-col md:flex-row justify-between items-end mb-20 gap-8">
-                  <div>
-                      <h2 className="text-4xl md:text-6xl font-light serif-font uppercase mb-4">Success <span className="text-premium-accent">Stories</span></h2>
-                      <p className="text-white/40 uppercase tracking-widest text-[10px] font-bold">Voices from our alumni and parents.</p>
-                  </div>
-                  <Link to="/contact" className="text-white border-b border-white/20 pb-1 text-xs font-black uppercase tracking-[0.3em] hover:text-premium-accent hover:border-premium-accent transition-all">View All Reviews</Link>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                  {[
-                      { name: "Aarav Patel", role: "Student, Grade 8", text: "The concepts I learned here in 6th grade are still helping me. The foundation building is unmatched." },
-                      { name: "Mrs. Sharma", role: "Parent", text: "Shriya's Coaching has transformed my daughter's approach to Math. She no longer fears the subject but enjoys it." },
-                      { name: "Rohan Mehta", role: "Alumni", text: "More than just marks, I learned discipline and time management which helps me even today in college." }
-                  ].map((t, i) => (
-                      <div key={i} className="p-10 bg-[#0A0A0A] border border-white/5 rounded-[40px] relative">
-                          <div className="flex items-center gap-2 mb-6">
-                              {[1,2,3,4,5].map(s => <Star key={s} size={14} className="text-premium-accent fill-premium-accent" />)}
-                          </div>
-                          <p className="text-white/60 text-sm leading-relaxed mb-8 italic">"{t.text}"</p>
-                          <div className="flex items-center gap-4">
-                              <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center font-black text-xs text-white">{t.name.charAt(0)}</div>
-                              <div>
-                                  <p className="text-sm font-bold text-white">{t.name}</p>
-                                  <p className="text-[9px] font-black uppercase text-white/30 tracking-wider">{t.role}</p>
-                              </div>
-                          </div>
-                      </div>
-                  ))}
               </div>
           </div>
       </section>

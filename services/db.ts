@@ -1,3 +1,4 @@
+
 import { supabase } from './supabase';
 import { RealtimeChannel } from '@supabase/supabase-js';
 import { Student, Grade, Subdivision, Notice, User, Teacher, TimetableEntry, FeeSubmission, SystemSettings, GatewayConfig, AttendanceRecord, Homework, Exam, ExamResult, HomeworkSubmission, ExamSubmission, StudentQuery, Enquiry, Product, Order, StudyNote, StudentNotification } from '../types';
@@ -111,6 +112,24 @@ class DatabaseService {
     }
     return null;
   }
+
+  // --- SUPERADMIN / CMS LOGIC ---
+  async getPageContent(pageKey: string): Promise<any> {
+      // NOTE: This assumes a table 'site_content' exists with columns: id, page_key (unique), content_json
+      const { data, error } = await supabase.from('site_content').select('content_json').eq('page_key', pageKey).single();
+      if (error || !data) return null;
+      return data.content_json;
+  }
+
+  async updatePageContent(pageKey: string, content: any) {
+      // Upsert: Create if not exists, update if exists
+      const { error } = await supabase.from('site_content').upsert(
+          { page_key: pageKey, content_json: content },
+          { onConflict: 'page_key' }
+      );
+      if (error) throw error;
+  }
+  // -----------------------------
 
   async changePassword(id: string, role: 'student' | 'teacher', oldPassword: string, newPassword: string): Promise<void> {
     const table = role === 'student' ? 'students' : 'teachers';

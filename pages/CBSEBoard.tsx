@@ -1,3 +1,4 @@
+
 import React, { useRef, Suspense, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -6,6 +7,8 @@ import { Float, Box, Sphere, MeshDistortMaterial, Environment, ContactShadows, S
 import * as THREE from 'three';
 import { Palette, Microscope, Zap, Book, Brain, Target, GraduationCap } from 'lucide-react';
 import Footer from '../components/Footer';
+import { db } from '../services/db';
+import SEO from '../components/SEO';
 
 const CBSEScene = () => {
   const group = useRef<THREE.Group>(null!);
@@ -27,6 +30,15 @@ const CBSEScene = () => {
 
 const CBSEBoard: React.FC = () => {
   const [webglSupported, setWebglSupported] = useState<boolean | null>(null);
+  const [content, setContent] = useState<any>({
+      heroTitle: 'CBSE Board',
+      heroSubtitle: 'NCERT-aligned coaching for future academic leadership.',
+      mainDesc: "Our CBSE program is meticulously structured around the NCERT framework, ensuring students don't just memorize but master the core concepts. We provide a bridge between regular schooling and competitive national standards.",
+      quoteText: "Excellence is not an act, but a habit of continuous conceptual evolution.",
+      seoTitle: 'CBSE Coaching',
+      seoDesc: 'Top CBSE Coaching in Ahmedabad for grades 1-8.',
+      seoKeywords: 'cbse, coaching, ahmedabad, ncert'
+  });
 
   useEffect(() => {
     try {
@@ -36,10 +48,18 @@ const CBSEBoard: React.FC = () => {
     } catch (e) {
       setWebglSupported(false);
     }
+
+    const loadContent = async () => {
+        const data = await db.getPageContent('cbse');
+        if (data) setContent(prev => ({ ...prev, ...data }));
+    };
+    loadContent();
   }, []);
 
   return (
     <div className="min-h-screen bg-premium-black text-white selection:bg-premium-accent overflow-x-hidden">
+      <SEO title={content.seoTitle} description={content.seoDesc} keywords={content.seoKeywords} />
+      
       <section className="relative min-h-screen flex flex-col items-center justify-center pt-24 overflow-hidden">
         <div className="absolute inset-0 z-0">
           {webglSupported ? (
@@ -58,8 +78,8 @@ const CBSEBoard: React.FC = () => {
         <div className="relative z-10 text-center px-6 max-w-5xl">
             <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
                 <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-500/10 border border-white/5 mb-8 backdrop-blur-xl"><Zap size={14} className="text-[#00E5FF]" /><span className="text-white/40 text-[9px] font-bold tracking-[0.4em] uppercase">National Excellence</span></div>
-                <h1 className="text-6xl md:text-[10rem] font-light serif-font uppercase mb-8 leading-tight luxury-text-gradient">CBSE Board</h1>
-                <p className="text-sm md:text-lg text-white/50 max-w-2xl mx-auto tracking-widest uppercase font-light"> NCERT-aligned coaching for future academic leadership.</p>
+                <h1 className="text-6xl md:text-[10rem] font-light serif-font uppercase mb-8 leading-tight luxury-text-gradient">{content.heroTitle}</h1>
+                <p className="text-sm md:text-lg text-white/50 max-w-2xl mx-auto tracking-widest uppercase font-light">{content.heroSubtitle}</p>
             </motion.div>
         </div>
       </section>
@@ -70,7 +90,7 @@ const CBSEBoard: React.FC = () => {
             <motion.div initial={{ opacity: 0, x: -30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}>
               <h2 className="text-4xl md:text-6xl font-light serif-font uppercase mb-8 leading-tight">The NCERT <br /><span className="text-premium-accent">Edge.</span></h2>
               <p className="text-white/50 text-lg leading-relaxed mb-10">
-                Our CBSE program is meticulously structured around the NCERT framework, ensuring students don't just memorize but master the core concepts. We provide a bridge between regular schooling and competitive national standards.
+                {content.mainDesc}
               </p>
               <div className="space-y-6">
                 {[
@@ -89,7 +109,7 @@ const CBSEBoard: React.FC = () => {
               <div className="aspect-square bg-gradient-to-br from-premium-accent/20 to-transparent rounded-[100px] border border-white/5 flex items-center justify-center p-20">
                 <Book size={180} className="text-premium-accent opacity-20 absolute" />
                 <p className="text-2xl md:text-4xl serif-font italic text-center text-white/80 leading-snug">
-                  "Excellence is not an act, but a habit of continuous conceptual evolution."
+                  "{content.quoteText}"
                 </p>
               </div>
             </div>
