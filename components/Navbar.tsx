@@ -13,7 +13,10 @@ const Navbar: React.FC = () => {
   const location = useLocation();
   
   const isLoginPage = location.pathname === '/login';
-  const isDashboard = location.pathname.startsWith('/admin') || location.pathname.startsWith('/student') || location.pathname.startsWith('/teacher');
+  const isDashboard = location.pathname.startsWith('/admin') || 
+                      location.pathname.startsWith('/student') || 
+                      location.pathname.startsWith('/teacher') || 
+                      location.pathname.startsWith('/pratikmanage');
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);

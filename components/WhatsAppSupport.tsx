@@ -1,8 +1,18 @@
+
 import React from 'react';
 import { motion } from 'framer-motion';
 import { MessageCircle } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
 
 const WhatsAppSupport: React.FC = () => {
+  const location = useLocation();
+  const isDashboard = location.pathname.startsWith('/admin') || 
+                      location.pathname.startsWith('/student') || 
+                      location.pathname.startsWith('/teacher') ||
+                      location.pathname.startsWith('/pratikmanage');
+
+  if (isDashboard) return null;
+
   const phoneNumber = "919724111369";
   const message = encodeURIComponent("Hello, I need assistance regarding Shriya's Coaching Platform.");
   const whatsappUrl = `https://wa.me/${phoneNumber}?text=${message}`;

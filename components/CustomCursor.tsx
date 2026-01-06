@@ -1,6 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { motion, useMotionValue, useSpring, AnimatePresence } from 'framer-motion';
+import { useLocation } from 'react-router-dom';
 
 // --- Desktop Cursor Implementation ---
 const DesktopCursor = () => {
@@ -168,6 +169,12 @@ const MobileTouchEffect = () => {
 // --- Main Component ---
 const CustomCursor: React.FC = () => {
   const [isMobile, setIsMobile] = useState<boolean | null>(null);
+  const location = useLocation();
+  
+  const isDashboard = location.pathname.startsWith('/admin') || 
+                      location.pathname.startsWith('/student') || 
+                      location.pathname.startsWith('/teacher') ||
+                      location.pathname.startsWith('/pratikmanage');
 
   useEffect(() => {
     const checkMobile = () => {
@@ -178,6 +185,7 @@ const CustomCursor: React.FC = () => {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  if (isDashboard) return null;
   if (isMobile === null) return null; // Avoid hydration mismatch or flash
 
   return isMobile ? <MobileTouchEffect /> : <DesktopCursor />;
