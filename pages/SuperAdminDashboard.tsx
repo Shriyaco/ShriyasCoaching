@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { db } from '../services/db';
-import { Lock, Save, Globe, Code, Image as ImageIcon, Layout, Terminal, LogOut, Search, TrendingUp, FileText } from 'lucide-react';
+import { Lock, Save, Globe, Code, Image as ImageIcon, Layout, Terminal, LogOut, Search, TrendingUp, FileText, Upload, Camera, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const DEFAULTS: any = {
@@ -126,6 +126,15 @@ export default function SuperAdminDashboard() {
             setContent(DEFAULTS[page] || {});
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, field: string) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => setContent({ ...content, [field]: reader.result as string });
+            reader.readAsDataURL(file);
         }
     };
 
@@ -282,11 +291,33 @@ export default function SuperAdminDashboard() {
                                 </div>
                             </div>
                             <div className="p-6 border border-white/10 rounded-xl bg-white/5">
-                                <h3 className="text-sm font-bold text-green-500 uppercase mb-6">Philosophy</h3>
-                                <div className="space-y-4">
+                                <h3 className="text-sm font-bold text-green-500 uppercase mb-6 flex items-center gap-3"><ImageIcon size={18}/> Philosophy Section</h3>
+                                <div className="space-y-6">
                                     <FormInput label="Heading" field="philHeading" />
                                     <FormInput label="Description" field="philDesc" type="textarea" />
-                                    <FormInput label="Image URL" field="philImage" />
+                                    
+                                    <div className="space-y-4 p-6 bg-black/40 rounded-2xl border border-white/5">
+                                        <label className="block text-[10px] uppercase text-gray-500 mb-1 tracking-widest font-black">Section Imagery</label>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="bg-white/5 border border-white/10 rounded-xl p-6 text-center relative hover:bg-white/10 transition-all cursor-pointer group">
+                                                <input type="file" accept="image/*" onChange={e => handleImageUpload(e, 'philImage')} className="absolute inset-0 opacity-0 cursor-pointer" />
+                                                <Upload className="mx-auto text-green-500 mb-2 group-hover:scale-110 transition-transform" size={24} />
+                                                <p className="text-[10px] font-bold uppercase text-gray-400">Upload from Gallery</p>
+                                            </div>
+                                            <div className="bg-white/5 border border-white/10 rounded-xl p-6 text-center relative hover:bg-white/10 transition-all cursor-pointer group">
+                                                <input type="file" accept="image/*" capture="environment" onChange={e => handleImageUpload(e, 'philImage')} className="absolute inset-0 opacity-0 cursor-pointer" />
+                                                <Camera className="mx-auto text-indigo-500 mb-2 group-hover:scale-110 transition-transform" size={24} />
+                                                <p className="text-[10px] font-bold uppercase text-gray-400">Capture from Camera</p>
+                                            </div>
+                                        </div>
+                                        <FormInput label="Manual Image URL" field="philImage" placeholder="https://..." />
+                                        {content.philImage && (
+                                            <div className="relative w-full aspect-video rounded-xl overflow-hidden border border-white/10 bg-black">
+                                                <img src={content.philImage} className="w-full h-full object-cover opacity-60" />
+                                                <button onClick={() => setContent({...content, philImage: ''})} className="absolute top-2 right-2 p-1.5 bg-black/60 rounded-full text-white hover:bg-black transition-all"><X size={14}/></button>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         </div>

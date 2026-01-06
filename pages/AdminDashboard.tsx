@@ -2,7 +2,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { db } from '../services/db';
 import { Student, TabView, Grade, Subdivision, Teacher, FeeSubmission, SystemSettings, Enquiry, Product, Order, Notice, Homework, Exam } from '../types';
-/* Added missing Clock icon import */
 import { Users, Settings, LogOut, Plus, Edit2, Search, Briefcase, CreditCard, Save, Layers, UserPlus, Lock, Key, Power, X, Trash2, TrendingUp, DollarSign, RefreshCw, Menu, Check, MessageCircle, Phone, ShoppingBag, Send, MapPin, Megaphone, Bell, Image as ImageIcon, Package, FileText, BookOpen, Wand2, Eye, UserCheck, QrCode, Smartphone, Upload, Camera, Clock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -481,8 +480,8 @@ const ProductsModule = ({ products, onNotify, refresh }: any) => {
                                     <div className="space-y-1">
                                         <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Stock Status</label>
                                         <select className="w-full bg-slate-100 border border-slate-200 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 font-bold text-slate-900" value={form.stockStatus} onChange={e => setForm({...form, stockStatus: e.target.value as any})}>
-                                            <option value="In Stock">Active (In Stock)</option>
-                                            <option value="Out of Stock">Unavailable (Out of Stock)</option>
+                                            <option value="In Stock">In Stock</option>
+                                            <option value="Out of Stock">Out of Stock</option>
                                         </select>
                                     </div>
                                 </div>
@@ -897,7 +896,9 @@ const StudentsModule = ({ students, grades, subdivisions, onNotify, refresh }: a
                                         <div className="mt-4 flex justify-center">
                                             <div className="relative w-24 h-24 rounded-full overflow-hidden border-4 border-white shadow-lg">
                                                 <img src={form.imageUrl} className="w-full h-full object-cover" />
-                                                <button onClick={() => setForm({...form, imageUrl: ''})} className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity text-white"><X size={20}/></button>
+                                                <button type="button" onClick={() => setForm({...form, imageUrl: ''})} className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity text-white">
+                                                    <Trash2 size={24}/>
+                                                </button>
                                             </div>
                                         </div>
                                     )}
