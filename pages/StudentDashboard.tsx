@@ -1,763 +1,140 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../services/db';
-import { Student, Exam, Homework, Notice, TimetableEntry, StudentQuery, Subdivision, AttendanceRecord, StudentOwnExam, LeaveApplication } from '../types';
-import { Gamepad2, Radio, Zap, Bell, Settings, LogOut, CheckCircle2, Target, Trophy, Flame, Lock, Send, X, CalendarDays, ShoppingBag, CreditCard, BookOpen, PenTool, HelpCircle, AlertTriangle, ChevronRight, ChevronLeft, Star, Sparkles, Upload, FileText, Calendar, Camera } from 'lucide-react';
+import { Student, Exam, Homework, StudentQuery, AttendanceRecord, StudentOwnExam, LeaveApplication, StudyNote, ExamSubmission, User } from '../types';
+import { 
+    LogOut, Calendar, BookOpen, PenTool, Award, X, MessageSquare, 
+    Clock, Settings, Lock, Power, LayoutDashboard, FileText, 
+    Check, ShoppingBag, CreditCard, Send, Upload, Camera, 
+    Database, ChevronLeft, ChevronRight, Flame, Sparkles, 
+    Target, AlertTriangle, ArrowRight 
+} from 'lucide-react';
 import { motion, AnimatePresence, Variants } from 'framer-motion';
-import JitsiMeeting from '../components/JitsiMeeting';
+
+// --- 3D AMBIENT BACKGROUND (Matching Teacher Panel) ---
+const SpatialBackground = () => (
+    <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none bg-[#020204]">
+        <div className="absolute top-1/4 left-1/4 w-[60vw] h-[60vw] bg-indigo-600/5 rounded-full blur-[120px] animate-pulse" />
+        <div className="absolute bottom-1/4 right-1/4 w-[50vw] h-[50vw] bg-purple-600/5 rounded-full blur-[100px]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.01)_1px,transparent_1px)] bg-[length:32px_32px] opacity-20" />
+    </div>
+);
 
 // --- ANIMATION VARIANTS ---
-const containerVariants: Variants = {
-    hidden: { opacity: 0 },
-    visible: { 
-        opacity: 1,
-        transition: { 
-            staggerChildren: 0.1,
-            delayChildren: 0.2
-        }
-    },
-    exit: { opacity: 0 }
+const pageTransition: Variants = {
+    initial: { opacity: 0, y: 10 },
+    animate: { opacity: 1, y: 0, transition: { duration: 0.4, ease: "easeOut" } },
+    exit: { opacity: 0, y: -10, transition: { duration: 0.2 } }
 };
 
-const itemVariants: Variants = {
-    hidden: { y: 20, opacity: 0 },
-    visible: { 
-        y: 0, 
-        opacity: 1,
-        transition: { type: 'spring', stiffness: 300, damping: 24 }
-    }
-};
+const StudentDashboard: React.FC = () => {
+    const navigate = useNavigate();
+    const [user, setUser] = useState<User | null>(null);
+    const [student, setStudent] = useState<Student | null>(null);
+    const [activeTab, setActiveTab] = useState<'dashboard' | 'homework' | 'notes' | 'exams' | 'results' | 'upcoming-exams' | 'leave' | 'doubts' | 'settings'>('dashboard');
+    const [loading, setLoading] = useState(true);
 
-// --- COMPONENTS ---
-
-const AttendanceCalendar = ({ attendance }: { attendance: AttendanceRecord[] }) => {
-    const [currentDate, setCurrentDate] = useState(new Date());
-    
-    const getDaysInMonth = (year: number, month: number) => new Date(year, month + 1, 0).getDate();
-    const getFirstDayOfMonth = (year: number, month: number) => new Date(year, month, 1).getDay();
-
-    const year = currentDate.getFullYear();
-    const month = currentDate.getMonth();
-    const daysInMonth = getDaysInMonth(year, month);
-    const firstDay = getFirstDayOfMonth(year, month);
-
-    const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-
-    const prevMonth = () => setCurrentDate(new Date(year, month - 1, 1));
-    const nextMonth = () => setCurrentDate(new Date(year, month + 1, 1));
-
-    return (
-        <motion.div 
-            variants={itemVariants}
-            className="col-span-full h-full bg-[#0a0a0a] border border-white/10 rounded-[32px] p-8 relative overflow-hidden"
-        >
-             <div className="flex justify-between items-center mb-6">
-                <div>
-                    <h3 className="text-xl font-black text-white uppercase tracking-wide flex items-center gap-2"><CalendarDays size={20} className="text-indigo-500"/> Attendance</h3>
-                    <p className="text-[10px] font-bold text-white/30 uppercase tracking-[0.2em]">{monthNames[month]} {year}</p>
-                </div>
-                <div className="flex gap-2">
-                    <button onClick={prevMonth} className="p-2 bg-white/5 rounded-xl hover:bg-white/10 text-white/50 hover:text-white transition-colors"><ChevronLeft size={16}/></button>
-                    <button onClick={nextMonth} className="p-2 bg-white/5 rounded-xl hover:bg-white/10 text-white/50 hover:text-white transition-colors"><ChevronRight size={16}/></button>
-                </div>
-             </div>
-
-             <div className="grid grid-cols-7 gap-2 mb-2">
-                {['S','M','T','W','T','F','S'].map(d => (
-                    <div key={d} className="text-center text-[10px] font-black text-white/20 uppercase">{d}</div>
-                ))}
-             </div>
-             <div className="grid grid-cols-7 gap-2">
-                {Array.from({ length: firstDay }).map((_, i) => <div key={`empty-${i}`} />)}
-                
-                {Array.from({ length: daysInMonth }).map((_, i) => {
-                    const day = i + 1;
-                    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                    const record = attendance.find(a => a.date === dateStr);
-                    const isToday = new Date().toDateString() === new Date(year, month, day).toDateString();
-
-                    let statusClass = "bg-white/[0.02] text-white/30 hover:bg-white/10";
-                    if (record?.status === 'Present') statusClass = "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-[0_0_10px_rgba(16,185,129,0.1)]";
-                    if (record?.status === 'Absent') statusClass = "bg-rose-500/10 text-rose-400 border border-rose-500/20";
-                    if (isToday && !record) statusClass = "bg-indigo-500/20 text-indigo-300 border border-indigo-500/30";
-
-                    return (
-                        <div key={day} className={`aspect-square rounded-xl flex items-center justify-center text-xs font-bold transition-all cursor-default ${statusClass}`}>
-                            {day}
-                        </div>
-                    );
-                })}
-             </div>
-             
-             <div className="flex gap-6 mt-6 justify-center border-t border-white/5 pt-4">
-                <div className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_5px_rgba(52,211,153,0.5)]"></div><span className="text-[9px] text-white/40 uppercase font-bold tracking-wider">Present</span></div>
-                <div className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-rose-400"></div><span className="text-[9px] text-white/40 uppercase font-bold tracking-wider">Absent</span></div>
-                <div className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-indigo-400"></div><span className="text-[9px] text-white/40 uppercase font-bold tracking-wider">Today</span></div>
-             </div>
-        </motion.div>
-    );
-};
-
-const PortalCard = ({ subdivision, studentName }: { subdivision: Subdivision, studentName: string }) => {
-    const [isMeetingOpen, setIsMeetingOpen] = useState(false);
-
-    if (!subdivision?.isLive) return (
-        <motion.div variants={itemVariants} className="col-span-full bg-[#0a0a0a] border border-white/5 rounded-[32px] p-8 flex items-center justify-between h-full group relative overflow-hidden">
-            <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center shrink-0 border border-white/5 group-hover:border-white/10 transition-colors">
-                <Radio size={32} className="text-white/20" />
-            </div>
-            <div>
-                <h3 className="text-xl font-black text-white/30 uppercase tracking-widest">Portal Offline</h3>
-                <p className="text-xs font-bold text-white/20 mt-1">No active warp signatures detected.</p>
-            </div>
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out pointer-events-none" />
-        </motion.div>
-    );
-
-    return (
-        <>
-            <motion.div 
-                variants={itemVariants}
-                whileHover={{ scale: 1.01 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => setIsMeetingOpen(true)}
-                className="col-span-full relative overflow-hidden rounded-[32px] p-[1px] cursor-pointer group h-full"
-            >
-                <div className="absolute inset-0 bg-gradient-to-r from-violet-600 via-fuchsia-600 to-indigo-600 animate-gradient-xy opacity-80" />
-                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/diagmonds-light.png')] opacity-30 mix-blend-overlay" />
-                
-                <div className="relative bg-black/80 backdrop-blur-xl rounded-[31px] p-8 flex items-center justify-between h-full">
-                    <div className="relative z-10">
-                        <div className="flex items-center gap-3 mb-3">
-                            <span className="relative flex h-3 w-3">
-                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                              <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
-                            </span>
-                            <span className="text-white font-black text-[10px] uppercase tracking-[0.3em] bg-red-500/20 border border-red-500/30 px-3 py-1 rounded-full backdrop-blur-md">Live Event</span>
-                        </div>
-                        <h3 className="text-3xl md:text-4xl font-black text-white italic tracking-tighter drop-shadow-lg">WARP GATE OPEN</h3>
-                        <p className="text-indigo-200 text-xs font-bold mt-2 uppercase tracking-widest opacity-80">Tap to teleport to class</p>
-                    </div>
-                    
-                    <div className="w-24 h-24 relative flex items-center justify-center">
-                        <div className="absolute inset-0 bg-indigo-500 rounded-full blur-xl opacity-40 animate-pulse" />
-                        <div className="relative w-full h-full bg-gradient-to-br from-indigo-500 to-violet-600 rounded-full flex items-center justify-center border-4 border-white/10 shadow-2xl group-hover:scale-110 transition-transform duration-300">
-                            <Zap size={40} fill="currentColor" className="text-white animate-bounce" />
-                        </div>
-                    </div>
-                </div>
-            </motion.div>
-            {isMeetingOpen && subdivision.liveMeetingId && (
-                <JitsiMeeting 
-                    roomName={subdivision.liveMeetingId} 
-                    userName={studentName} 
-                    onClose={() => setIsMeetingOpen(false)} 
-                />
-            )}
-        </>
-    );
-};
-
-const StatCard = ({ title, value, label, icon: Icon, colorClass, borderClass }: any) => (
-    <motion.div 
-        variants={itemVariants}
-        className={`bg-[#0a0a0a] p-6 rounded-[32px] border ${borderClass} flex flex-col items-center justify-center text-center gap-3 relative overflow-hidden group hover:bg-white/[0.02] transition-colors`}
-    >
-        <div className={`w-12 h-12 ${colorClass} rounded-2xl flex items-center justify-center mb-1 transition-transform group-hover:scale-110 duration-300 shadow-lg`}>
-            <Icon size={24} strokeWidth={2.5}/>
-        </div>
-        <div>
-            <h3 className="text-3xl font-black text-white tracking-tight">{value}</h3>
-            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-white/30 group-hover:text-white/50 transition-colors">{label}</p>
-        </div>
-    </motion.div>
-);
-
-// Expanded Homework Card with Submission Logic
-// Fix: Use React.FC to correctly handle the 'key' prop in functional component
-const HomeworkCard: React.FC<{ homework: Homework, studentId: string, onSubmission: () => void }> = ({ homework, studentId, onSubmission }) => {
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [isOpen, setIsOpen] = useState(false);
-    const [text, setText] = useState('');
-    const [image, setImage] = useState('');
-
-    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => setImage(reader.result as string);
-            reader.readAsDataURL(file);
-        }
-    };
-
-    const submit = async () => {
-        if (!text) return alert("Submission text required.");
-        setIsSubmitting(true);
-        await db.submitHomework(homework.id, studentId, text, image);
-        setIsSubmitting(false);
-        setIsOpen(false);
-        onSubmission();
-        alert("Homework Submitted!");
-    };
-
-    return (
-        <>
-            <motion.div 
-                variants={itemVariants}
-                whileHover={{ y: -5 }}
-                onClick={() => setIsOpen(true)}
-                className="bg-[#0a0a0a] border border-white/5 p-8 rounded-[40px] group relative overflow-hidden hover:border-emerald-500/30 transition-all shadow-lg hover:shadow-emerald-900/10 cursor-pointer"
-            >
-                <div className="absolute top-0 right-0 p-6 opacity-[0.03] group-hover:opacity-10 transition-opacity duration-500">
-                    <BookOpen size={120} />
-                </div>
-                <div className="flex justify-between items-start mb-6 relative z-10">
-                    <span className="px-4 py-1.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-black uppercase tracking-widest border border-emerald-500/20 shadow-[0_0_10px_rgba(16,185,129,0.1)]">
-                        {homework.subject}
-                    </span>
-                    <Target size={20} className="text-white/10 group-hover:text-emerald-500 transition-colors" />
-                </div>
-                <h4 className="text-xl font-bold text-white mb-3 line-clamp-2 leading-tight group-hover:text-emerald-200 transition-colors relative z-10">"{homework.task}"</h4>
-                <div className="mt-6 pt-6 border-t border-white/5 flex items-center gap-3 relative z-10">
-                    <CalendarDays size={16} className="text-emerald-500" />
-                    <span className="text-xs font-mono font-bold text-white/40 group-hover:text-white/60 transition-colors">Due: {homework.dueDate}</span>
-                </div>
-            </motion.div>
-
-            <AnimatePresence>
-                {isOpen && (
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-                        <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} className="bg-[#111] p-8 rounded-[40px] w-full max-w-md border border-white/10 shadow-2xl relative">
-                            <button onClick={(e) => { e.stopPropagation(); setIsOpen(false); }} className="absolute top-6 right-6 text-white/40 hover:text-white"><X/></button>
-                            <h3 className="text-2xl font-black text-white mb-6 flex items-center gap-2"><BookOpen className="text-emerald-500"/> Submit Work</h3>
-                            <div className="space-y-4">
-                                <textarea placeholder="Type your answer or notes here..." className="w-full bg-black border border-white/10 rounded-2xl p-4 text-sm text-white outline-none focus:border-emerald-500 h-32 resize-none" value={text} onChange={e => setText(e.target.value)} />
-                                
-                                <div className="grid grid-cols-2 gap-3">
-                                    <div className="border-2 border-dashed border-white/10 rounded-2xl p-4 text-center hover:bg-white/5 transition-all relative">
-                                        <input type="file" accept="image/*" onChange={handleImageUpload} className="absolute inset-0 opacity-0 cursor-pointer" />
-                                        <Upload className="mx-auto text-emerald-500 mb-2" size={20} />
-                                        <p className="text-[9px] font-bold uppercase text-white/40 tracking-wider">From Gallery</p>
-                                    </div>
-                                    <div className="border-2 border-dashed border-white/10 rounded-2xl p-4 text-center hover:bg-white/5 transition-all relative">
-                                        <input type="file" accept="image/*" capture="environment" onChange={handleImageUpload} className="absolute inset-0 opacity-0 cursor-pointer" />
-                                        <Camera className="mx-auto text-indigo-500 mb-2" size={20} />
-                                        <p className="text-[9px] font-bold uppercase text-white/40 tracking-wider">Use Camera</p>
-                                    </div>
-                                </div>
-
-                                {image && (
-                                    <div className="relative w-full aspect-video rounded-xl overflow-hidden border border-white/10 bg-black">
-                                        <img src={image} className="w-full h-full object-contain" />
-                                        <button onClick={() => setImage('')} className="absolute top-2 right-2 p-1.5 bg-black/60 rounded-full text-white/80 hover:text-white"><X size={14}/></button>
-                                    </div>
-                                )}
-
-                                <button onClick={submit} disabled={isSubmitting} className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:bg-emerald-500 transition-all shadow-xl">
-                                    {isSubmitting ? 'Uploading...' : 'Confirm Submission'}
-                                </button>
-                            </div>
-                        </motion.div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-        </>
-    );
-};
-
-// Fix: Use React.FC to correctly handle the 'key' prop in functional component
-const ExamCard: React.FC<{ exam: Exam }> = ({ exam }) => (
-    <motion.div 
-        variants={itemVariants}
-        whileHover={{ scale: 1.02 }}
-        className="relative p-[1px] rounded-[40px] bg-gradient-to-br from-rose-500/50 to-orange-500/50"
-    >
-        <div className="bg-[#0a0a0a] rounded-[39px] p-8 h-full relative overflow-hidden">
-            <div className="absolute -right-8 -top-8 text-rose-500/5 group-hover:text-rose-500/10 transition-colors">
-                <PenTool size={180} />
-            </div>
-            
-            <div className="relative z-10">
-                <div className="flex justify-between items-start mb-8">
-                    <span className="text-rose-400 font-black text-[10px] uppercase tracking-[0.3em] bg-rose-500/10 px-4 py-1.5 rounded-full border border-rose-500/20">Boss Raid</span>
-                    <Flame size={24} className="text-orange-500 animate-pulse" fill="currentColor" />
-                </div>
-                
-                <h3 className="text-3xl font-black text-white italic uppercase tracking-wide mb-2">{exam.subject}</h3>
-                <p className="text-white/60 text-sm font-bold mb-10 border-l-2 border-rose-500/30 pl-4">{exam.title}</p>
-                
-                <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-white/5 rounded-2xl p-4 border border-white/5 text-center group hover:bg-white/10 transition-colors">
-                        <p className="text-[9px] text-orange-400 font-black uppercase tracking-wider mb-1">Battle Date</p>
-                        <p className="text-white font-mono text-sm font-bold">{exam.examDate}</p>
-                    </div>
-                    <div className="bg-white/5 rounded-2xl p-4 border border-white/5 text-center group hover:bg-white/10 transition-colors">
-                        <p className="text-[9px] text-orange-400 font-black uppercase tracking-wider mb-1">Start Time</p>
-                        <p className="text-white font-mono text-sm font-bold">{exam.startTime}</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </motion.div>
-);
-
-const SettingsPanel = ({ student, refresh }: { student: Student, refresh: () => void }) => {
-    const [form, setForm] = useState({ current: '', new: '', confirm: '' });
-    const [loading, setLoading] = useState(false);
-
-    const handleUpdate = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (form.new !== form.confirm) return alert("New passwords do not match!");
-        setLoading(true);
+    const loadData = useCallback(async (userId: string) => {
         try {
-            await db.changePassword(student.id, 'student', form.current, form.new);
-            alert("Password updated successfully!");
-            setForm({ current: '', new: '', confirm: '' });
-        } catch (e: any) {
-            alert(e.message);
+            const me = await db.getStudentById(userId);
+            if (me) setStudent(me);
+        } catch (e) {
+            console.error(e);
         } finally {
             setLoading(false);
         }
-    };
-
-    return (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-md mx-auto py-10">
-            <div className="bg-[#0a0a0a] p-10 rounded-[40px] border border-white/10 text-center relative overflow-hidden shadow-2xl">
-                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-cyan-500 to-blue-500" />
-                <div className="w-24 h-24 bg-cyan-500/10 rounded-full flex items-center justify-center mx-auto mb-8 text-cyan-400 border border-cyan-500/20 shadow-[0_0_30px_rgba(6,182,212,0.1)]">
-                    <Lock size={36} />
-                </div>
-                <h3 className="text-2xl font-black text-white mb-8 uppercase tracking-[0.2em]">Security Protocol</h3>
-                
-                <form onSubmit={handleUpdate} className="space-y-5">
-                    <div className="space-y-1 text-left">
-                        <label className="text-[9px] font-black uppercase text-white/30 ml-3 tracking-widest">Current Password</label>
-                        <input type="password" required value={form.current} onChange={e => setForm({...form, current:e.target.value})} className="w-full bg-black border border-white/10 rounded-2xl px-6 py-4 text-xs text-white outline-none focus:border-cyan-500 focus:shadow-[0_0_20px_rgba(6,182,212,0.1)] transition-all font-mono" />
-                    </div>
-                    <div className="space-y-1 text-left">
-                        <label className="text-[9px] font-black uppercase text-white/30 ml-3 tracking-widest">New Password</label>
-                        <input type="password" required value={form.new} onChange={e => setForm({...form, new:e.target.value})} className="w-full bg-black border border-white/10 rounded-2xl px-6 py-4 text-xs text-white outline-none focus:border-cyan-500 focus:shadow-[0_0_20px_rgba(6,182,212,0.1)] transition-all font-mono" />
-                    </div>
-                    <div className="space-y-1 text-left">
-                        <label className="text-[9px] font-black uppercase text-white/30 ml-3 tracking-widest">Verify Password</label>
-                        <input type="password" required value={form.confirm} onChange={e => setForm({...form, confirm:e.target.value})} className="w-full bg-black border border-white/10 rounded-2xl px-6 py-4 text-xs text-white outline-none focus:border-cyan-500 focus:shadow-[0_0_20px_rgba(6,182,212,0.1)] transition-all font-mono" />
-                    </div>
-                    
-                    <button disabled={loading} className="w-full py-5 bg-white text-black rounded-2xl font-black text-xs uppercase tracking-[0.3em] hover:bg-cyan-400 hover:text-white transition-all mt-8 disabled:opacity-50 shadow-xl">
-                        {loading ? 'Updating...' : 'Update Credentials'}
-                    </button>
-                </form>
-            </div>
-        </motion.div>
-    );
-};
-
-// --- MAIN DASHBOARD ---
-
-export default function StudentDashboard() {
-    const navigate = useNavigate();
-    const [student, setStudent] = useState<Student | null>(null);
-    const [subdivision, setSubdivision] = useState<Subdivision | null>(null);
-    const [activeTab, setActiveTab] = useState('command');
-    const [loading, setLoading] = useState(true);
-    
-    // Data States
-    const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
-    const [missions, setMissions] = useState<Homework[]>([]);
-    const [challenges, setChallenges] = useState<Exam[]>([]);
-    const [intel, setIntel] = useState<Notice[]>([]);
-    const [doubts, setDoubts] = useState<StudentQuery[]>([]);
-    const [myExams, setMyExams] = useState<StudentOwnExam[]>([]);
-    const [leaves, setLeaves] = useState<LeaveApplication[]>([]);
-    const [doubtForm, setDoubtForm] = useState({ subject: '', queryText: '' });
-    
-    // Forms for new modules
-    const [examForm, setExamForm] = useState({ subject: '', examDate: '', description: '' });
-    const [leaveForm, setLeaveForm] = useState({ startDate: '', endDate: '', reason: '' });
+    }, []);
 
     useEffect(() => {
-        const init = async () => {
-            const stored = sessionStorage.getItem('sc_user');
-            if (!stored) { navigate('/login'); return; }
-            const user = JSON.parse(stored);
-            if (user.role !== 'student') { navigate('/'); return; }
-
-            try {
-                const [me] = await Promise.all([db.getStudentById(user.id)]);
-                
-                if (me) {
-                    setStudent(me);
-                    const subs = await db.getSubdivisions(me.gradeId);
-                    const mySub = subs.find(s => s.id === me.subdivisionId);
-                    setSubdivision(mySub || null);
-
-                    const [att, hw, ex, not, q, myEx, lv] = await Promise.all([
-                        db.getAttendance(me.id),
-                        db.getHomeworkForStudent(me.gradeId, me.subdivisionId),
-                        db.getExamsForStudent(me.gradeId, me.subdivisionId),
-                        db.getNotices(),
-                        db.getQueries(me.id),
-                        db.getStudentExams(me.id),
-                        db.getLeaveApplications(me.id)
-                    ]);
-
-                    setAttendance(att);
-                    setMissions(hw);
-                    setChallenges(ex);
-                    setIntel(not);
-                    setDoubts(q);
-                    setMyExams(myEx);
-                    setLeaves(lv);
-                }
-            } catch (e) {
-                console.error("Dashboard Load Error", e);
-            } finally {
-                setLoading(false);
-            }
-        };
-        init();
-    }, [navigate]);
-
-    const handleDoubtSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if(!student) return;
-        await db.addQuery({ studentId: student.id, studentName: student.name, ...doubtForm });
-        setDoubtForm({ subject: '', queryText: '' });
-        const q = await db.getQueries(student.id);
-        setDoubts(q);
-    };
-
-    const handleExamSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if(!student) return;
-        await db.addStudentExam({ studentId: student.id, studentName: student.name, gradeId: student.gradeId, subdivisionId: student.subdivisionId, ...examForm });
-        setExamForm({ subject: '', examDate: '', description: '' });
-        const ex = await db.getStudentExams(student.id);
-        setMyExams(ex);
-    };
-
-    const handleLeaveSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if(!student) return;
-        await db.addLeaveApplication({ studentId: student.id, studentName: student.name, gradeId: student.gradeId, subdivisionId: student.subdivisionId, ...leaveForm });
-        setLeaveForm({ startDate: '', endDate: '', reason: '' });
-        const lv = await db.getLeaveApplications(student.id);
-        setLeaves(lv);
-    };
+        const storedUser = sessionStorage.getItem('sc_user');
+        if (!storedUser) { navigate('/login'); return; }
+        const parsedUser = JSON.parse(storedUser);
+        if (parsedUser.role !== 'student') { navigate('/'); return; }
+        setUser(parsedUser);
+        loadData(parsedUser.id);
+    }, [navigate, loadData]);
 
     const handleLogout = () => { sessionStorage.removeItem('sc_user'); navigate('/'); };
 
-    if (loading) return (
-        <div className="min-h-screen bg-[#050505] flex flex-col items-center justify-center gap-6">
-            <div className="relative w-24 h-24">
-                <div className="absolute inset-0 border-4 border-white/10 rounded-full"></div>
-                <div className="absolute inset-0 border-4 border-cyan-500 rounded-full border-t-transparent animate-spin"></div>
-                <div className="absolute inset-4 bg-cyan-500/20 rounded-full blur-md animate-pulse"></div>
-            </div>
-            <p className="text-white/40 font-black uppercase text-xs tracking-[0.5em] animate-pulse">Initializing System...</p>
-        </div>
-    );
-    
-    if (!student) return null;
-
     const navItems = [
-        { id: 'command', label: 'Base', icon: Gamepad2 },
+        { id: 'dashboard', label: 'Base', icon: LayoutDashboard },
         { id: 'homework', label: 'Homework', icon: BookOpen },
-        { id: 'exams', label: 'Exam', icon: PenTool },
-        { id: 'my-exams', label: 'My Exams', icon: Calendar },
-        { id: 'leave', label: 'Leave', icon: FileText },
-        { id: 'doubts', label: 'Doubt', icon: HelpCircle },
-        { id: 'settings', label: 'Config', icon: Settings },
+        { id: 'notes', label: 'Vault', icon: Database },
+        { id: 'exams', label: 'Battle', icon: PenTool },
+        { id: 'results', label: 'Intel', icon: Award },
+        { id: 'upcoming-exams', label: 'Log', icon: Calendar },
+        { id: 'leave', label: 'Permit', icon: FileText },
+        { id: 'doubts', label: 'Comm', icon: MessageSquare },
+        { id: 'settings', label: 'Core', icon: Settings }
     ];
 
-    return (
-        <div className="min-h-screen bg-[#020204] text-white font-sans selection:bg-cyan-500/30 overflow-x-hidden pb-40 md:pb-0 relative">
-            
-            {/* Ambient Background */}
-            <div className="fixed inset-0 z-0 pointer-events-none">
-                <div className="absolute top-[-20%] left-[-10%] w-[800px] h-[800px] bg-indigo-900/20 rounded-full blur-[120px] mix-blend-screen opacity-40" />
-                <div className="absolute bottom-[-20%] right-[-10%] w-[600px] h-[600px] bg-cyan-900/20 rounded-full blur-[100px] mix-blend-screen opacity-40" />
-                <div className="absolute top-[20%] right-[20%] w-[400px] h-[400px] bg-purple-900/10 rounded-full blur-[80px] mix-blend-screen opacity-30" />
-            </div>
+    if (loading) return (
+        <div className="min-h-screen bg-[#020204] flex flex-col items-center justify-center gap-6">
+            <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+            <p className="text-white/40 font-black uppercase text-[10px] tracking-[0.5em] animate-pulse">Initializing Terminal...</p>
+        </div>
+    );
 
-            {/* Glass Header */}
-            <header className="sticky top-0 z-40 bg-[#020204]/80 backdrop-blur-xl border-b border-white/5 px-6 py-4 flex items-center justify-between shadow-lg">
-                <div className="flex items-center gap-4">
-                    <div className="relative">
-                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-600 p-[2px] shadow-[0_0_20px_rgba(6,182,212,0.3)]">
-                            <div className="w-full h-full bg-black rounded-[14px] overflow-hidden">
-                                {student.imageUrl ? <img src={student.imageUrl} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center font-black text-cyan-400">{student.name.charAt(0)}</div>}
-                            </div>
-                        </div>
-                        <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-black rounded-full flex items-center justify-center">
-                            <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse border border-emerald-400"></div>
-                        </div>
-                    </div>
-                    <div>
-                        <h2 className="text-sm font-black italic tracking-wide text-white uppercase leading-none mb-1">{student.name.split(' ')[0]}</h2>
-                        <div className="flex items-center gap-2">
-                            <span className="text-[9px] font-bold text-white/40 uppercase tracking-[0.2em]">Cadet Online</span>
-                        </div>
+    return (
+        <div className="min-h-screen bg-[#020204] text-white flex flex-col font-sans selection:bg-indigo-500/30 overflow-x-hidden">
+            <SpatialBackground />
+            
+            {/* --- TOP BAR --- */}
+            <header className="relative z-50 px-4 md:px-8 py-3 flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-white/5 bg-black/40 backdrop-blur-xl shrink-0">
+                <div className="flex items-center w-full sm:w-auto justify-between sm:justify-start gap-4">
+                    <img src="https://advedasolutions.in/sc.png" alt="Logo" className="h-6 md:h-8 w-auto invert opacity-80 cursor-pointer" onClick={() => navigate('/')} />
+                    <div className="flex items-center gap-2 bg-white/5 px-3 py-1 rounded-full border border-white/5">
+                        <div className="w-1.5 h-1.5 rounded-full bg-cyan-500 animate-pulse" />
+                        <span className="text-[8px] font-black uppercase tracking-widest text-white/40 truncate max-w-[100px]">{student?.name}</span>
                     </div>
                 </div>
-                <button onClick={handleLogout} className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center text-rose-500 hover:bg-rose-500/10 hover:text-rose-400 transition-all border border-white/5">
-                    <LogOut size={18} />
-                </button>
+
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                    <div className="flex gap-1 flex-1 sm:flex-none p-1 bg-white/5 rounded-xl border border-white/5">
+                        <div className="px-3 py-1.5 border-r border-white/10">
+                            <p className="text-[7px] font-black uppercase text-white/20 leading-none mb-1">Rank</p>
+                            <p className="text-[9px] font-black uppercase text-white/60 leading-none">Grade {student?.gradeId}</p>
+                        </div>
+                        <div className="px-3 py-1.5">
+                            <p className="text-[7px] font-black uppercase text-white/20 leading-none mb-1">Sector</p>
+                            <p className="text-[9px] font-black uppercase text-white/60 leading-none">ID: {student?.studentCustomId}</p>
+                        </div>
+                    </div>
+                    <button onClick={handleLogout} className="p-2 bg-rose-500/10 rounded-xl text-rose-500 border border-rose-500/20 active:scale-95 transition-all"><Power size={12}/></button>
+                </div>
             </header>
 
-            {/* Main Content Area */}
-            <main className="relative z-10 max-w-6xl mx-auto p-6 md:p-12">
-                <AnimatePresence mode="wait">
-                    
-                    {activeTab === 'command' && (
-                        <motion.div variants={containerVariants} initial="hidden" animate="visible" exit="exit" className="space-y-12">
-                            
-                            {/* Hero Section Grid */}
-                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                                {/* XP Bar spans full width on mobile, 2 cols on large */}
-                                <div className="lg:col-span-2">
-                                    <AttendanceCalendar attendance={attendance} />
-                                </div>
-                                {/* Portal Card (Live Class) */}
-                                <div className="lg:col-span-1 h-full">
-                                    {subdivision && <PortalCard subdivision={subdivision} studentName={student.name} />}
-                                </div>
-                            </div>
-
-                            {/* Stats Grid */}
-                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                                <StatCard title="Active Missions" value={missions.length} label="Pending HW" icon={BookOpen} colorClass="bg-cyan-500/20 text-cyan-400" borderClass="border-cyan-500/20" />
-                                <StatCard title="Boss Raids" value={challenges.length} label="Exams" icon={PenTool} colorClass="bg-rose-500/20 text-rose-400" borderClass="border-rose-500/20" />
-                                <StatCard title="Intel" value={intel.length} label="New Alerts" icon={Bell} colorClass="bg-yellow-500/20 text-yellow-400" borderClass="border-yellow-500/20" />
-                                <StatCard title="Reputation" value="98%" label="Elite Status" icon={Trophy} colorClass="bg-emerald-500/20 text-emerald-400" borderClass="border-emerald-500/20" />
-                            </div>
-
-                            {/* Two Column Layout: Alerts & Actions */}
-                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                                {/* Alerts Column */}
-                                <div className="lg:col-span-2 space-y-6">
-                                    <div className="flex items-center gap-3 px-2">
-                                        <div className="p-2 bg-yellow-500/10 rounded-lg text-yellow-500 animate-pulse"><AlertTriangle size={20} /></div>
-                                        <h3 className="text-xl font-black italic tracking-wide text-white uppercase">Mission Updates</h3>
-                                    </div>
-                                    
-                                    <div className="space-y-4">
-                                        {intel.slice(0, 3).map((n, i) => (
-                                            <motion.div 
-                                                key={n.id} 
-                                                variants={itemVariants}
-                                                className="bg-[#0a0a0a] border-l-4 border-yellow-500 p-6 rounded-r-[24px] relative overflow-hidden group hover:bg-white/5 transition-colors"
-                                            >
-                                                <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity"><Bell size={40}/></div>
-                                                <div className="flex justify-between items-start mb-2 relative z-10">
-                                                    <h4 className="text-lg font-bold text-white group-hover:text-yellow-400 transition-colors">{n.title}</h4>
-                                                    {n.important && <span className="bg-rose-500/20 text-rose-400 text-[9px] font-black uppercase px-2 py-1 rounded border border-rose-500/30">Urgent</span>}
-                                                </div>
-                                                <p className="text-white/50 text-sm leading-relaxed mb-4 relative z-10">{n.content}</p>
-                                                <p className="text-[10px] font-black uppercase tracking-widest text-white/20 relative z-10">{n.date}</p>
-                                            </motion.div>
-                                        ))}
-                                        {intel.slice(0, 3).length === 0 && (
-                                            <div className="py-12 bg-white/[0.02] rounded-[24px] border border-dashed border-white/10 text-center">
-                                                <p className="text-white/20 font-black uppercase text-xs tracking-[0.2em]">All Systems Nominal</p>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-
-                                {/* Quick Actions Column */}
-                                <div className="space-y-6">
-                                    <div className="flex items-center gap-3 px-2">
-                                        <div className="p-2 bg-purple-500/10 rounded-lg text-purple-500"><Sparkles size={20} /></div>
-                                        <h3 className="text-xl font-black italic tracking-wide text-white uppercase">Quick Access</h3>
-                                    </div>
-                                    <div className="grid gap-4">
-                                        <motion.button 
-                                            variants={itemVariants}
-                                            whileHover={{ scale: 1.02 }}
-                                            whileTap={{ scale: 0.98 }}
-                                            onClick={() => navigate('/shop')}
-                                            className="w-full bg-gradient-to-r from-purple-900/40 to-indigo-900/40 border border-purple-500/20 p-6 rounded-[24px] text-left relative overflow-hidden group"
-                                        >
-                                            <div className="absolute inset-0 bg-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-                                            <div className="flex items-center justify-between relative z-10">
-                                                <div>
-                                                    <h4 className="text-lg font-bold text-white mb-1">Item Shop</h4>
-                                                    <p className="text-[10px] uppercase tracking-wider text-purple-300">Browse Equipment</p>
-                                                </div>
-                                                <ShoppingBag className="text-purple-400" size={24} />
-                                            </div>
-                                        </motion.button>
-
-                                        <motion.button 
-                                            variants={itemVariants}
-                                            whileHover={{ scale: 1.02 }}
-                                            whileTap={{ scale: 0.98 }}
-                                            onClick={() => navigate('/pay-fees')}
-                                            className="w-full bg-gradient-to-r from-emerald-900/40 to-teal-900/40 border border-emerald-500/20 p-6 rounded-[24px] text-left relative overflow-hidden group"
-                                        >
-                                            <div className="absolute inset-0 bg-emerald-500/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-                                            <div className="flex items-center justify-between relative z-10">
-                                                <div>
-                                                    <h4 className="text-lg font-bold text-white mb-1">Treasury</h4>
-                                                    <p className="text-[10px] uppercase tracking-wider text-emerald-300">Settle Dues</p>
-                                                </div>
-                                                <CreditCard className="text-emerald-400" size={24} />
-                                            </div>
-                                        </motion.button>
-                                        
-                                        <div className="p-6 bg-white/[0.02] rounded-[24px] border border-white/5">
-                                            <h4 className="text-sm font-bold text-white mb-4">Latest Homework</h4>
-                                            {missions.slice(0, 1).map(m => (
-                                                <div key={m.id} onClick={() => setActiveTab('homework')} className="cursor-pointer group">
-                                                    <div className="flex justify-between mb-2">
-                                                        <span className="text-[10px] font-black uppercase text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded">{m.subject}</span>
-                                                        <ChevronRight size={14} className="text-white/20 group-hover:text-white transition-colors" />
-                                                    </div>
-                                                    <p className="text-xs text-white/60 line-clamp-2 italic">"{m.task}"</p>
-                                                </div>
-                                            ))}
-                                            {missions.length === 0 && <p className="text-[10px] text-white/20 uppercase tracking-wider font-bold">None Pending</p>}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+            {/* --- MAIN STAGE --- */}
+            <main className="flex-1 px-4 md:px-12 py-6 relative z-10 overflow-y-auto scrollbar-hide">
+                <div className="max-w-6xl mx-auto w-full">
+                    <AnimatePresence mode="wait">
+                        <motion.div key={activeTab} variants={pageTransition} initial="initial" animate="animate" exit="exit" className="pb-40">
+                            {activeTab === 'dashboard' && <DashboardModule student={student!} />}
+                            {activeTab === 'homework' && <HomeworkModule student={student!} />}
+                            {activeTab === 'notes' && <NotesModule student={student!} />}
+                            {activeTab === 'exams' && <ExamsModule student={student!} />}
+                            {activeTab === 'results' && <ResultsModule student={student!} />}
+                            {activeTab === 'upcoming-exams' && <UpcomingExamsModule student={student!} />}
+                            {activeTab === 'leave' && <LeaveModule student={student!} />}
+                            {activeTab === 'doubts' && <DoubtsModule student={student!} />}
+                            {activeTab === 'settings' && <SettingsModule student={student!} />}
                         </motion.div>
-                    )}
-
-                    {activeTab === 'homework' && (
-                        <motion.div variants={containerVariants} initial="hidden" animate="visible" exit="exit" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {missions.map(m => <HomeworkCard key={m.id} homework={m} studentId={student.id} onSubmission={() => {}} />)}
-                            {missions.length === 0 && <div className="col-span-full text-center py-40 text-white/20 font-black uppercase tracking-[0.5em] border border-dashed border-white/10 rounded-[40px]">Log Empty</div>}
-                        </motion.div>
-                    )}
-
-                    {activeTab === 'exams' && (
-                        <motion.div variants={containerVariants} initial="hidden" animate="visible" exit="exit" className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            {challenges.map(c => <ExamCard key={c.id} exam={c} />)}
-                            {challenges.length === 0 && <div className="col-span-full text-center py-40 text-white/20 font-black uppercase tracking-[0.5em] border border-dashed border-white/10 rounded-[40px]">No Active Raids</div>}
-                        </motion.div>
-                    )}
-
-                    {activeTab === 'my-exams' && (
-                        <motion.div variants={containerVariants} initial="hidden" animate="visible" exit="exit" className="max-w-4xl mx-auto h-[calc(100vh-200px)] flex flex-col pb-32">
-                            <div className="flex-1 overflow-y-auto space-y-6 mb-6 pr-2 scrollbar-hide">
-                                {myExams.map(ex => (
-                                    <motion.div key={ex.id} layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-[#111] border border-white/10 p-6 rounded-[28px] flex justify-between items-center group hover:border-white/20 transition-all">
-                                        <div>
-                                            <h4 className="text-lg font-bold text-white mb-1">{ex.subject}</h4>
-                                            <p className="text-xs text-white/40">{ex.description}</p>
-                                        </div>
-                                        <div className="text-right">
-                                            <p className="text-[10px] font-black uppercase text-premium-accent tracking-widest bg-premium-accent/5 px-3 py-1 rounded-full border border-premium-accent/10">{ex.examDate}</p>
-                                        </div>
-                                    </motion.div>
-                                ))}
-                                {myExams.length === 0 && <div className="text-center py-40 opacity-20 font-black uppercase tracking-[0.3em] text-xs">No Upcoming Exams Registered</div>}
-                            </div>
-                            <form onSubmit={handleExamSubmit} className="bg-[#0a0a0a] p-6 rounded-[32px] border border-white/10 shadow-2xl relative z-20 space-y-4">
-                                <h3 className="text-sm font-bold text-white/60 uppercase tracking-widest mb-2">Register Upcoming Exam</h3>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <input required placeholder="Subject Name" value={examForm.subject} onChange={e => setExamForm({...examForm, subject: e.target.value})} className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-3 text-xs font-bold text-white outline-none focus:border-indigo-500 transition-all" />
-                                    <input required type="date" value={examForm.examDate} onChange={e => setExamForm({...examForm, examDate: e.target.value})} className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-3 text-xs font-bold text-white outline-none focus:border-indigo-500 transition-all" />
-                                </div>
-                                <input required placeholder="Syllabus / Notes..." value={examForm.description} onChange={e => setExamForm({...examForm, description: e.target.value})} className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-3 text-xs font-bold text-white outline-none focus:border-indigo-500 transition-all" />
-                                <button className="w-full bg-white text-black p-4 rounded-xl hover:bg-indigo-400 hover:text-white transition-all shadow-lg font-black text-xs uppercase tracking-[0.2em]">Notify Teacher</button>
-                            </form>
-                        </motion.div>
-                    )}
-
-                    {activeTab === 'leave' && (
-                        <motion.div variants={containerVariants} initial="hidden" animate="visible" exit="exit" className="max-w-4xl mx-auto h-[calc(100vh-200px)] flex flex-col pb-32">
-                            <div className="flex-1 overflow-y-auto space-y-6 mb-6 pr-2 scrollbar-hide">
-                                {leaves.map(l => (
-                                    <motion.div key={l.id} layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-[#111] border border-white/10 p-6 rounded-[28px] flex justify-between items-start group hover:border-white/20 transition-all">
-                                        <div>
-                                            <div className="flex gap-2 items-center mb-2">
-                                                <span className={`w-2 h-2 rounded-full ${l.status === 'Approved' ? 'bg-emerald-500' : l.status === 'Rejected' ? 'bg-rose-500' : 'bg-amber-500'}`} />
-                                                <span className="text-[10px] font-black uppercase text-white/40 tracking-widest">{l.status}</span>
-                                            </div>
-                                            <p className="text-sm font-bold text-white mb-1">Reason: {l.reason}</p>
-                                            <p className="text-xs text-white/40 font-mono">{l.startDate} to {l.endDate}</p>
-                                        </div>
-                                    </motion.div>
-                                ))}
-                                {leaves.length === 0 && <div className="text-center py-40 opacity-20 font-black uppercase tracking-[0.3em] text-xs">No Leave History</div>}
-                            </div>
-                            <form onSubmit={handleLeaveSubmit} className="bg-[#0a0a0a] p-6 rounded-[32px] border border-white/10 shadow-2xl relative z-20 space-y-4">
-                                <h3 className="text-sm font-bold text-white/60 uppercase tracking-widest mb-2">Request Leave</h3>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-1">
-                                        <label className="text-[9px] font-black uppercase text-white/20 ml-1">From</label>
-                                        <input required type="date" value={leaveForm.startDate} onChange={e => setLeaveForm({...leaveForm, startDate: e.target.value})} className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-3 text-xs font-bold text-white outline-none focus:border-rose-500 transition-all" />
-                                    </div>
-                                    <div className="space-y-1">
-                                        <label className="text-[9px] font-black uppercase text-white/20 ml-1">To</label>
-                                        <input required type="date" value={leaveForm.endDate} onChange={e => setLeaveForm({...leaveForm, endDate: e.target.value})} className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-3 text-xs font-bold text-white outline-none focus:border-rose-500 transition-all" />
-                                    </div>
-                                </div>
-                                <input required placeholder="Reason for leave..." value={leaveForm.reason} onChange={e => setLeaveForm({...leaveForm, reason: e.target.value})} className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-3 text-xs font-bold text-white outline-none focus:border-rose-500 transition-all" />
-                                <button className="w-full bg-white text-black p-4 rounded-xl hover:bg-rose-400 hover:text-white transition-all shadow-lg font-black text-xs uppercase tracking-[0.2em]">Submit Request</button>
-                            </form>
-                        </motion.div>
-                    )}
-
-                    {activeTab === 'doubts' && (
-                        <motion.div variants={containerVariants} initial="hidden" animate="visible" exit="exit" className="max-w-4xl mx-auto h-[calc(100vh-200px)] flex flex-col pb-32">
-                            <div className="flex-1 overflow-y-auto space-y-6 mb-6 pr-2 scrollbar-hide">
-                                {doubts.map(d => (
-                                    <motion.div key={d.id} layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col gap-2">
-                                        <div className="self-end bg-gradient-to-br from-indigo-600 to-blue-600 text-white p-6 rounded-2xl rounded-tr-sm max-w-[85%] shadow-lg">
-                                            <p className="text-[9px] font-black uppercase text-indigo-200 mb-2 tracking-widest">{d.subject}</p>
-                                            <p className="text-sm font-medium leading-relaxed">{d.queryText}</p>
-                                        </div>
-                                        {d.status === 'Answered' && (
-                                            <div className="self-start bg-[#111] border border-white/10 p-6 rounded-2xl rounded-tl-sm max-w-[85%]">
-                                                <div className="flex items-center gap-2 mb-3">
-                                                    <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
-                                                    <span className="text-[9px] font-black uppercase text-emerald-400 tracking-widest">Incoming Transmission</span>
-                                                </div>
-                                                <p className="text-sm text-slate-300 leading-relaxed">{d.replyText}</p>
-                                            </div>
-                                        )}
-                                    </motion.div>
-                                ))}
-                                {doubts.length === 0 && <div className="text-center py-40 opacity-20 font-black uppercase tracking-[0.3em] text-xs">Secure Channel Open</div>}
-                            </div>
-                            <form onSubmit={handleDoubtSubmit} className="bg-[#0a0a0a] p-2 rounded-[28px] border border-white/10 flex gap-2 shadow-2xl relative z-20">
-                                <input required placeholder="Subject..." value={doubtForm.subject} onChange={e => setDoubtForm({...doubtForm, subject: e.target.value})} className="w-1/3 bg-transparent px-6 py-4 text-xs font-bold text-white outline-none border-r border-white/10 placeholder:text-white/20" />
-                                <input required placeholder="Transmission content..." value={doubtForm.queryText} onChange={e => setDoubtForm({...doubtForm, queryText: e.target.value})} className="flex-1 bg-transparent px-6 py-4 text-sm text-white outline-none placeholder:text-white/20" />
-                                <button className="bg-white text-black p-4 rounded-[24px] hover:bg-indigo-400 hover:text-white transition-all shadow-lg active:scale-95"><Send size={20} /></button>
-                            </form>
-                        </motion.div>
-                    )}
-
-                    {activeTab === 'settings' && <SettingsPanel student={student} refresh={() => {}} />}
-
-                </AnimatePresence>
+                    </AnimatePresence>
+                </div>
             </main>
 
-            <AnimatePresence>
-                {/* Removed AttendanceModal call as it was part of the old design flow, if needed re-add */}
-            </AnimatePresence>
-
-            {/* Enhanced Floating Dock */}
-            <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50">
-                <nav className="bg-[#0a0a0a]/80 backdrop-blur-2xl border border-white/10 rounded-[32px] p-2 flex items-center gap-1 shadow-[0_20px_50px_rgba(0,0,0,0.5)] max-w-[95vw] overflow-x-auto scrollbar-hide">
+            {/* --- BOTTOM DOCK --- */}
+            <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[100] w-full max-w-fit px-4">
+                <nav className="bg-[#0A0A0E]/90 backdrop-blur-2xl border border-white/10 p-1.5 rounded-[24px] flex items-center gap-1 shadow-2xl overflow-x-auto scrollbar-hide max-w-[95vw]">
                     {navItems.map(item => (
                         <button
                             key={item.id}
-                            onClick={() => { 
-                                setActiveTab(item.id); 
-                            }}
-                            className={`relative min-w-[64px] h-[64px] rounded-[24px] flex flex-col items-center justify-center gap-1 transition-all duration-300 group ${activeTab === item.id ? 'bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-lg scale-105 -translate-y-2' : 'text-white/40 hover:text-white hover:bg-white/5'}`}
+                            onClick={() => setActiveTab(item.id as any)}
+                            className={`group relative flex flex-col items-center justify-center min-w-[44px] md:min-w-[60px] h-[44px] md:h-[60px] rounded-[18px] transition-all duration-300 ${activeTab === item.id ? 'bg-indigo-600 text-white shadow-lg' : 'text-white/30 hover:bg-white/5'}`}
                         >
-                            <item.icon size={22} strokeWidth={activeTab === item.id ? 2.5 : 2} className="transition-transform group-hover:scale-110" />
-                            <span className={`text-[8px] font-black uppercase tracking-widest scale-75 transition-opacity ${activeTab === item.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>{item.label}</span>
-                            {activeTab === item.id && (
-                                <motion.span layoutId="active-dot" className="absolute -bottom-1 w-1 h-1 bg-white rounded-full shadow-[0_0_10px_white]" />
-                            )}
+                            <item.icon size={16} strokeWidth={activeTab === item.id ? 2.5 : 2} />
+                            <span className={`text-[6px] font-black uppercase tracking-widest mt-1 hidden md:block ${activeTab === item.id ? 'opacity-100' : 'opacity-0'}`}>{item.label}</span>
                         </button>
                     ))}
                 </nav>
@@ -765,3 +142,488 @@ export default function StudentDashboard() {
         </div>
     );
 };
+
+// --- MODULE: DASHBOARD ---
+const DashboardModule = ({ student }: { student: Student }) => {
+    const navigate = useNavigate();
+    const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
+    const [currentDate, setCurrentDate] = useState(new Date());
+
+    useEffect(() => {
+        db.getAttendance(student.id).then(setAttendance);
+    }, [student.id]);
+
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const firstDay = new Date(year, month, 1).getDay();
+    const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+    return (
+        <div className="space-y-12">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
+                <div>
+                    <h2 className="text-3xl md:text-5xl font-light serif-font italic luxury-text-gradient tracking-tighter">Command Hub.</h2>
+                    <p className="text-[8px] font-black uppercase tracking-[0.5em] text-white/20 mt-1">Operational Overview & Registry</p>
+                </div>
+                <div className="flex gap-3">
+                    <button onClick={() => navigate('/shop')} className="bg-white/5 border border-white/10 px-6 py-3 rounded-2xl flex items-center gap-3 hover:bg-white/10 transition-all group">
+                        <ShoppingBag size={16} className="text-indigo-400 group-hover:scale-110 transition-transform" />
+                        <span className="text-[9px] font-black uppercase tracking-widest">Boutique</span>
+                    </button>
+                    <button onClick={() => navigate('/pay-fees')} className="bg-indigo-600 px-6 py-3 rounded-2xl flex items-center gap-3 shadow-lg hover:shadow-indigo-500/20 transition-all active:scale-95 group">
+                        <CreditCard size={16} className="text-white group-hover:rotate-12 transition-transform" />
+                        <span className="text-[9px] font-black uppercase tracking-widest text-white">Treasury</span>
+                    </button>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div className="lg:col-span-2 bg-white/[0.02] border border-white/5 p-8 rounded-[40px] shadow-2xl relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity"><Calendar size={120} /></div>
+                    <div className="flex justify-between items-center mb-10 relative z-10">
+                        <div><h3 className="text-xl font-bold italic serif-font">Attendance Log</h3><p className="text-[8px] font-black uppercase tracking-widest text-white/30">{monthNames[month]} {year}</p></div>
+                        <div className="flex gap-2">
+                            <button onClick={() => setCurrentDate(new Date(year, month - 1, 1))} className="p-2 bg-white/5 rounded-lg hover:bg-white/10"><ChevronLeft size={14}/></button>
+                            <button onClick={() => setCurrentDate(new Date(year, month + 1, 1))} className="p-2 bg-white/5 rounded-lg hover:bg-white/10"><ChevronRight size={14}/></button>
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-7 gap-3 mb-4">
+                        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => (<div key={d} className="text-center text-[8px] font-black text-white/20 uppercase">{d}</div>))}
+                        {Array.from({ length: firstDay }).map((_, i) => <div key={`empty-${i}`} />)}
+                        {Array.from({ length: daysInMonth }).map((_, i) => {
+                            const day = i + 1;
+                            const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                            const record = attendance.find(a => a.date === dateStr);
+                            const isToday = new Date().toISOString().split('T')[0] === dateStr;
+                            return (
+                                <div key={day} className={`aspect-square rounded-xl flex items-center justify-center text-xs font-bold transition-all relative ${
+                                    record?.status === 'Present' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
+                                    record?.status === 'Absent' ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20' :
+                                    isToday ? 'bg-indigo-600 text-white shadow-lg' : 'bg-white/5 text-white/30'
+                                }`}>
+                                    {day}
+                                    {isToday && <span className="absolute -bottom-1 w-1 h-1 bg-white rounded-full animate-ping" />}
+                                </div>
+                            );
+                        })}
+                    </div>
+                    <div className="flex gap-6 justify-center pt-8 border-t border-white/5">
+                        <div className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div><span className="text-[7px] text-white/30 uppercase font-black">Present</span></div>
+                        <div className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-rose-400"></div><span className="text-[7px] text-white/30 uppercase font-black">Absent</span></div>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-4">
+                    <div className="bg-white/[0.02] border border-white/5 p-8 rounded-[40px] flex flex-col items-center justify-center text-center gap-4 hover:border-indigo-500/20 transition-all">
+                        <div className="w-14 h-14 bg-indigo-500/10 rounded-2xl flex items-center justify-center text-indigo-400 shadow-xl"><Flame size={28} strokeWidth={2.5}/></div>
+                        <div><h4 className="text-3xl font-black text-white leading-none">98%</h4><p className="text-[8px] font-black uppercase text-white/20 tracking-[0.3em] mt-2">Persistence Level</p></div>
+                    </div>
+                    <div className="bg-white/[0.02] border border-white/5 p-8 rounded-[40px] flex flex-col items-center justify-center text-center gap-4 hover:border-emerald-500/20 transition-all">
+                        <div className="w-14 h-14 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-400 shadow-xl"><Award size={28} strokeWidth={2.5}/></div>
+                        <div><h4 className="text-3xl font-black text-white leading-none">Elite</h4><p className="text-[8px] font-black uppercase text-white/20 tracking-[0.3em] mt-2">Academic Rank</p></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// --- MODULE: HOMEWORK ---
+const HomeworkModule = ({ student }: { student: Student }) => {
+    const [missions, setMissions] = useState<Homework[]>([]);
+    const [isSubmitting, setIsSubmitting] = useState<string | null>(null);
+    const [form, setForm] = useState({ text: '', image: '' });
+
+    const load = useCallback(() => {
+        db.getHomeworkForStudent(student.gradeId, student.subdivisionId).then(setMissions);
+    }, [student.gradeId, student.subdivisionId]);
+
+    useEffect(() => { load(); }, [load]);
+
+    const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const r = new FileReader();
+            r.onloadend = () => setForm({ ...form, image: r.result as string });
+            r.readAsDataURL(file);
+        }
+    };
+
+    const submit = async (id: string) => {
+        if (!form.text) return alert("Description required.");
+        await db.submitHomework(id, student.id, form.text, form.image);
+        setIsSubmitting(null);
+        setForm({ text: '', image: '' });
+        alert("Mission Data Transmitted.");
+    };
+
+    return (
+        <div className="space-y-8">
+            <div className="pb-4 border-b border-white/5">
+                <h2 className="text-3xl md:text-5xl font-light serif-font italic luxury-text-gradient tracking-tighter">Directives.</h2>
+                <p className="text-[8px] font-black uppercase tracking-[0.5em] text-white/20 mt-1">Tactical Assignments</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {missions.map(hw => (
+                    <div key={hw.id} onClick={() => setIsSubmitting(hw.id)} className="bg-white/[0.02] p-8 rounded-[40px] border border-white/5 group hover:border-indigo-500/30 transition-all cursor-pointer shadow-xl relative overflow-hidden">
+                        <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10"><BookOpen size={80}/></div>
+                        <span className="text-indigo-400 text-[8px] font-black uppercase tracking-widest mb-4 block">{hw.subject}</span>
+                        <h4 className="text-xl font-bold text-white/90 italic leading-tight">"{hw.task}"</h4>
+                        <div className="mt-8 flex items-center justify-between border-t border-white/5 pt-6">
+                            <div className="flex items-center gap-2"><Clock size={12} className="text-white/20" /><span className="text-[8px] font-black uppercase text-white/20">Due: {hw.dueDate}</span></div>
+                            <button className="px-4 py-2 bg-white/5 rounded-xl text-[7px] font-black uppercase tracking-widest text-indigo-400 group-hover:bg-indigo-600 group-hover:text-white">Transmit</button>
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            <AnimatePresence>
+                {isSubmitting && (
+                    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/90 p-4 backdrop-blur-xl">
+                        <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-[#0A0A0E] border border-white/10 rounded-[48px] w-full max-w-md p-10 relative shadow-2xl">
+                            <button onClick={() => setIsSubmitting(null)} className="absolute top-8 right-8 text-white/20"><X size={24}/></button>
+                            <h3 className="text-3xl font-light serif-font italic luxury-text-gradient mb-8">Report Submit.</h3>
+                            <textarea placeholder="Mission details..." className="w-full bg-black border border-white/10 rounded-2xl p-5 text-sm outline-none focus:border-indigo-500 h-32 resize-none" value={form.text} onChange={e => setForm({...form, text: e.target.value})} />
+                            <div className="grid grid-cols-2 gap-4 mt-4">
+                                <div className="bg-white/5 border-2 border-dashed border-white/5 rounded-2xl p-5 text-center relative hover:bg-white/10 cursor-pointer">
+                                    <input type="file" accept="image/*" onChange={handleUpload} className="absolute inset-0 opacity-0 cursor-pointer" />
+                                    <Upload size={20} className="mx-auto text-white/20 mb-2" /><p className="text-[8px] font-black uppercase text-white/20">Gallery</p>
+                                </div>
+                                <div className="bg-white/5 border-2 border-dashed border-white/5 rounded-2xl p-5 text-center relative hover:bg-white/10 cursor-pointer">
+                                    <input type="file" accept="image/*" capture="environment" onChange={handleUpload} className="absolute inset-0 opacity-0 cursor-pointer" />
+                                    <Camera size={20} className="mx-auto text-white/20 mb-2" /><p className="text-[8px] font-black uppercase text-white/20">Camera</p>
+                                </div>
+                            </div>
+                            {form.image && <div className="mt-4 aspect-video rounded-xl overflow-hidden border border-white/10"><img src={form.image} className="w-full h-full object-cover" /></div>}
+                            <button onClick={() => submit(isSubmitting)} className="w-full bg-white text-black py-5 rounded-2xl font-black text-xs uppercase tracking-[0.4em] mt-8 hover:bg-indigo-500 hover:text-white transition-all">Authorize Transmission</button>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+        </div>
+    );
+};
+
+// --- MODULE: NOTES ---
+const NotesModule = ({ student }: { student: Student }) => {
+    const [notes, setNotes] = useState<StudyNote[]>([]);
+    useEffect(() => {
+        db.getNotes(student.gradeId, student.subdivisionId).then(setNotes);
+    }, [student.gradeId, student.subdivisionId]);
+
+    return (
+        <div className="space-y-8">
+            <div className="pb-4 border-b border-white/5">
+                <h2 className="text-3xl md:text-5xl font-light serif-font italic luxury-text-gradient tracking-tighter">Vault.</h2>
+                <p className="text-[8px] font-black uppercase tracking-[0.5em] text-white/20 mt-1">Study Archives</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {notes.map(n => (
+                    <div key={n.id} className="bg-white/[0.02] p-8 rounded-[40px] border border-white/5 group hover:border-emerald-500/20 transition-all shadow-xl relative overflow-hidden">
+                        <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10"><Database size={80}/></div>
+                        <span className="text-emerald-400 text-[8px] font-black uppercase tracking-widest mb-4 block">{n.subject}</span>
+                        <h4 className="text-2xl font-bold text-white/90 italic mb-4">{n.title}</h4>
+                        <p className="text-sm text-white/30 font-medium line-clamp-3 leading-relaxed">{n.content}</p>
+                        <div className="mt-8 pt-6 border-t border-white/5 flex items-center justify-between">
+                             <span className="text-[7px] font-black text-white/10 uppercase tracking-widest">{n.createdAt?.split('T')[0]}</span>
+                             <button className="px-5 py-2 bg-emerald-500/10 text-emerald-400 text-[8px] font-black uppercase tracking-widest rounded-xl hover:bg-emerald-500 hover:text-white transition-all">Download Archive</button>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+};
+
+// --- MODULE: EXAMS ---
+const ExamsModule = ({ student }: { student: Student }) => {
+    const [exams, setExams] = useState<Exam[]>([]);
+    const [activeExam, setActiveExam] = useState<Exam | null>(null);
+    const [answers, setAnswers] = useState<Record<string, string>>({});
+    const [timeLeft, setTimeLeft] = useState(0);
+
+    useEffect(() => { db.getExams(student.gradeId).then(setExams); }, [student.gradeId]);
+
+    const startExam = (e: Exam) => {
+        setActiveExam(e);
+        setTimeLeft(e.duration * 60);
+        setAnswers({});
+    };
+
+    useEffect(() => {
+        if (activeExam && timeLeft > 0) {
+            const timer = setInterval(() => setTimeLeft(t => t - 1), 1000);
+            return () => clearInterval(timer);
+        } else if (activeExam && timeLeft === 0) {
+            submitExam();
+        }
+    }, [activeExam, timeLeft]);
+
+    const submitExam = async () => {
+        if (!activeExam) return;
+        // Logic to write results to DB
+        await db.updateSettings(await db.getSettings()); // Mock sync
+        alert("Battle protocol terminated. Result logged.");
+        setActiveExam(null);
+    };
+
+    return (
+        <div className="space-y-8">
+            <div className="pb-4 border-b border-white/5">
+                <h2 className="text-3xl md:text-5xl font-light serif-font italic luxury-text-gradient tracking-tighter">Arena.</h2>
+                <p className="text-[8px] font-black uppercase tracking-[0.5em] text-white/20 mt-1">Live Combat Assessments</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8">
+                {exams.map(e => (
+                    <div key={e.id} className="relative p-[1px] rounded-[48px] bg-gradient-to-br from-rose-500/20 to-orange-500/20 group">
+                        <div className="bg-[#0A0A0E] rounded-[47px] p-10 h-full relative overflow-hidden transition-all group-hover:bg-black">
+                            <div className="absolute top-0 right-0 p-10 opacity-[0.03] group-hover:opacity-[0.08]"><PenTool size={160}/></div>
+                            <div className="flex justify-between items-start mb-8 relative z-10">
+                                <span className="bg-rose-500/10 text-rose-400 text-[9px] font-black uppercase tracking-[0.3em] px-4 py-1.5 rounded-full border border-rose-500/20">Live Raid</span>
+                                <Flame size={24} className="text-orange-500 animate-pulse" />
+                            </div>
+                            <h3 className="text-4xl font-black text-white italic uppercase mb-2">{e.subject}</h3>
+                            <p className="text-white/40 text-sm font-bold mb-10 border-l border-white/10 pl-6 uppercase tracking-widest">{e.title}</p>
+                            <div className="grid grid-cols-2 gap-4 mb-10">
+                                <div className="bg-white/5 rounded-2xl p-5 text-center"><p className="text-[8px] text-white/20 font-black uppercase mb-1">Timeline</p><p className="text-xl font-mono font-bold text-white">{e.duration}m</p></div>
+                                <div className="bg-white/5 rounded-2xl p-5 text-center"><p className="text-[8px] text-white/20 font-black uppercase mb-1">Max Damage</p><p className="text-xl font-mono font-bold text-white">{e.totalMarks}pt</p></div>
+                            </div>
+                            <button onClick={() => startExam(e)} className="w-full bg-white text-black py-5 rounded-2xl font-black text-xs uppercase tracking-[0.4em] shadow-xl hover:bg-rose-600 hover:text-white">Begin Raid</button>
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            <AnimatePresence>
+                {activeExam && (
+                    <div className="fixed inset-0 z-[300] bg-black p-4 md:p-12 flex flex-col overflow-hidden">
+                        <div className="max-w-4xl mx-auto w-full flex-1 flex flex-col bg-[#0A0A0E] border border-white/10 rounded-[60px] relative overflow-hidden shadow-2xl">
+                            <div className="p-8 border-b border-white/5 flex items-center justify-between shrink-0">
+                                <div className="flex items-center gap-4"><div className="w-12 h-12 bg-rose-500/10 rounded-2xl flex items-center justify-center text-rose-500"><Target size={24}/></div><div><h4 className="text-xl font-bold italic serif-font">{activeExam.title}</h4><p className="text-[8px] font-black uppercase text-white/20">AUTHORIZED RAID PROTOCOL</p></div></div>
+                                <div className="text-right"><p className="text-[8px] font-black uppercase text-white/30 mb-1">Clock Sync</p><p className="text-3xl font-mono font-black text-rose-500 animate-pulse">{Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, '0')}</p></div>
+                            </div>
+                            <div className="flex-1 overflow-y-auto p-12 space-y-12 scrollbar-hide">
+                                {activeExam.questions.map((q, idx) => (
+                                    <div key={q.id} className="space-y-6">
+                                        <div className="flex items-start gap-6"><span className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center text-sm font-black italic text-white/40 shrink-0">#0{idx+1}</span><h5 className="text-2xl font-medium text-white/90 leading-tight">{q.text}</h5></div>
+                                        {q.type === 'mcq' && q.options && (
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pl-16">
+                                                {q.options.map((opt, oIdx) => (
+                                                    <button key={oIdx} onClick={() => setAnswers({...answers, [q.id]: opt})} className={`p-5 rounded-2xl border text-left text-sm font-bold uppercase tracking-wider transition-all ${answers[q.id] === opt ? 'bg-indigo-600 border-indigo-500 text-white shadow-lg' : 'bg-white/5 border-white/5 text-white/40 hover:bg-white/10'}`}><span className="text-white/20 mr-4 font-black">{String.fromCharCode(65+oIdx)}</span> {opt}</button>
+                                                ))}
+                                            </div>
+                                        )}
+                                        {(q.type === 'short' || q.type === 'paragraph') && (<textarea placeholder="Input response..." className="w-full bg-white/5 border border-white/5 rounded-3xl p-8 ml-16 text-sm outline-none focus:border-indigo-500 h-32 resize-none" value={answers[q.id] || ''} onChange={e => setAnswers({...answers, [q.id]: e.target.value})} />)}
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="p-8 border-t border-white/5 bg-black/40 flex justify-center shrink-0"><button onClick={submitExam} className="bg-white text-black px-16 py-5 rounded-2xl font-black text-xs uppercase tracking-[0.5em] shadow-xl hover:bg-emerald-500 hover:text-white transition-all">Authorize Transmission</button></div>
+                        </div>
+                    </div>
+                )}
+            </AnimatePresence>
+        </div>
+    );
+};
+
+// --- MODULE: RESULTS ---
+const ResultsModule = ({ student }: { student: Student }) => {
+    const [results, setResults] = useState<ExamSubmission[]>([]);
+    useEffect(() => {
+        db.getAllExamSubmissions().then(subs => {
+            setResults(subs.filter(s => s.studentId === student.id && s.status === 'Graded'));
+        });
+    }, [student.id]);
+
+    return (
+        <div className="space-y-8">
+            <div className="pb-4 border-b border-white/5">
+                <h2 className="text-3xl md:text-5xl font-light serif-font italic luxury-text-gradient tracking-tighter">Intel Logs.</h2>
+                <p className="text-[8px] font-black uppercase tracking-[0.5em] text-white/20 mt-1">Operational Scores</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {results.map(r => (
+                    <div key={r.id} className="bg-white/[0.02] p-8 rounded-[40px] border border-white/5 shadow-2xl relative group overflow-hidden">
+                        <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity"><Award size={80}/></div>
+                        <h4 className="text-xl font-bold text-white/80 italic mb-8 border-l-2 border-indigo-500 pl-6 uppercase tracking-widest">RAID: {r.examId.slice(0, 8)}</h4>
+                        <div className="flex items-end justify-between">
+                            <div><p className="text-[8px] font-black uppercase text-white/20 mb-1">Combat Rating</p><p className="text-5xl font-light luxury-text-gradient serif-font italic">{r.totalObtained}pt</p></div>
+                            <span className="bg-emerald-500/10 text-emerald-400 text-[8px] font-black uppercase px-4 py-2 rounded-xl border border-emerald-500/20">Authenticated</span>
+                        </div>
+                    </div>
+                ))}
+                {results.length === 0 && <div className="col-span-full py-40 text-center opacity-10 font-black uppercase text-[10px] tracking-[0.5em]">Intel Database Nominal</div>}
+            </div>
+        </div>
+    );
+};
+
+// --- MODULE: UPCOMING EXAMS ---
+const UpcomingExamsModule = ({ student }: { student: Student }) => {
+    const [list, setList] = useState<StudentOwnExam[]>([]);
+    const [form, setForm] = useState({ subject: '', examDate: '', description: '' });
+
+    const load = useCallback(() => db.getStudentExams(student.id).then(setList), [student.id]);
+    useEffect(() => { load(); }, [load]);
+
+    const submit = async (e: any) => {
+        e.preventDefault();
+        await db.addStudentExam({ studentId: student.id, studentName: student.name, gradeId: student.gradeId, subdivisionId: student.subdivisionId, ...form });
+        setForm({ subject: '', examDate: '', description: '' });
+        load();
+        alert("Schedule Logged.");
+    };
+
+    return (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+            <div className="bg-white/[0.02] p-10 rounded-[50px] border border-white/5 shadow-2xl h-fit">
+                <h3 className="text-3xl font-light serif-font italic luxury-text-gradient mb-8">External Log.</h3>
+                <form onSubmit={submit} className="space-y-6">
+                    <div className="space-y-1"><label className="text-[8px] font-black uppercase text-white/30 ml-2">Objective</label><input required placeholder="Subject..." value={form.subject} onChange={e => setForm({...form, subject: e.target.value})} className="w-full bg-black border border-white/10 rounded-2xl px-6 py-4 text-xs" /></div>
+                    <div className="space-y-1"><label className="text-[8px] font-black uppercase text-white/30 ml-2">Timeline</label><input required type="date" value={form.examDate} onChange={e => setForm({...form, examDate: e.target.value})} className="w-full bg-black border border-white/10 rounded-2xl px-6 py-4 text-xs [color-scheme:dark]" /></div>
+                    <div className="space-y-1"><label className="text-[8px] font-black uppercase text-white/30 ml-2">Syllabus Intel</label><textarea placeholder="Add topics..." value={form.description} onChange={e => setForm({...form, description: e.target.value})} className="w-full bg-black border border-white/10 rounded-2xl px-6 py-4 text-xs h-32 resize-none" /></div>
+                    <button className="w-full bg-white text-black py-5 rounded-2xl font-black text-xs uppercase tracking-[0.4em] shadow-xl hover:bg-indigo-600 hover:text-white transition-all">Authorize Log</button>
+                </form>
+            </div>
+            <div className="space-y-6 overflow-y-auto max-h-[70vh] pr-2 scrollbar-hide">
+                <h4 className="text-[9px] font-black uppercase tracking-[0.5em] text-white/20 ml-2">Schedule Registry</h4>
+                {list.map(ex => (
+                    <div key={ex.id} className="bg-white/[0.02] p-8 rounded-[40px] border border-white/5 flex items-center justify-between hover:bg-white/[0.04] transition-all group">
+                        <div><h4 className="text-2xl font-black text-white italic uppercase mb-1">{ex.subject}</h4><p className="text-[8px] font-black uppercase text-white/20 tracking-widest">{ex.description}</p></div>
+                        <div className="text-right"><p className="text-[7px] font-black uppercase text-indigo-400 mb-1">Date</p><p className="text-xl font-mono font-bold text-white">{ex.examDate}</p></div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+};
+
+// --- MODULE: REQUEST LEAVE ---
+const LeaveModule = ({ student }: { student: Student }) => {
+    const [list, setList] = useState<LeaveApplication[]>([]);
+    const [form, setForm] = useState({ startDate: '', endDate: '', reason: '' });
+
+    const load = useCallback(() => db.getLeaveApplications(student.id).then(setList), [student.id]);
+    useEffect(() => { load(); }, [load]);
+
+    const submit = async (e: any) => {
+        e.preventDefault();
+        await db.addLeaveApplication({ studentId: student.id, studentName: student.name, gradeId: student.gradeId, subdivisionId: student.subdivisionId, ...form });
+        setForm({ startDate: '', endDate: '', reason: '' });
+        load();
+        alert("Permit transmission complete.");
+    };
+
+    return (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+            <div className="bg-white/[0.02] p-10 rounded-[50px] border border-white/5 shadow-2xl h-fit">
+                <h3 className="text-3xl font-light serif-font italic luxury-text-gradient mb-8">Absence Permit.</h3>
+                <form onSubmit={submit} className="space-y-6">
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1"><label className="text-[8px] font-black uppercase text-white/30 ml-2">Start</label><input required type="date" value={form.startDate} onChange={e => setForm({...form, startDate: e.target.value})} className="w-full bg-black border border-white/10 rounded-2xl px-6 py-4 text-xs [color-scheme:dark]" /></div>
+                        <div className="space-y-1"><label className="text-[8px] font-black uppercase text-white/30 ml-2">End</label><input required type="date" value={form.endDate} onChange={e => setForm({...form, endDate: e.target.value})} className="w-full bg-black border border-white/10 rounded-2xl px-6 py-4 text-xs [color-scheme:dark]" /></div>
+                    </div>
+                    <div className="space-y-1"><label className="text-[8px] font-black uppercase text-white/30 ml-2">Justification</label><textarea required placeholder="Reason for leave..." value={form.reason} onChange={e => setForm({...form, reason: e.target.value})} className="w-full bg-black border border-white/10 rounded-2xl px-6 py-4 text-xs h-32 resize-none" /></div>
+                    <button className="w-full bg-white text-black py-5 rounded-2xl font-black text-xs uppercase tracking-[0.4em] shadow-xl hover:bg-rose-600 hover:text-white transition-all">Transmit Permit</button>
+                </form>
+            </div>
+            <div className="space-y-6 overflow-y-auto max-h-[70vh] pr-2 scrollbar-hide">
+                <h4 className="text-[9px] font-black uppercase tracking-[0.5em] text-white/20 ml-2">Request History</h4>
+                {list.map(l => (
+                    <div key={l.id} className="bg-white/[0.02] p-8 rounded-[40px] border border-white/5 group hover:bg-white/[0.04] transition-all">
+                         <div className="flex items-center gap-2 mb-2"><span className={`w-1.5 h-1.5 rounded-full ${l.status === 'Approved' ? 'bg-emerald-500' : l.status === 'Rejected' ? 'bg-rose-500' : 'bg-amber-500'}`} /><span className="text-[8px] font-black uppercase tracking-widest text-white/40">{l.status} Protocol</span></div>
+                         <h4 className="text-xl font-bold text-white mb-1 italic">"{l.reason}"</h4>
+                         <p className="text-[8px] font-black uppercase text-white/20 tracking-widest">{l.startDate} » {l.endDate}</p>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+};
+
+// --- MODULE: DOUBTS ---
+const DoubtsModule = ({ student }: { student: Student }) => {
+    const [queries, setQueries] = useState<StudentQuery[]>([]);
+    const [form, setForm] = useState({ subject: '', text: '' });
+
+    const load = useCallback(() => db.getQueries(student.id).then(setQueries), [student.id]);
+    useEffect(() => { load(); }, [load]);
+
+    const submit = async (e: any) => {
+        e.preventDefault();
+        await db.addQuery({ studentId: student.id, studentName: student.name, subject: form.subject, queryText: form.text });
+        setForm({ subject: '', text: '' });
+        load();
+        alert("Intel Inquiry Secured.");
+    };
+
+    return (
+        <div className="max-w-4xl mx-auto space-y-12">
+            <div className="pb-4 border-b border-white/5">
+                <h3 className="text-3xl md:text-5xl font-light serif-font italic luxury-text-gradient tracking-tighter">Comm Center.</h3>
+                <p className="text-[8px] font-black uppercase tracking-[0.5em] text-white/20 mt-1">Secured Doubt Transmission</p>
+            </div>
+            
+            <div className="flex flex-col gap-6 max-h-[50vh] overflow-y-auto scrollbar-hide p-4 mb-10">
+                {queries.map(q => (
+                    <div key={q.id} className="flex flex-col gap-3">
+                        <div className="self-end bg-indigo-600/20 border border-indigo-500/20 p-6 rounded-[32px] rounded-tr-lg max-w-[85%]">
+                            <p className="text-[8px] font-black uppercase text-indigo-400 mb-2 tracking-widest">{q.subject}</p>
+                            <p className="text-sm font-medium leading-relaxed italic">"{q.queryText}"</p>
+                        </div>
+                        {q.status === 'Answered' && (
+                            <div className="self-start bg-emerald-500/5 border border-emerald-500/10 p-6 rounded-[32px] rounded-tl-lg max-w-[85%] animate-fade-in">
+                                <div className="flex items-center gap-2 mb-3"><span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" /><span className="text-[8px] font-black uppercase text-emerald-400 tracking-widest">Faculty Response</span></div>
+                                <p className="text-sm text-white/70 leading-relaxed font-bold tracking-tight">"{q.replyText}"</p>
+                            </div>
+                        )}
+                    </div>
+                ))}
+            </div>
+
+            <form onSubmit={submit} className="bg-white/[0.02] p-2 rounded-[32px] border border-white/10 flex gap-2 shadow-2xl relative z-20">
+                <input required placeholder="Domain..." value={form.subject} onChange={e => setForm({...form, subject: e.target.value})} className="w-1/4 bg-transparent px-6 py-4 text-[10px] font-black uppercase tracking-widest text-white outline-none border-r border-white/5" />
+                <input required placeholder="Formulate Transmission..." value={form.text} onChange={e => setForm({...form, text: e.target.value})} className="flex-1 bg-transparent px-6 py-4 text-sm text-white outline-none font-medium italic" />
+                <button className="bg-white text-black p-4 rounded-[24px] hover:bg-indigo-600 hover:text-white transition-all shadow-xl active:scale-95"><Send size={20}/></button>
+            </form>
+        </div>
+    );
+};
+
+// --- MODULE: SETTINGS ---
+const SettingsModule = ({ student }: { student: Student }) => {
+    const [form, setForm] = useState({ current: '', new: '', confirm: '' });
+    const [loading, setLoading] = useState(false);
+
+    const update = async (e: any) => {
+        e.preventDefault();
+        if(form.new !== form.confirm) return alert('Hash Mismatch Detected');
+        setLoading(true);
+        try { 
+            await db.changePassword(student.id, 'student', form.current, form.new); 
+            alert('Security keys updated.'); 
+            setForm({current:'',new:'',confirm:''}); 
+        } catch(e:any) { alert(e.message); } finally { setLoading(false); }
+    };
+
+    return (
+        <div className="max-w-md mx-auto py-20 space-y-12 text-center">
+            <div className="bg-[#0A0A0E] p-12 rounded-[60px] border border-white/10 shadow-2xl relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 to-purple-600" />
+                <div className="w-20 h-20 bg-white/5 rounded-[30px] flex items-center justify-center mx-auto mb-10 text-indigo-400 border border-white/10 shadow-inner group">
+                    <Lock size={32} className="group-hover:scale-110 transition-transform duration-500" />
+                </div>
+                <h3 className="text-3xl font-light serif-font mb-10 luxury-text-gradient italic">Security Core.</h3>
+                <form onSubmit={update} className="space-y-4">
+                    <input required type="password" placeholder="CURRENT KEY" value={form.current} onChange={e=>setForm({...form, current:e.target.value})} className="w-full bg-black border border-white/10 rounded-2xl px-6 py-4 text-[10px] text-white font-mono tracking-[0.4em] text-center outline-none focus:border-indigo-500 uppercase" />
+                    <input required type="password" placeholder="NEW KEY" value={form.new} onChange={e=>setForm({...form, new:e.target.value})} className="w-full bg-black border border-white/10 rounded-2xl px-6 py-4 text-[10px] text-white font-mono tracking-[0.4em] text-center outline-none focus:border-indigo-500 uppercase" />
+                    <input required type="password" placeholder="VERIFY KEY" value={form.confirm} onChange={e=>setForm({...form, confirm:e.target.value})} className="w-full bg-black border border-white/10 rounded-2xl px-6 py-4 text-[10px] text-white font-mono tracking-[0.4em] text-center outline-none focus:border-indigo-500 uppercase" />
+                    <button disabled={loading} className="w-full py-5 bg-white text-black font-black text-[11px] uppercase tracking-[0.6em] rounded-2xl hover:shadow-[0_0_50px_rgba(255,255,255,0.2)] transition-all mt-8 active:scale-95 disabled:opacity-50">Authorize Security Update</button>
+                </form>
+            </div>
+        </div>
+    );
+};
+
+export default StudentDashboard;
