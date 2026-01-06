@@ -5,7 +5,7 @@ import ThreeHero from '../components/ThreeHero';
 import Footer from '../components/Footer';
 import { db } from '../services/db';
 import { Notice } from '../types';
-import { ArrowRight, X, CheckCircle2, Zap, Users, Brain, Target, Star, Quote, Award, BookOpen } from 'lucide-react';
+import { ArrowRight, X, CheckCircle2, Zap, Users, Brain, Target, Star, Quote, Award, BookOpen, Trophy, Microscope, Layout } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const PublicHome: React.FC = () => {
@@ -72,7 +72,8 @@ const PublicHome: React.FC = () => {
     <div className="min-h-screen bg-black text-white selection:bg-premium-accent overflow-x-hidden">
       
       {/* --- HERO SECTION --- */}
-      <section className="relative h-screen flex flex-col items-center justify-center overflow-hidden">
+      {/* Added pt-32 to push content down visually so it clears the navbar comfortably */}
+      <section className="relative h-screen flex flex-col items-center justify-center overflow-hidden pt-32">
         {/* Background Animation */}
         <div className="absolute inset-0 z-0">
           <ThreeHero />
@@ -87,7 +88,7 @@ const PublicHome: React.FC = () => {
               variants={headlineVariants}
               className="flex flex-col items-center mb-10"
             >
-              <span className="text-[11px] font-black uppercase tracking-[0.8em] text-premium-accent mb-6 block opacity-70">
+              <span className="text-[11px] font-black uppercase tracking-[0.8em] text-premium-accent mb-8 block opacity-90">
                 The Zenith of Learning
               </span>
               <h1 className="flex flex-col items-center">
@@ -188,6 +189,33 @@ const PublicHome: React.FC = () => {
           </div>
       </section>
 
+      {/* --- NEW SECTION: ACADEMIC PATHWAYS --- */}
+      <section className="py-32 px-6 bg-[#030303] border-t border-white/5">
+          <div className="max-w-7xl mx-auto">
+              <div className="mb-20 text-center md:text-left">
+                  <h2 className="text-4xl md:text-6xl font-light serif-font uppercase mb-4">Academic <span className="text-premium-accent">Pathways</span></h2>
+                  <p className="text-white/40 text-[10px] font-black uppercase tracking-[0.4em]">Structured Modules for every stage</p>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                  {[
+                      { icon: BookOpen, title: "Foundation Years", grade: "Grades 1 - 4", text: "Building robust basics in Math and Literacy through interactive learning and curiosity-driven modules." },
+                      { icon: Microscope, title: "Transition Years", grade: "Grades 5 - 6", text: "Introduction to specialized sciences and complex logic. Bridging the gap between primary play and middle school rigor." },
+                      { icon: Layout, title: "Mastery Years", grade: "Grades 7 - 8", text: "Advanced conceptual depth aligned with competitive exam standards. Preparing the mind for high school challenges." }
+                  ].map((path, i) => (
+                      <div key={i} className="p-12 bg-white/[0.02] border border-white/5 rounded-[48px] hover:bg-white/[0.04] transition-all group">
+                          <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center text-white mb-10 group-hover:bg-premium-accent group-hover:text-black transition-colors">
+                              <path.icon size={32} strokeWidth={1.5} />
+                          </div>
+                          <span className="text-premium-accent text-[9px] font-black uppercase tracking-[0.4em] mb-4 block">{path.grade}</span>
+                          <h3 className="text-3xl font-light serif-font mb-6 text-white/90">{path.title}</h3>
+                          <p className="text-sm text-white/40 leading-relaxed font-bold uppercase tracking-wider">{path.text}</p>
+                      </div>
+                  ))}
+              </div>
+          </div>
+      </section>
+
       {/* --- THE EDGE / FEATURES --- */}
       <section className="py-32 px-6 bg-[#080808]">
           <div className="max-w-7xl mx-auto">
@@ -209,6 +237,31 @@ const PublicHome: React.FC = () => {
                           <h3 className="text-xl font-bold mb-4 text-white/90">{f.title}</h3>
                           <p className="text-sm text-white/40 leading-relaxed font-medium">{f.desc}</p>
                       </motion.div>
+                  ))}
+              </div>
+          </div>
+      </section>
+
+      {/* --- NEW SECTION: HALL OF FAME --- */}
+      <section className="py-24 px-6 bg-premium-black relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-premium-accent/5 rounded-full blur-[120px] pointer-events-none" />
+          <div className="max-w-7xl mx-auto relative z-10">
+              <div className="flex items-center gap-4 mb-16">
+                  <Trophy size={32} className="text-premium-accent" />
+                  <h2 className="text-4xl md:text-5xl font-light serif-font uppercase">Hall of <span className="text-premium-accent">Fame</span></h2>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                  {[
+                      { label: "Olympiad Gold", value: "15+", sub: "National Level" },
+                      { label: "Scholarship Exams", value: "100%", sub: "Selection Rate" },
+                      { label: "A1 Grade", value: "92%", sub: "Board Results" },
+                      { label: "Student Retention", value: "98%", sub: "Year on Year" }
+                  ].map((stat, i) => (
+                      <div key={i} className="p-8 border-l border-white/10">
+                          <h4 className="text-5xl font-light text-white mb-2">{stat.value}</h4>
+                          <p className="text-lg font-bold text-white/80 mb-1">{stat.label}</p>
+                          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/30">{stat.sub}</p>
+                      </div>
                   ))}
               </div>
           </div>
