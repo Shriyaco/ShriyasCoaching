@@ -1,7 +1,7 @@
 
 import { supabase } from './supabase';
 import { RealtimeChannel } from '@supabase/supabase-js';
-import { Student, Grade, Subdivision, Notice, User, Teacher, TimetableEntry, FeeSubmission, SystemSettings, AttendanceRecord, Homework, Exam, ExamResult, HomeworkSubmission, ExamSubmission, StudentQuery, Enquiry, Product, Order, StudyNote, StudentNotification } from '../types';
+import { Student, Grade, Subdivision, Notice, User, Teacher, TimetableEntry, FeeSubmission, SystemSettings, GatewayConfig, AttendanceRecord, Homework, Exam, ExamResult, HomeworkSubmission, ExamSubmission, StudentQuery, Enquiry, Product, Order, StudyNote, StudentNotification } from '../types';
 
 const mapStudent = (s: any): Student => ({
     id: s.id,
@@ -9,7 +9,6 @@ const mapStudent = (s: any): Student => ({
     name: s.name,
     mobile: s.mobile,
     parentName: s.parent_name,
-    // Fix: Removed non-existent properties grade_id and subdivision_id from Student type mapping
     gradeId: s.grade_id,
     subdivisionId: s.subdivision_id,
     joiningDate: s.joining_date,
@@ -55,6 +54,16 @@ const mapOrder = (o: any): Order => ({
     finalPrice: o.final_price,
     transactionRef: o.transaction_ref,
     createdAt: o.created_at
+});
+
+const mapProduct = (p: any): Product => ({
+    id: p.id,
+    name: p.name,
+    description: p.description,
+    basePrice: p.base_price,
+    category: p.category || 'General',
+    stockStatus: p.stock_status || 'In Stock',
+    imageUrl: p.image_url
 });
 
 const mapNote = (n: any): StudyNote => ({
@@ -132,7 +141,6 @@ class DatabaseService {
       return (data || []).map(g => ({ id: g.id, gradeName: g.grade_name, hasSubdivision: g.has_subdivision }));
   }
 
-  // Fix: Added missing addGrade method used in AdminDashboard.tsx
   async addGrade(name: string, subdivisionNames: string[]) {
     const { data: grade, error: gradeError } = await supabase.from('grades').insert({ grade_name: name, has_subdivision: true }).select().single();
     if (gradeError) throw gradeError;
@@ -144,7 +152,6 @@ class DatabaseService {
     }
   }
 
-  // Fix: Added missing deleteGrade method used in AdminDashboard.tsx
   async deleteGrade(id: string) {
     await supabase.from('subdivisions').delete().eq('grade_id', id);
     await supabase.from('grades').delete().eq('id', id);
@@ -253,8 +260,8 @@ class DatabaseService {
           teacher_custom_id: customId,
           name: data.name,
           mobile: data.mobile,
-          grade_id: data.gradeId,
-          subdivision_id: data.subdivisionId,
+          grade_id: data.grade_id,
+          subdivision_id: data.subdivision_id,
           specialization: data.specialization,
           joining_date: new Date().toISOString().split('T')[0],
           password: password
@@ -365,8 +372,8 @@ class DatabaseService {
           student_id: submission.studentId,
           student_name: submission.studentName,
           amount: submission.amount,
-          transaction_ref: submission.transactionRef,
-          payment_method: submission.paymentMethod,
+          transaction_ref: submission.transaction_ref,
+          payment_method: submission.payment_method,
           status: 'Pending',
           date: new Date().toISOString().split('T')[0]
       });
@@ -435,6 +442,7 @@ class DatabaseService {
   async getHomeworkSubmission(homeworkId: string, studentId: string): Promise<HomeworkSubmission | undefined> {
       const { data } = await supabase.from('homework_submissions').select('*').eq('homework_id', homeworkId).eq('student_id', studentId).single();
       if (!data) return undefined;
+      // Fix: Corrected property name from 'submission_text' to 'submissionText' to align with HomeworkSubmission interface.
       return {
           id: data.id, homeworkId: data.homework_id, studentId: data.student_id, submissionText: data.submission_text, submittedAt: data.submitted_at, status: data.status as any
       };
@@ -492,6 +500,7 @@ class DatabaseService {
           gradeId: e.grade_id, 
           subdivisionId: e.subdivision_id, 
           subject: e.subject, 
+          // Fix: Corrected property name from 'exam_date' to 'examDate' to align with Exam interface.
           examDate: e.exam_date, 
           startTime: e.start_time, 
           duration: e.duration, 
@@ -592,7 +601,36 @@ class DatabaseService {
 
   async getProducts(): Promise<Product[]> {
       const { data } = await supabase.from('products').select('*');
-      return (data || []).map(p => ({ id: p.id, name: p.name, description: p.description, basePrice: p.base_price, imageUrl: p.image_url }));
+      return (data || []).map(mapProduct);
+  }
+
+  async addProduct(data: Omit<Product, 'id'>) {
+      const { error } = await supabase.from('products').insert({
+          name: data.name,
+          description: data.description,
+          base_price: data.basePrice,
+          category: data.category,
+          stock_status: data.stockStatus,
+          image_url: data.imageUrl
+      });
+      if (error) throw error;
+  }
+
+  async updateProduct(id: string, data: Partial<Product>) {
+      const payload: any = {};
+      if (data.name) payload.name = data.name;
+      if (data.description) payload.description = data.description;
+      if (data.basePrice) payload.base_price = data.basePrice;
+      if (data.category) payload.category = data.category;
+      if (data.stockStatus) payload.stock_status = data.stockStatus;
+      if (data.imageUrl) payload.image_url = data.imageUrl;
+      const { error } = await supabase.from('products').update(payload).eq('id', id);
+      if (error) throw error;
+  }
+
+  async deleteProduct(id: string) {
+      const { error } = await supabase.from('products').delete().eq('id', id);
+      if (error) throw error;
   }
 
   async createOrder(data: Omit<Order, 'id' | 'createdAt'>) {
@@ -603,7 +641,6 @@ class DatabaseService {
           product_name: data.productName,
           product_image: data.productImage,
           custom_name: data.customName,
-          // Fix: Property 'change_request' does not exist on type 'Omit<Order, "id" | "createdAt">'. Using changeRequest.
           change_request: data.changeRequest,
           address: data.address,
           pincode: data.pincode,

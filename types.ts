@@ -1,3 +1,4 @@
+
 export interface Grade {
   id: string;
   gradeName: string;
@@ -192,6 +193,8 @@ export interface Product {
     name: string;
     description: string;
     basePrice: string;
+    category: string;
+    stockStatus: 'In Stock' | 'Out of Stock';
     imageUrl?: string;
 }
 
@@ -236,4 +239,4 @@ export interface StudentNotification {
     createdAt: string;
 }
 
-export type TabView = 'dashboard' | 'students' | 'notices' | 'timetable' | 'grades' | 'teachers' | 'fees' | 'settings' | 'enquiries' | 'shop' | 'broadcast';
+export type TabView = 'dashboard' | 'students' | 'notices' | 'timetable' | 'grades' | 'teachers' | 'fees' | 'settings' | 'enquiries' | 'shop' | 'products' | 'broadcast';

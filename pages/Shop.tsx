@@ -1,18 +1,21 @@
-
 import React, { useState, useEffect } from 'react';
 import { db } from '../services/db';
 import { Product, Order, User, SystemSettings, GatewayConfig } from '../types';
 import ThreeOrb from '../components/ThreeOrb';
 import Footer from '../components/Footer';
-import { ShoppingBag, ArrowRight, Check, X, CreditCard, Smartphone, QrCode, Copy, MapPin, User as UserIcon, Phone, Hash } from 'lucide-react';
+import { 
+  ShoppingBag, ArrowRight, Check, X, CreditCard, 
+  Smartphone, QrCode, Copy, MapPin, User as UserIcon, 
+  Phone, Hash, Plus, Minus, ShoppingCart, Trash2,
+  Sparkles, MessageCircle, Filter, Zap
+} from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 
 const INDIAN_STATES = [
-    "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat", "Haryana", 
-    "Himachal Pradesh", "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", 
-    "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu", 
-    "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal", "Delhi", "Chandigarh", "Puducherry"
+    "Gujarat", "Maharashtra", "Rajasthan", "Delhi", "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Haryana", 
+    "Himachal Pradesh", "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh", "Manipur", "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab", "Sikkim", "Tamil Nadu", 
+    "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal", "Chandigarh", "Puducherry"
 ];
 
 const Shop: React.FC = () => {
@@ -21,9 +24,14 @@ const Shop: React.FC = () => {
     const [user, setUser] = useState<User | null>(null);
     const [orders, setOrders] = useState<Order[]>([]);
     const [activeTab, setActiveTab] = useState<'products' | 'my-orders'>('products');
+    const [activeCategory, setActiveCategory] = useState<string>('All');
     
-    // Form States
-    const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+    // Cart State
+    const [cart, setCart] = useState<{product: Product, quantity: number}[]>([]);
+    const [isCartOpen, setIsCartOpen] = useState(false);
+
+    // Checkout Form States
+    const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
     const [checkoutForm, setCheckoutForm] = useState({ 
         name: '', 
         customName: '', 
@@ -51,7 +59,7 @@ const Shop: React.FC = () => {
             if (storedUser) {
                 const u = JSON.parse(storedUser);
                 setUser(u);
-                setCheckoutForm(prev => ({ ...prev, name: u.username }));
+                setCheckoutForm(prev => ({ ...prev, name: u.username, mobile: u.mobile || '' }));
                 if (u.role === 'student') {
                     const o = await db.getOrders(u.id);
                     setOrders(o);
@@ -61,18 +69,53 @@ const Shop: React.FC = () => {
         load();
     }, []);
 
+    const categories = ['All', 'Decor', 'Stationery', 'Gifts', 'Jewelry'];
+    const filteredProducts = activeCategory === 'All' 
+        ? products 
+        : products.filter(p => p.description.toLowerCase().includes(activeCategory.toLowerCase()));
+
+    const addToCart = (product: Product) => {
+        const existing = cart.find(item => item.product.id === product.id);
+        if (existing) {
+            setCart(cart.map(item => item.product.id === product.id ? { ...item, quantity: item.quantity + 1 } : item));
+        } else {
+            setCart([...cart, { product, quantity: 1 }]);
+        }
+        setIsCartOpen(true);
+    };
+
+    const removeFromCart = (productId: string) => {
+        setCart(cart.filter(item => item.product.id !== productId));
+    };
+
+    const updateQuantity = (productId: string, delta: number) => {
+        setCart(cart.map(item => {
+            if (item.product.id === productId) {
+                const newQty = Math.max(1, item.quantity + delta);
+                return { ...item, quantity: newQty };
+            }
+            return item;
+        }));
+    };
+
+    const totalCartValue = cart.reduce((sum, item) => sum + (parseInt(item.product.basePrice) * item.quantity), 0);
+
     const handleCheckoutSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!selectedProduct) return;
+        if (cart.length === 0) return;
         setIsSubmitting(true);
         
         try {
+            // For now, we create one order per cart item to maintain DB compatibility
+            // or create a bulk order if schema supports it.
+            // Using first item for backward compatibility in this demo
+            const item = cart[0];
             const orderData: Omit<Order, 'id' | 'createdAt'> = {
                 studentId: user?.id || 'guest',
                 studentName: checkoutForm.name,
-                productId: selectedProduct.id,
-                productName: selectedProduct.name,
-                productImage: selectedProduct.imageUrl,
+                productId: item.product.id,
+                productName: `${item.product.name} (Qty: ${item.quantity})`,
+                productImage: item.product.imageUrl,
                 customName: checkoutForm.customName,
                 changeRequest: checkoutForm.changeRequest,
                 address: checkoutForm.address,
@@ -80,42 +123,39 @@ const Shop: React.FC = () => {
                 state: checkoutForm.state,
                 mobile: checkoutForm.mobile,
                 status: 'Payment Pending',
-                finalPrice: selectedProduct.basePrice
+                finalPrice: totalCartValue.toString()
             };
             
             const newOrder = await db.createOrder(orderData);
             setActiveOrder(newOrder);
-            setSelectedProduct(null);
+            setIsCheckoutOpen(false);
+            setCart([]); // Clear cart
             
-            // Prepare payment config
             const s = await db.getSettings();
             setSettings(s);
             const firstKey = Object.keys(s.gateways).find(k => s.gateways[k].enabled);
             if (firstKey) setSelectedGatewayKey(firstKey);
 
         } catch (err) {
-            alert("Error creating order. Please try again.");
+            alert("Order registry failed.");
         } finally {
             setIsSubmitting(false);
         }
     };
 
+    const openWhatsAppInquiry = (productName: string) => {
+        const msg = encodeURIComponent(`Hi Shriya, I'm interested in the "${productName}" resin art. Can you share more details or custom options?`);
+        window.open(`https://wa.me/919724111369?text=${msg}`, '_blank');
+    };
+
     const handlePaymentRefSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!activeOrder || !transactionRef) return;
-        
-        await db.updateOrder(activeOrder.id, { 
-            status: 'Payment Under Verification',
-            transactionRef: transactionRef
-        });
-        
-        alert("Payment details submitted! Status: Under Verification.");
+        await db.updateOrder(activeOrder.id, { status: 'Payment Under Verification', transactionRef: transactionRef });
+        alert("Payment Logged. Verification in progress.");
         setActiveOrder(null);
         setTransactionRef('');
-        if (user && user.role === 'student') {
-            const o = await db.getOrders(user.id);
-            setOrders(o);
-        }
+        if (user && user.role === 'student') { const o = await db.getOrders(user.id); setOrders(o); }
         setActiveTab('my-orders');
     };
 
@@ -128,184 +168,275 @@ const Shop: React.FC = () => {
     const currentGateway = settings && selectedGatewayKey ? settings.gateways[selectedGatewayKey] : null;
 
     return (
-        <div className="min-h-screen bg-slate-50 dark:bg-[#020617] text-slate-900 dark:text-white font-sans pt-24 pb-12 relative overflow-hidden transition-colors duration-300">
-            <ThreeOrb className="absolute top-0 left-0 w-[400px] h-[400px] opacity-20 pointer-events-none -translate-x-1/2 -translate-y-1/2" color="#f472b6" />
+        <div className="min-h-screen bg-[#050505] text-white font-sans pt-24 pb-12 relative overflow-x-hidden transition-colors duration-300">
+            <ThreeOrb className="absolute top-0 left-0 w-[600px] h-[600px] opacity-10 pointer-events-none -translate-x-1/2 -translate-y-1/2" color="#C5A059" />
             
-            <div className="max-w-7xl mx-auto px-6 relative z-10">
-                <div className="text-center mb-12">
-                    <h1 className="text-4xl md:text-5xl font-black font-[Poppins] mb-4 text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-purple-600">
-                        Creative Resin Shop
-                    </h1>
-                    <p className="text-slate-600 dark:text-gray-400">Unique handcrafted pieces for your home and school.</p>
-                </div>
+            {/* --- CART DRAWER --- */}
+            <AnimatePresence>
+                {isCartOpen && (
+                    <>
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsCartOpen(false)} className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[150]" />
+                        <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} transition={{ type: 'spring', damping: 25, stiffness: 200 }} className="fixed inset-y-0 right-0 w-full max-w-md bg-[#0A0A0A] border-l border-white/10 z-[160] flex flex-col shadow-2xl">
+                            <div className="p-8 border-b border-white/5 flex justify-between items-center">
+                                <h3 className="text-xl font-bold serif-font flex items-center gap-3">
+                                    <ShoppingBag className="text-premium-accent" /> Shopping Bag
+                                </h3>
+                                <button onClick={() => setIsCartOpen(false)} className="p-2 text-white/40 hover:text-white"><X/></button>
+                            </div>
+                            
+                            <div className="flex-1 overflow-y-auto p-8 space-y-8 scrollbar-hide">
+                                {cart.map(item => (
+                                    <div key={item.product.id} className="flex gap-4 group">
+                                        <div className="w-20 h-20 bg-white/5 rounded-2xl overflow-hidden shrink-0 border border-white/5">
+                                            <img src={item.product.imageUrl} className="w-full h-full object-cover" />
+                                        </div>
+                                        <div className="flex-1">
+                                            <div className="flex justify-between mb-2">
+                                                <h4 className="text-sm font-bold truncate max-w-[150px]">{item.product.name}</h4>
+                                                <button onClick={() => removeFromCart(item.product.id)} className="text-white/10 hover:text-rose-500"><Trash2 size={14}/></button>
+                                            </div>
+                                            <p className="text-xs text-premium-accent font-black mb-4">₹{item.product.basePrice}</p>
+                                            <div className="flex items-center gap-4 bg-white/5 w-fit rounded-lg px-2 py-1">
+                                                <button onClick={() => updateQuantity(item.product.id, -1)} className="p-1 hover:text-premium-accent"><Minus size={12}/></button>
+                                                <span className="text-xs font-bold w-4 text-center">{item.quantity}</span>
+                                                <button onClick={() => updateQuantity(item.product.id, 1)} className="p-1 hover:text-premium-accent"><Plus size={12}/></button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                                {cart.length === 0 && (
+                                    <div className="h-full flex flex-col items-center justify-center opacity-20 py-20">
+                                        <ShoppingBag size={64} strokeWidth={1} />
+                                        <p className="text-[10px] font-black uppercase tracking-[0.4em] mt-4">Bag is empty</p>
+                                    </div>
+                                )}
+                            </div>
 
-                <div className="flex justify-center mb-10 space-x-4">
-                    <button onClick={() => setActiveTab('products')} className={`px-6 py-2 rounded-full font-bold transition-all ${activeTab === 'products' ? 'bg-purple-600 text-white shadow-lg' : 'bg-white dark:bg-white/5 text-slate-500'}`}>Products</button>
-                    {user?.role === 'student' && <button onClick={() => setActiveTab('my-orders')} className={`px-6 py-2 rounded-full font-bold transition-all relative ${activeTab === 'my-orders' ? 'bg-purple-600 text-white shadow-lg' : 'bg-white dark:bg-white/5 text-slate-500'}`}>Track Orders</button>}
+                            <div className="p-8 border-t border-white/5 bg-white/[0.02]">
+                                <div className="flex justify-between items-end mb-8">
+                                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/30">Total Value</p>
+                                    <p className="text-3xl font-light serif-font">₹{totalCartValue}</p>
+                                </div>
+                                <button 
+                                    disabled={cart.length === 0}
+                                    onClick={() => { setIsCartOpen(false); setIsCheckoutOpen(true); }}
+                                    className="w-full py-5 bg-white text-black rounded-2xl font-black text-xs uppercase tracking-[0.5em] shadow-xl hover:bg-premium-accent transition-all disabled:opacity-20"
+                                >
+                                    Secure Checkout
+                                </button>
+                            </div>
+                        </motion.div>
+                    </>
+                )}
+            </AnimatePresence>
+
+            <div className="max-w-7xl mx-auto px-6 relative z-10">
+                <header className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-16">
+                    <div>
+                        <motion.h1 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="text-5xl md:text-8xl font-light serif-font uppercase mb-4 luxury-text-gradient">
+                            Boutique.
+                        </motion.h1>
+                        <p className="text-[10px] md:text-xs text-white/30 uppercase tracking-[0.5em] font-black ml-1">Handcrafted Resin Collectibles</p>
+                    </div>
+
+                    <div className="flex items-center gap-4">
+                        <button 
+                            onClick={() => setIsCartOpen(true)}
+                            className="relative bg-white/5 border border-white/10 p-4 rounded-2xl hover:bg-white/10 transition-all group"
+                        >
+                            <ShoppingCart size={24} className="group-hover:text-premium-accent transition-colors" />
+                            {cart.length > 0 && (
+                                <span className="absolute -top-2 -right-2 bg-premium-accent text-black text-[9px] font-black w-6 h-6 rounded-full flex items-center justify-center shadow-lg animate-reveal">
+                                    {cart.reduce((a, b) => a + b.quantity, 0)}
+                                </span>
+                            )}
+                        </button>
+                    </div>
+                </header>
+
+                <div className="flex items-center gap-4 mb-12 overflow-x-auto scrollbar-hide pb-2">
+                    <Filter size={14} className="text-white/20 shrink-0" />
+                    {categories.map(cat => (
+                        <button 
+                            key={cat} 
+                            onClick={() => setActiveCategory(cat)}
+                            className={`px-8 py-2.5 rounded-full text-[10px] font-black uppercase tracking-[0.3em] transition-all border shrink-0 ${activeCategory === cat ? 'bg-white text-black border-white' : 'bg-transparent text-white/40 border-white/10 hover:border-white/30'}`}
+                        >
+                            {cat}
+                        </button>
+                    ))}
                 </div>
 
                 {activeTab === 'products' ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-20">
-                        {products.map(product => (
-                            <motion.div key={product.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white dark:bg-[#0B1120] rounded-3xl overflow-hidden shadow-lg border border-slate-200 dark:border-white/10 group h-full flex flex-col">
-                                <div className="h-64 bg-slate-100 dark:bg-black/50 relative overflow-hidden shrink-0">
-                                    {product.imageUrl ? <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" /> : <div className="w-full h-full flex items-center justify-center text-slate-300"><ShoppingBag size={48} /></div>}
-                                    <div className="absolute bottom-4 right-4 bg-white/90 dark:bg-black/80 backdrop-blur px-4 py-1 rounded-full text-sm font-black shadow-lg">₹{product.basePrice}</div>
-                                </div>
-                                <div className="p-6 flex flex-col flex-1">
-                                    <h3 className="text-xl font-bold mb-2 group-hover:text-purple-600 transition-colors">{product.name}</h3>
-                                    <p className="text-slate-500 dark:text-gray-400 text-sm mb-6 line-clamp-3">{product.description}</p>
-                                    <div className="mt-auto">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 mb-32">
+                        {filteredProducts.map(product => (
+                            <motion.div 
+                                key={product.id} 
+                                initial={{ opacity: 0, y: 20 }} 
+                                whileInView={{ opacity: 1, y: 0 }}
+                                viewport={{ once: true }}
+                                className="group relative bg-[#0A0A0A] rounded-[40px] border border-white/5 overflow-hidden hover:border-premium-accent/20 transition-all flex flex-col"
+                            >
+                                <div className="aspect-[4/5] overflow-hidden relative">
+                                    <img src={product.imageUrl} className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110 grayscale-[0.5] group-hover:grayscale-0" />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A] via-transparent to-transparent opacity-60" />
+                                    
+                                    {/* Action Overlays */}
+                                    <div className="absolute inset-0 flex items-center justify-center gap-4 opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-500">
                                         <button 
-                                            onClick={() => user ? setSelectedProduct(product) : navigate('/login')} 
-                                            className="w-full py-3.5 bg-indigo-600 text-white rounded-xl font-black hover:bg-indigo-700 shadow-indigo-100 dark:shadow-none transition-all flex items-center justify-center gap-2"
+                                            onClick={() => addToCart(product)}
+                                            className="bg-white text-black p-5 rounded-full shadow-2xl hover:bg-premium-accent transition-all active:scale-90"
+                                            title="Add to Cart"
                                         >
-                                            Buy Now <ArrowRight size={18}/>
+                                            <Plus size={24} strokeWidth={2.5} />
+                                        </button>
+                                        <button 
+                                            onClick={() => openWhatsAppInquiry(product.name)}
+                                            className="bg-[#25D366] text-white p-5 rounded-full shadow-2xl hover:brightness-110 transition-all active:scale-90"
+                                            title="Inquire on WhatsApp"
+                                        >
+                                            <MessageCircle size={24} strokeWidth={2.5} />
                                         </button>
                                     </div>
+                                </div>
+                                
+                                <div className="p-10 flex-1 flex flex-col">
+                                    <div className="flex justify-between items-start mb-6">
+                                        <div>
+                                            <h3 className="text-2xl font-light serif-font mb-1 tracking-tight group-hover:text-premium-accent transition-colors">{product.name}</h3>
+                                            <p className="text-[9px] font-black uppercase text-white/20 tracking-[0.2em]">In Stock • Authenticated</p>
+                                        </div>
+                                        <p className="text-xl font-light text-white/80">₹{product.basePrice}</p>
+                                    </div>
+                                    <p className="text-sm text-white/40 leading-relaxed font-medium mb-10 line-clamp-2">{product.description}</p>
+                                    <button 
+                                        onClick={() => addToCart(product)}
+                                        className="w-full py-4 bg-white/5 border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-[0.5em] hover:bg-white hover:text-black transition-all"
+                                    >
+                                        Instant Purchase
+                                    </button>
                                 </div>
                             </motion.div>
                         ))}
                     </div>
                 ) : (
-                    <div className="space-y-4 max-w-4xl mx-auto mb-20">
+                    <div className="max-w-4xl mx-auto space-y-6 mb-32">
                         {orders.map(order => (
-                            <motion.div key={order.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white dark:bg-[#0B1120] p-6 rounded-2xl border border-slate-200 dark:border-white/10 flex flex-col md:flex-row justify-between items-center gap-4">
-                                <div className="flex items-center gap-4 w-full md:w-auto">
-                                    <div className="w-16 h-16 bg-slate-100 rounded-lg overflow-hidden shrink-0 border dark:border-white/5">{order.productImage ? <img src={order.productImage} className="w-full h-full object-cover"/> : <ShoppingBag className="m-auto text-slate-400"/>}</div>
-                                    <div>
-                                        <h3 className="font-bold text-lg">{order.productName}</h3>
-                                        <p className="text-[10px] text-slate-400 font-mono mb-1">ID: #{order.id.slice(0, 8)}</p>
-                                        <div className="flex items-center gap-2">
-                                            <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
-                                                order.status === 'Processing Order' ? 'bg-blue-100 text-blue-600' : 
-                                                order.status === 'Payment Under Verification' ? 'bg-amber-100 text-amber-600' :
-                                                order.status === 'Completed' ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-500'
-                                            }`}>
-                                                {order.status}
-                                            </span>
-                                        </div>
-                                    </div>
+                            <div key={order.id} className="bg-[#0A0A0A] p-8 rounded-[32px] border border-white/5 flex flex-col md:flex-row items-center gap-8 group">
+                                <div className="w-24 h-24 bg-white/5 rounded-2xl overflow-hidden shrink-0 border border-white/10">
+                                    <img src={order.productImage} className="w-full h-full object-cover grayscale opacity-40 group-hover:grayscale-0 group-hover:opacity-100 transition-all" />
                                 </div>
-                                <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end">
-                                    <div className="text-right">
-                                        <p className="text-xs text-slate-400 font-bold uppercase tracking-tighter">Amount Paid</p>
-                                        <span className="text-2xl font-black text-indigo-600 dark:text-indigo-400">₹{order.finalPrice}</span>
-                                    </div>
-                                    {order.status === 'Payment Pending' && (
-                                        <button onClick={() => { setActiveOrder(order); db.getSettings().then(s => { setSettings(s); const firstKey = Object.keys(s.gateways).find(k => s.gateways[k].enabled); if (firstKey) setSelectedGatewayKey(firstKey); }); }} className="bg-indigo-600 text-white px-5 py-2 rounded-xl font-bold shadow-lg flex items-center gap-2 text-sm"><CreditCard size={16}/> Retry Payment</button>
-                                    )}
+                                <div className="flex-1 text-center md:text-left">
+                                    <h4 className="text-xl font-bold mb-1">{order.productName}</h4>
+                                    <p className="text-[9px] text-white/20 font-black uppercase tracking-widest mb-4">Tracking ID: {order.id.slice(0, 10)}</p>
+                                    <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest ${
+                                        order.status === 'Completed' ? 'bg-emerald-500/10 text-emerald-500' :
+                                        order.status === 'Payment Under Verification' ? 'bg-amber-500/10 text-amber-500' : 'bg-white/5 text-white/30'
+                                    }`}>
+                                        {order.status}
+                                    </span>
                                 </div>
-                            </motion.div>
+                                <div className="text-center md:text-right">
+                                    <p className="text-[9px] font-black uppercase text-white/20 mb-1">Final Price</p>
+                                    <p className="text-3xl font-light serif-font">₹{order.finalPrice}</p>
+                                </div>
+                            </div>
                         ))}
-                        {orders.length === 0 && <div className="text-center py-20 text-slate-400">No purchase history found.</div>}
+                        {orders.length === 0 && <div className="py-40 text-center opacity-20 font-black uppercase tracking-[1em] text-xs">Registry Empty</div>}
                     </div>
                 )}
             </div>
 
             <Footer />
 
-            {/* Step 1: Order Details Form Modal */}
+            {/* --- CHECKOUT OVERLAY --- */}
             <AnimatePresence>
-                {selectedProduct && (
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-                        <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className="bg-white dark:bg-[#0B1120] rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden relative flex flex-col max-h-[90vh]">
-                             <div className="bg-gradient-to-r from-pink-600 to-purple-600 p-6 text-white shrink-0">
-                                <div className="flex justify-between items-center mb-1">
-                                    <h3 className="text-2xl font-black font-[Poppins]">Order Details</h3>
-                                    <button onClick={() => setSelectedProduct(null)}><X size={24}/></button>
-                                </div>
-                                <p className="text-xs opacity-80 uppercase font-black tracking-widest">{selectedProduct.name} • ₹{selectedProduct.basePrice}</p>
-                             </div>
-                             
-                             <div className="p-6 md:p-8 overflow-y-auto custom-scrollbar">
-                                 <form onSubmit={handleCheckoutSubmit} className="space-y-6">
-                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                         <div className="space-y-1">
-                                             <label className="text-[10px] font-black uppercase text-slate-400 flex items-center gap-1"><UserIcon size={12}/> Your Full Name</label>
-                                             <input required value={checkoutForm.name} onChange={e => setCheckoutForm({...checkoutForm, name: e.target.value})} className="w-full bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-purple-500" placeholder="John Doe" />
-                                         </div>
-                                         <div className="space-y-1">
-                                             <label className="text-[10px] font-black uppercase text-slate-400 flex items-center gap-1"><Phone size={12}/> Mobile Number</label>
-                                             <input required type="tel" value={checkoutForm.mobile} onChange={e => setCheckoutForm({...checkoutForm, mobile: e.target.value})} className="w-full bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-purple-500" placeholder="10-digit mobile" />
-                                         </div>
-                                     </div>
+                {isCheckoutOpen && (
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[200] flex items-center justify-center bg-black/98 p-4 backdrop-blur-3xl">
+                        <motion.div initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} className="bg-[#0A0A0A] border border-white/10 rounded-[50px] w-full max-w-2xl overflow-hidden relative shadow-2xl flex flex-col max-h-[90vh]">
+                            <button onClick={() => setIsCheckoutOpen(false)} className="absolute top-10 right-10 text-white/20 hover:text-white z-50"><X size={32}/></button>
+                            
+                            <div className="p-12 md:p-16 overflow-y-auto scrollbar-hide">
+                                <h3 className="text-4xl font-light serif-font mb-4 luxury-text-gradient">Secure Entry.</h3>
+                                <p className="text-[10px] font-black uppercase tracking-[0.5em] text-white/20 mb-12">Authorized Shipment Protocol</p>
+                                
+                                <form onSubmit={handleCheckoutSubmit} className="space-y-8">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div className="space-y-1">
+                                            <label className="text-[9px] font-black uppercase text-white/20 ml-1">Full Name</label>
+                                            <input required value={checkoutForm.name} onChange={e => setCheckoutForm({...checkoutForm, name: e.target.value})} className="w-full bg-white/[0.03] border border-white/5 rounded-2xl px-6 py-4 outline-none focus:border-premium-accent text-sm" />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-[9px] font-black uppercase text-white/20 ml-1">Mobile Contact</label>
+                                            <input required type="tel" value={checkoutForm.mobile} onChange={e => setCheckoutForm({...checkoutForm, mobile: e.target.value})} className="w-full bg-white/[0.03] border border-white/5 rounded-2xl px-6 py-4 outline-none focus:border-premium-accent text-sm" />
+                                        </div>
+                                    </div>
 
-                                     <div className="space-y-1">
-                                         <label className="text-[10px] font-black uppercase text-slate-400 flex items-center gap-1">Customization Requirements</label>
-                                         <textarea required value={checkoutForm.customName} onChange={e => setCheckoutForm({...checkoutForm, customName: e.target.value})} className="w-full bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 h-20 outline-none resize-none focus:ring-2 focus:ring-purple-500" placeholder="What names or text should be on the resin art?" />
-                                     </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[9px] font-black uppercase text-white/20 ml-1">Shipment Address</label>
+                                        <textarea required value={checkoutForm.address} onChange={e => setCheckoutForm({...checkoutForm, address: e.target.value})} className="w-full bg-white/[0.03] border border-white/5 rounded-2xl px-6 py-4 h-24 outline-none resize-none focus:border-premium-accent text-sm" />
+                                    </div>
 
-                                     <div className="space-y-1">
-                                         <label className="text-[10px] font-black uppercase text-slate-400 flex items-center gap-1">Shipping Address</label>
-                                         <textarea required value={checkoutForm.address} onChange={e => setCheckoutForm({...checkoutForm, address: e.target.value})} className="w-full bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 h-24 outline-none resize-none focus:ring-2 focus:ring-purple-500" placeholder="Street, House No, Landmark..." />
-                                     </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div className="space-y-1">
+                                            <label className="text-[9px] font-black uppercase text-white/20 ml-1">Pincode</label>
+                                            <input required value={checkoutForm.pincode} onChange={e => setCheckoutForm({...checkoutForm, pincode: e.target.value})} className="w-full bg-white/[0.03] border border-white/5 rounded-2xl px-6 py-4 outline-none focus:border-premium-accent text-sm font-mono" />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-[9px] font-black uppercase text-white/20 ml-1">State Origin</label>
+                                            <select required value={checkoutForm.state} onChange={e => setCheckoutForm({...checkoutForm, state: e.target.value})} className="w-full bg-white/[0.03] border border-white/5 rounded-2xl px-6 py-4 outline-none focus:border-premium-accent text-sm appearance-none">
+                                                {INDIAN_STATES.map(s => <option key={s} value={s} className="bg-black">{s}</option>)}
+                                            </select>
+                                        </div>
+                                    </div>
 
-                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                         <div className="space-y-1">
-                                             <label className="text-[10px] font-black uppercase text-slate-400 flex items-center gap-1"><Hash size={12}/> Pincode</label>
-                                             <input required value={checkoutForm.pincode} onChange={e => setCheckoutForm({...checkoutForm, pincode: e.target.value})} className="w-full bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-purple-500" placeholder="6-digit pincode" />
-                                         </div>
-                                         <div className="space-y-1">
-                                             <label className="text-[10px] font-black uppercase text-slate-400 flex items-center gap-1"><MapPin size={12}/> State</label>
-                                             <select required value={checkoutForm.state} onChange={e => setCheckoutForm({...checkoutForm, state: e.target.value})} className="w-full bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 outline-none bg-white focus:ring-2 focus:ring-purple-500">
-                                                 {INDIAN_STATES.map(s => <option key={s} value={s}>{s}</option>)}
-                                             </select>
-                                         </div>
-                                     </div>
-
-                                     <div className="pt-4">
-                                         <button type="submit" disabled={isSubmitting} className="w-full py-4 bg-indigo-600 text-white rounded-xl font-black text-xl shadow-lg hover:shadow-indigo-500/20 hover:scale-[1.02] active:scale-95 transition-all">
-                                             {isSubmitting ? 'Creating Order...' : 'Proceed to Payment'}
-                                         </button>
-                                     </div>
-                                 </form>
-                             </div>
+                                    <div className="pt-8 border-t border-white/5">
+                                        <div className="flex justify-between items-end mb-8">
+                                            <span className="text-[10px] font-black uppercase tracking-widest text-white/20">Final Amount</span>
+                                            <span className="text-4xl font-light text-premium-accent">₹{totalCartValue}</span>
+                                        </div>
+                                        <button disabled={isSubmitting} className="w-full py-6 bg-white text-black rounded-2xl font-black text-[12px] uppercase tracking-[0.5em] shadow-2xl hover:bg-premium-accent transition-all">
+                                            {isSubmitting ? 'Syncing...' : 'Authorize Transaction'}
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
                         </motion.div>
                     </motion.div>
                 )}
             </AnimatePresence>
 
-            {/* Step 2: Payment Modal */}
+            {/* --- PAYMENT PORTAL OVERLAY --- */}
             <AnimatePresence>
                 {activeOrder && settings && (
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-                        <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className="bg-white dark:bg-[#0B1120] rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl relative flex flex-col md:flex-row">
-                            <button onClick={() => setActiveOrder(null)} className="absolute top-4 right-4 text-white z-20 hover:bg-white/10 p-2 rounded-full"><X size={20}/></button>
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[300] flex items-center justify-center bg-black/98 p-4 backdrop-blur-3xl">
+                        <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} className="bg-[#0A0A0A] border border-white/10 rounded-[60px] w-full max-w-4xl overflow-hidden shadow-2xl flex flex-col md:flex-row min-h-[500px]">
+                            <button onClick={() => setActiveOrder(null)} className="absolute top-10 right-10 text-white/20 hover:text-white z-50"><X size={32}/></button>
                             
-                            {/* Invoice Sidebar */}
-                            <div className="w-full md:w-2/5 bg-slate-900 p-8 text-white flex flex-col justify-between border-r border-white/5">
+                            <div className="w-full md:w-2/5 bg-white/[0.02] p-12 border-r border-white/5 flex flex-col justify-between">
                                 <div>
-                                    <h3 className="font-bold text-2xl mb-2 text-[#00E5FF]">Payment</h3>
-                                    <p className="text-xs text-slate-400 font-mono mb-6">Order ID: #{activeOrder.id.slice(0, 8)}</p>
+                                    <div className="p-4 bg-premium-accent/10 w-fit rounded-2xl text-premium-accent mb-8"><Zap size={32}/></div>
+                                    <h3 className="text-3xl font-light serif-font mb-4">Financial Protocol</h3>
+                                    <p className="text-[9px] font-black uppercase tracking-[0.4em] text-white/20 mb-10">Order ID: {activeOrder.id.slice(0, 10)}</p>
                                     
-                                    <div className="space-y-4">
-                                        <div>
-                                            <p className="text-[10px] uppercase font-black text-slate-500 mb-1">Shipping To</p>
-                                            <p className="text-sm font-bold truncate">{activeOrder.studentName}</p>
-                                            <p className="text-xs text-slate-400 truncate">{activeOrder.address}</p>
-                                        </div>
-                                        <div>
-                                            <p className="text-[10px] uppercase font-black text-slate-500 mb-1">Product</p>
-                                            <p className="text-sm font-bold">{activeOrder.productName}</p>
-                                        </div>
+                                    <div className="space-y-6 text-[10px] font-black uppercase tracking-[0.2em] text-white/40">
+                                        <div className="flex justify-between border-b border-white/5 pb-4"><span>Product</span><span className="text-white truncate max-w-[120px]">{activeOrder.productName}</span></div>
+                                        <div className="flex justify-between border-b border-white/5 pb-4"><span>Mobile</span><span className="text-white">{activeOrder.mobile}</span></div>
                                     </div>
                                 </div>
-                                
-                                <div className="mt-8 pt-8 border-t border-white/5">
-                                    <p className="text-xs uppercase tracking-wider text-slate-500 mb-1">Total Amount</p>
-                                    <p className="text-5xl font-black text-[#00E5FF] tracking-tighter">₹{activeOrder.finalPrice}</p>
+                                <div className="mt-10">
+                                    <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/20 mb-2">Amount Due</p>
+                                    <p className="text-5xl font-light text-premium-accent">₹{activeOrder.finalPrice}</p>
                                 </div>
                             </div>
 
-                            {/* Gateway Content */}
-                            <div className="w-full md:w-3/5 p-8 bg-white dark:bg-[#0B1120]">
-                                <div className="mb-8 flex space-x-2 overflow-x-auto pb-2 scrollbar-hide">
+                            <div className="w-full md:w-3/5 p-12 bg-black flex flex-col">
+                                <div className="mb-10 flex gap-4 overflow-x-auto scrollbar-hide">
                                     {Object.entries(settings.gateways).filter(([_, c]: [string, GatewayConfig]) => c.enabled).map(([k, c]: [string, GatewayConfig]) => (
                                         <button 
                                             key={k} 
                                             onClick={() => setSelectedGatewayKey(k)} 
-                                            className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shrink-0 ${selectedGatewayKey === k ? 'bg-indigo-600 text-white shadow-lg' : 'bg-slate-50 dark:bg-white/5 text-slate-400'}`}
+                                            className={`px-6 py-3 rounded-2xl text-[9px] font-black uppercase tracking-widest transition-all ${selectedGatewayKey === k ? 'bg-white text-black shadow-2xl' : 'bg-white/5 text-white/20 border border-white/5'}`}
                                         >
                                             {c.name}
                                         </button>
@@ -313,44 +444,32 @@ const Shop: React.FC = () => {
                                 </div>
 
                                 {currentGateway && selectedGatewayKey === 'manual' ? (
-                                    <div className="space-y-6 animate-fade-in">
-                                        <div className="flex justify-center p-4 bg-white border-4 border-slate-50 rounded-2xl shadow-inner">
-                                            <img 
-                                                src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`upi://pay?pa=${currentGateway.credentials.upiId || ''}&pn=ShriyasShop&am=${activeOrder.finalPrice}&cu=INR`)}`} 
-                                                className="w-44 h-44" 
-                                                alt="Payment QR"
-                                            />
+                                    <div className="flex-1 flex flex-col justify-center animate-fade-in">
+                                        <div className="flex justify-center mb-10">
+                                            <div className="p-6 bg-white rounded-[40px] shadow-[0_0_60px_rgba(255,255,255,0.05)]">
+                                                <img src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(`upi://pay?pa=${currentGateway.credentials.upiId || ''}&pn=ShriyasBoutique&am=${activeOrder.finalPrice}&cu=INR`)}`} className="w-48 h-48 md:w-56 md:h-56" alt="UPI QR" />
+                                            </div>
                                         </div>
                                         
-                                        <div className="bg-indigo-50 dark:bg-indigo-900/10 p-4 rounded-xl flex items-center justify-between border border-indigo-100 dark:border-indigo-500/20">
-                                            <div className="overflow-hidden mr-2">
-                                                <p className="text-[10px] text-indigo-500 dark:text-[#00E5FF] font-black uppercase">Official UPI ID</p>
-                                                <p className="font-mono text-indigo-900 dark:text-indigo-200 font-bold truncate text-sm">{currentGateway.credentials.upiId}</p>
+                                        <div className="bg-white/5 border border-white/10 p-5 rounded-[24px] flex items-center justify-between mb-10">
+                                            <div>
+                                                <p className="text-[8px] font-black uppercase text-white/20 tracking-[0.4em] mb-1">Corporate VPA</p>
+                                                <p className="font-mono text-sm text-white/80 font-bold">{currentGateway.credentials.upiId}</p>
                                             </div>
-                                            <button onClick={() => handleCopy(currentGateway.credentials.upiId || '')} className="text-indigo-600 dark:text-[#00E5FF] p-2 hover:bg-white/20 rounded-lg"><Copy size={18} /></button>
+                                            <button onClick={() => handleCopy(currentGateway.credentials.upiId || '')} className="p-3 text-white/20 hover:text-white"><Copy size={20} /></button>
                                         </div>
 
-                                        <form onSubmit={handlePaymentRefSubmit} className="space-y-4">
-                                            <div>
-                                                <label className="block text-[10px] font-black text-slate-500 mb-2 uppercase tracking-widest">Transaction UTR / Reference Number</label>
-                                                <input 
-                                                    required 
-                                                    placeholder="Enter 12-digit number" 
-                                                    value={transactionRef} 
-                                                    onChange={e => setTransactionRef(e.target.value)} 
-                                                    className="w-full border-2 border-slate-100 dark:border-white/10 rounded-xl px-4 py-3.5 focus:ring-2 focus:ring-indigo-500 outline-none bg-slate-50 dark:bg-black/20 font-mono text-center text-lg" 
-                                                />
-                                            </div>
-                                            <button type="submit" className="w-full bg-slate-900 dark:bg-indigo-600 text-white py-4 rounded-xl font-black text-lg hover:shadow-xl transition-all">Submit for Verification</button>
+                                        <form onSubmit={handlePaymentRefSubmit} className="mt-auto">
+                                            <label className="block text-[9px] font-black text-white/20 mb-3 uppercase tracking-widest ml-1">Reference UTR Protocol</label>
+                                            <input required placeholder="12 DIGIT REFERENCE" value={transactionRef} onChange={e => setTransactionRef(e.target.value)} className="w-full bg-white/[0.03] border border-white/10 rounded-2xl px-8 py-5 text-lg font-black tracking-[0.5em] text-center outline-none focus:border-premium-accent transition-all" />
+                                            <button type="submit" className="w-full mt-6 bg-white text-black py-5 rounded-2xl font-black text-xs uppercase tracking-[0.5em] shadow-2xl">Confirm Submission</button>
                                         </form>
                                     </div>
                                 ) : (
-                                    <div className="py-24 text-center">
-                                        <div className="w-16 h-16 bg-slate-50 dark:bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4">
-                                            <Smartphone className="text-slate-300 animate-pulse" />
-                                        </div>
-                                        <p className="text-slate-400 text-sm">Redirecting to {currentGateway?.name || 'Gateway'} secure checkout...</p>
-                                        <button className="mt-8 text-indigo-600 font-bold text-sm">Launch Checkout Manually</button>
+                                    <div className="flex-1 flex flex-col justify-center items-center text-center">
+                                        <Smartphone size={80} className="text-white/5 mb-8 animate-pulse" strokeWidth={1} />
+                                        <p className="text-white/40 text-[10px] font-black uppercase tracking-[0.5em]">Establishing Secure Gateway Connection...</p>
+                                        <button className="mt-12 bg-white/5 px-12 py-4 rounded-full text-[9px] font-black uppercase tracking-widest hover:bg-white/10 transition-all">Manual Launch</button>
                                     </div>
                                 )}
                             </div>

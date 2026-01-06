@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { db } from '../services/db';
 import { Student, TabView, Grade, Subdivision, Teacher, FeeSubmission, SystemSettings, GatewayConfig, Enquiry, Product, Order, StudentNotification, Notice } from '../types';
-import { Users, Settings, LogOut, Plus, Edit2, Search, Briefcase, CreditCard, Save, Layers, UserPlus, Lock, ShieldAlert, Key, Power, X, Trash2, GraduationCap, TrendingUp, DollarSign, RefreshCw, Menu, Check, Upload, Calendar, MessageCircle, Phone, Clock, ShoppingBag, Send, MapPin, Truck, Megaphone, Bell, Info, AlertTriangle, User, UserCheck, AlertCircle, Globe, Smartphone, QrCode } from 'lucide-react';
+import { Users, Settings, LogOut, Plus, Edit2, Search, Briefcase, CreditCard, Save, Layers, UserPlus, Lock, ShieldAlert, Key, Power, X, Trash2, GraduationCap, TrendingUp, DollarSign, RefreshCw, Menu, Check, Upload, Calendar, MessageCircle, Phone, Clock, ShoppingBag, Send, MapPin, Truck, Megaphone, Bell, Info, AlertTriangle, User, UserCheck, AlertCircle, Globe, Smartphone, QrCode, Package, Image as ImageIcon, Filter, CheckCircle2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -56,11 +56,13 @@ export default function AdminDashboard() {
   }, []);
 
   useEffect(() => {
-    const user = sessionStorage.getItem('sc_user');
-    if (!user) { navigate('/login'); return; }
+    const userStr = sessionStorage.getItem('sc_user');
+    if (!userStr) { navigate('/login'); return; }
+    const user = JSON.parse(userStr);
+    if (user.role !== 'admin') { navigate('/login'); return; }
+    
     refreshData().then(() => setLoading(false));
     
-    // Setup generic subscription to refresh on any change
     const channels = [
         db.subscribe('students', refreshData),
         db.subscribe('teachers', refreshData),
@@ -68,6 +70,7 @@ export default function AdminDashboard() {
         db.subscribe('subdivisions', refreshData),
         db.subscribe('fee_submissions', refreshData),
         db.subscribe('shop_orders', refreshData),
+        db.subscribe('products', refreshData),
         db.subscribe('notices', refreshData),
         db.subscribe('app_notifications', refreshData)
     ];
@@ -105,6 +108,8 @@ export default function AdminDashboard() {
     </motion.div>
   );
 
+  if (loading) return <div className="h-screen w-full flex items-center justify-center bg-slate-50 font-black uppercase text-[10px] tracking-[1em] text-slate-300">Loading SMS Hub...</div>;
+
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden font-sans relative">
       <AnimatePresence>
@@ -125,6 +130,7 @@ export default function AdminDashboard() {
         <div className="flex-1 py-6 space-y-1 overflow-y-auto scrollbar-hide">
           <SidebarItem tab="dashboard" icon={TrendingUp} label="Insights" />
           <SidebarItem tab="broadcast" icon={Megaphone} label="Push Alerts" />
+          <SidebarItem tab="products" icon={Package} label="Product Catalog" />
           <SidebarItem tab="shop" icon={ShoppingBag} label="Orders Tracking" />
           <SidebarItem tab="fees" icon={CreditCard} label="Fee Records" />
           <SidebarItem tab="students" icon={Users} label="Students" />
@@ -141,49 +147,333 @@ export default function AdminDashboard() {
         <header className="bg-white/80 backdrop-blur-md border-b border-slate-200 px-8 h-20 flex items-center justify-between sticky top-0 z-20">
           <div className="flex items-center gap-4">
               <button onClick={() => setIsSidebarOpen(true)} className="lg:hidden p-2 text-slate-600"><Menu size={24}/></button>
-              <h2 className="text-2xl font-black text-slate-800 capitalize font-[Poppins]">{activeTab}</h2>
+              <h2 className="text-2xl font-black text-slate-800 capitalize">{activeTab}</h2>
           </div>
           <div className="flex items-center gap-3">
-              <div className="h-10 w-10 bg-indigo-600 rounded-full flex items-center justify-center text-white font-bold">A</div>
+              <div className="h-10 w-10 bg-indigo-600 rounded-full flex items-center justify-center text-white font-bold uppercase">A</div>
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto p-8 pb-24">
+        <div className="flex-1 overflow-y-auto p-8 pb-24 bg-slate-50/50">
           <div className="max-w-7xl mx-auto">
-
-          {activeTab === 'dashboard' && (
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                  <StatCard title="Orders Paid" value={orders.filter(o => o.status === 'Payment Under Verification').length} icon={ShoppingBag} color="bg-pink-500" subtext="Pending Verification" />
-                  <StatCard title="Active Students" value={students.filter(s=>s.status==='Active').length} icon={Users} color="bg-indigo-500" subtext="Enrolled students" />
-                  <StatCard title="Revenue (Fees)" value={`₹${fees.reduce((a,b)=>a+parseInt(b.amount||'0'), 0)}`} icon={DollarSign} color="bg-emerald-500" subtext="Collected this month" />
-                  <StatCard title="New Leads" value={enquiries.length} icon={MessageCircle} color="bg-blue-500" subtext="Website enquiries" />
-              </div>
-          )}
-
-          {activeTab === 'broadcast' && <BroadcastModule grades={grades} subdivisions={subdivisions} students={students} onNotify={showNotification} />}
-
-          {activeTab === 'students' && <StudentsModule grades={grades} subdivisions={subdivisions} students={students} onNotify={showNotification} refresh={refreshData} />}
-
-          {activeTab === 'teachers' && <TeachersModule teachers={teachers} onNotify={showNotification} refresh={refreshData} />}
-
-          {activeTab === 'grades' && <GradesModule grades={grades} subdivisions={subdivisions} onNotify={showNotification} refresh={refreshData} />}
-
-          {activeTab === 'fees' && <FeesModule fees={fees} onNotify={showNotification} refresh={refreshData} />}
-
-          {activeTab === 'notices' && <NoticesModule notices={notices} onNotify={showNotification} refresh={refreshData} />}
-
-          {activeTab === 'settings' && settings && <SettingsModule settings={settings} onNotify={showNotification} refresh={refreshData} />}
-
-          {activeTab === 'enquiries' && <EnquiriesModule enquiries={enquiries} onNotify={showNotification} refresh={refreshData} />}
-
-          {activeTab === 'shop' && <OrdersModule orders={orders} onNotify={showNotification} refresh={refreshData} />}
-
+            <AnimatePresence mode="wait">
+              <motion.div key={activeTab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+                {activeTab === 'dashboard' && (
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                        <StatCard title="Orders Paid" value={orders.filter(o => o.status === 'Payment Under Verification').length} icon={ShoppingBag} color="bg-pink-500" subtext="Verification Required" />
+                        <StatCard title="Active Students" value={students.filter(s=>s.status==='Active').length} icon={Users} color="bg-indigo-500" subtext="Enrolled students" />
+                        <StatCard title="Revenue (Fees)" value={`₹${fees.filter(f=>f.status==='Approved').reduce((a,b)=>a+parseInt(b.amount||'0'), 0)}`} icon={DollarSign} color="bg-emerald-500" subtext="Total Validated Revenue" />
+                        <StatCard title="New Leads" value={enquiries.filter(e => e.status === 'New').length} icon={MessageCircle} color="bg-blue-500" subtext="Unattended Enquiries" />
+                    </div>
+                )}
+                {activeTab === 'products' && <ProductsModule products={products} onNotify={showNotification} refresh={refreshData} />}
+                {activeTab === 'shop' && <OrdersModule orders={orders} onNotify={showNotification} refresh={refreshData} />}
+                {activeTab === 'broadcast' && <BroadcastModule grades={grades} subdivisions={subdivisions} students={students} onNotify={showNotification} />}
+                {activeTab === 'students' && <StudentsModule grades={grades} subdivisions={subdivisions} students={students} onNotify={showNotification} refresh={refreshData} />}
+                {activeTab === 'teachers' && <TeachersModule teachers={teachers} onNotify={showNotification} refresh={refreshData} />}
+                {activeTab === 'grades' && <GradesModule grades={grades} subdivisions={subdivisions} onNotify={showNotification} refresh={refreshData} />}
+                {activeTab === 'fees' && <FeesModule fees={fees} onNotify={showNotification} refresh={refreshData} />}
+                {activeTab === 'notices' && <NoticesModule notices={notices} onNotify={showNotification} refresh={refreshData} />}
+                {activeTab === 'enquiries' && <EnquiriesModule enquiries={enquiries} onNotify={showNotification} refresh={refreshData} />}
+                {activeTab === 'settings' && settings && <SettingsModule settings={settings} onNotify={showNotification} refresh={refreshData} />}
+              </motion.div>
+            </AnimatePresence>
           </div>
         </div>
       </main>
     </div>
   );
 }
+
+const ProductsModule = ({ products, onNotify, refresh }: any) => {
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+    const [search, setSearch] = useState('');
+    const [form, setForm] = useState({ 
+        name: '', description: '', basePrice: '', category: 'Decor', stockStatus: 'In Stock' as 'In Stock' | 'Out of Stock', imageUrl: '' 
+    });
+
+    useEffect(() => {
+        if (editingProduct) {
+            setForm({
+                name: editingProduct.name,
+                description: editingProduct.description,
+                basePrice: editingProduct.basePrice,
+                category: editingProduct.category || 'Decor',
+                stockStatus: editingProduct.stockStatus || 'In Stock',
+                imageUrl: editingProduct.imageUrl || ''
+            });
+        } else {
+            setForm({ name: '', description: '', basePrice: '', category: 'Decor', stockStatus: 'In Stock', imageUrl: '' });
+        }
+    }, [editingProduct]);
+
+    const handleSubmit = async (e: any) => {
+        e.preventDefault();
+        try {
+            if (editingProduct) {
+                await db.updateProduct(editingProduct.id, form);
+                onNotify("Product catalog updated!");
+            } else {
+                await db.addProduct(form);
+                onNotify("New product added to catalog!");
+            }
+            setIsModalOpen(false);
+            setEditingProduct(null);
+            refresh();
+        } catch (err) { alert("Failed to save product."); }
+    };
+
+    const handleDelete = async (id: string) => {
+        if (confirm("Permanently remove this product from the catalog?")) {
+            await db.deleteProduct(id);
+            onNotify("Product deleted.");
+            refresh();
+        }
+    };
+
+    const filtered = products.filter((p: Product) => 
+        p.name.toLowerCase().includes(search.toLowerCase()) || 
+        p.category.toLowerCase().includes(search.toLowerCase())
+    );
+
+    return (
+        <div className="space-y-6">
+            <div className="flex justify-between items-center">
+                <div className="relative w-72">
+                    <Search className="absolute left-3 top-2.5 text-slate-400" size={18} />
+                    <input className="w-full bg-white border border-slate-200 rounded-xl pl-10 pr-4 py-2 text-sm outline-none" placeholder="Search products..." value={search} onChange={e => setSearch(e.target.value)} />
+                </div>
+                <button onClick={() => { setEditingProduct(null); setIsModalOpen(true); }} className="bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-lg"><Plus size={20}/> Add Product</button>
+            </div>
+
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                <table className="w-full text-left">
+                    <thead className="bg-slate-50 text-[10px] uppercase font-black tracking-widest text-slate-400 border-b border-slate-100">
+                        <tr><th className="p-4">Product Details</th><th className="p-4">Category</th><th className="p-4">Price</th><th className="p-4">Stock Status</th><th className="p-4 text-center">Actions</th></tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 text-sm">
+                        {filtered.map((p: Product) => (
+                            <tr key={p.id} className="hover:bg-slate-50 transition-colors">
+                                <td className="p-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-12 h-12 rounded-xl bg-slate-100 overflow-hidden border border-slate-200">
+                                            {p.imageUrl ? <img src={p.imageUrl} className="w-full h-full object-cover" /> : <ImageIcon className="w-full h-full p-2 text-slate-300" />}
+                                        </div>
+                                        <div>
+                                            <p className="font-bold text-slate-800">{p.name}</p>
+                                            <p className="text-[10px] text-slate-400 uppercase tracking-tighter truncate max-w-[200px]">{p.description}</p>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td className="p-4"><span className="px-3 py-1 bg-indigo-50 text-indigo-600 rounded-lg text-[10px] font-black uppercase">{p.category}</span></td>
+                                <td className="p-4 font-black text-slate-800">₹{p.basePrice}</td>
+                                <td className="p-4">
+                                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${p.stockStatus === 'In Stock' ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'}`}>
+                                        {p.stockStatus}
+                                    </span>
+                                </td>
+                                <td className="p-4 text-center">
+                                    <div className="flex justify-center gap-2">
+                                        <button onClick={() => { setEditingProduct(p); setIsModalOpen(true); }} className="p-2 rounded-lg text-indigo-600 bg-indigo-50 hover:bg-indigo-100 transition-all"><Edit2 size={16}/></button>
+                                        <button onClick={() => handleDelete(p.id)} className="p-2 rounded-lg text-rose-400 hover:text-rose-600 hover:bg-rose-50 transition-all"><Trash2 size={16}/></button>
+                                    </div>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+                {filtered.length === 0 && <div className="p-20 text-center text-slate-300 font-black uppercase tracking-[0.5em] text-xs">No Items Found</div>}
+            </div>
+
+            <AnimatePresence>
+                {isModalOpen && (
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+                        <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} className="bg-white rounded-[40px] p-10 w-full max-w-xl shadow-2xl relative max-h-[90vh] overflow-y-auto scrollbar-hide">
+                            <button onClick={() => setIsModalOpen(false)} className="absolute top-8 right-8 text-slate-400 hover:text-slate-800"><X/></button>
+                            <h3 className="text-3xl font-black text-slate-800 mb-2 flex items-center gap-3">
+                                <Package className="text-indigo-600" size={32}/> {editingProduct ? 'Modify Product' : 'Add New Collectible'}
+                            </h3>
+                            <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-10">Boutique Inventory Protocol</p>
+                            
+                            <form onSubmit={handleSubmit} className="space-y-6">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Product Name</label>
+                                        <input required className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 font-bold" value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Category</label>
+                                        <select className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 font-bold" value={form.category} onChange={e => setForm({...form, category: e.target.value})}>
+                                            <option value="Decor">Resin Decor</option>
+                                            <option value="Jewelry">Jewelry</option>
+                                            <option value="Stationery">Stationery</option>
+                                            <option value="Gifts">Bespoke Gifts</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-1">
+                                    <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Description</label>
+                                    <textarea required className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 h-28 outline-none focus:ring-2 focus:ring-indigo-500 resize-none font-medium text-sm" value={form.description} onChange={e => setForm({...form, description: e.target.value})} />
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Base Price (₹)</label>
+                                        <input required type="number" className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-lg font-black" value={form.basePrice} onChange={e => setForm({...form, basePrice: e.target.value})} />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Stock Status</label>
+                                        <select className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 font-bold" value={form.stockStatus} onChange={e => setForm({...form, stockStatus: e.target.value as any})}>
+                                            <option value="In Stock">Active (In Stock)</option>
+                                            <option value="Out of Stock">Unavailable (Out of Stock)</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-1">
+                                    <label className="text-[10px] font-black uppercase text-slate-400 ml-1">High-Res Image URL</label>
+                                    <input required placeholder="https://..." className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-xs" value={form.imageUrl} onChange={e => setForm({...form, imageUrl: e.target.value})} />
+                                </div>
+
+                                <button type="submit" className="w-full bg-slate-900 text-white py-5 rounded-2xl font-black text-xl hover:shadow-2xl transition-all mt-4 flex items-center justify-center gap-3">
+                                    {editingProduct ? <RefreshCw size={24}/> : <Save size={24}/>}
+                                    {editingProduct ? 'Apply Modifications' : 'Store in Catalog'}
+                                </button>
+                            </form>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </div>
+    );
+};
+
+const OrdersModule = ({ orders, onNotify, refresh }: any) => {
+    const handleStatusUpdate = async (id: string, status: Order['status']) => {
+        try {
+            await db.updateOrder(id, { status });
+            onNotify(`Order status marked: ${status}`);
+            refresh();
+        } catch (err) { alert("Registry update failed."); }
+    };
+
+    return (
+        <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+            <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                <h3 className="font-black text-slate-800 text-xl flex items-center gap-2"><ShoppingBag className="text-pink-500"/> Order Registry Tracking</h3>
+            </div>
+            <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                    <thead className="bg-slate-50 text-[10px] uppercase font-black tracking-widest text-slate-400 border-b">
+                        <tr><th className="p-6">Client & Product</th><th className="p-6">Contact</th><th className="p-6">Price</th><th className="p-6">UTR Reference</th><th className="p-6">Action</th></tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 text-sm">
+                        {orders.map((o: Order) => (
+                            <tr key={o.id} className="hover:bg-slate-50/50 transition-colors">
+                                <td className="p-6">
+                                    <div className="flex items-center gap-3">
+                                        <img src={o.productImage} className="w-10 h-10 rounded-lg object-cover bg-slate-100" />
+                                        <div><p className="font-bold text-slate-800">{o.studentName}</p><p className="text-[10px] text-slate-400 font-medium truncate max-w-[120px]">{o.productName}</p></div>
+                                    </div>
+                                </td>
+                                <td className="p-6 text-slate-600 font-mono text-xs">{o.mobile}</td>
+                                <td className="p-6 font-black text-slate-800">₹{o.finalPrice}</td>
+                                <td className="p-6 font-mono text-xs uppercase text-indigo-500 font-bold">{o.transactionRef || 'N/A'}</td>
+                                <td className="p-6">
+                                    <select 
+                                        className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase outline-none ${
+                                            o.status === 'Completed' ? 'bg-emerald-50 text-emerald-600' : 
+                                            o.status === 'Rejected' ? 'bg-rose-50 text-rose-600' : 'bg-slate-100 text-slate-600'
+                                        }`}
+                                        value={o.status}
+                                        onChange={(e) => handleStatusUpdate(o.id, e.target.value as Order['status'])}
+                                    >
+                                        <option value="Payment Pending">Pending</option>
+                                        <option value="Payment Under Verification">Under Verif.</option>
+                                        <option value="Processing Order">Processing</option>
+                                        <option value="Completed">Completed</option>
+                                        <option value="Rejected">Rejected</option>
+                                    </select>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+                {orders.length === 0 && <div className="p-20 text-center text-slate-300 font-black uppercase text-xs tracking-widest">No Active Orders</div>}
+            </div>
+        </div>
+    );
+};
+
+const BroadcastModule = ({ grades, subdivisions, students, onNotify }: any) => {
+    const [targetType, setTargetType] = useState<'all' | 'grade' | 'division' | 'student'>('all');
+    const [targetId, setTargetId] = useState('');
+    const [title, setTitle] = useState('');
+    const [message, setMessage] = useState('');
+    const [isSending, setIsSending] = useState(false);
+
+    const handleSend = async (e: any) => {
+        e.preventDefault();
+        setIsSending(true);
+        try {
+            await db.pushNotification({ targetType, targetId: targetId || undefined, type: 'announcement', title, message });
+            onNotify("Push alert deployed successfully!");
+            setTitle(''); setMessage('');
+        } catch (e) { alert("Transmission failed."); }
+        finally { setIsSending(false); }
+    };
+
+    return (
+        <div className="max-w-4xl mx-auto">
+            <form onSubmit={handleSend} className="bg-white p-10 rounded-[40px] shadow-sm border border-slate-100 space-y-8">
+                 <div className="flex items-center gap-4">
+                    <div className="h-14 w-14 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center shadow-inner"><Megaphone size={32}/></div>
+                    <div><h3 className="text-2xl font-black text-slate-800">Push Deployment</h3><p className="text-sm text-slate-400 font-medium">Broadcast academic or financial alerts.</p></div>
+                 </div>
+
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-1">
+                        <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Target Group</label>
+                        <select className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 font-bold" value={targetType} onChange={e => { setTargetType(e.target.value as any); setTargetId(''); }}>
+                            <option value="all">Entire Institution</option>
+                            <option value="grade">Specific Grade</option>
+                            <option value="division">Specific Division</option>
+                            <option value="student">Specific Student</option>
+                        </select>
+                    </div>
+                    {targetType !== 'all' && (
+                        <div className="space-y-1">
+                            <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Target Identity</label>
+                            <select className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 font-bold" value={targetId} onChange={e => setTargetId(e.target.value)}>
+                                <option value="">Select ID</option>
+                                {targetType === 'grade' && grades.map((g:any) => <option key={g.id} value={g.id}>{g.gradeName}</option>)}
+                                {targetType === 'division' && subdivisions.map((s:any) => <option key={s.id} value={s.id}>Grade {s.gradeId} - {s.divisionName}</option>)}
+                                {targetType === 'student' && students.map((s:any) => <option key={s.id} value={s.id}>{s.name} ({s.studentCustomId})</option>)}
+                            </select>
+                        </div>
+                    )}
+                 </div>
+
+                 <div className="space-y-6">
+                    <div className="space-y-1">
+                        <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Alert Heading</label>
+                        <input required placeholder="URGENT: TITLE" className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 font-bold" value={title} onChange={e => setTitle(e.target.value)} />
+                    </div>
+                    <div className="space-y-1">
+                        <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Alert Payload (Message)</label>
+                        <textarea required placeholder="Deployment message content..." className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 h-32 resize-none font-medium" value={message} onChange={e => setMessage(e.target.value)} />
+                    </div>
+                 </div>
+
+                 <button disabled={isSending} className="w-full bg-slate-900 text-white py-5 rounded-2xl font-black text-xl hover:shadow-2xl transition-all flex items-center justify-center gap-3">
+                    <Send size={24}/> {isSending ? 'Transmitting...' : 'Authorize Broadcast'}
+                 </button>
+            </form>
+        </div>
+    );
+};
 
 const StudentsModule = ({ students, grades, subdivisions, onNotify, refresh }: any) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -401,7 +691,7 @@ const TeachersModule = ({ teachers, onNotify, refresh }: any) => {
             <AnimatePresence>
                 {isModalOpen && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-                        <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="bg-white rounded-3xl p-8 w-full max-w-md shadow-2xl relative">
+                        <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="bg-white rounded-3xl p-8 w-full max-md shadow-2xl relative">
                             <button onClick={() => setIsModalOpen(false)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-800"><X/></button>
                             <h3 className="text-2xl font-black text-slate-800 mb-6 flex items-center gap-2"><Briefcase className="text-indigo-600"/> {editingTeacher ? 'Modify Profile' : 'New Teacher Profile'}</h3>
                             <form onSubmit={handleSubmit} className="space-y-4">
@@ -534,13 +824,7 @@ const NoticesModule = ({ notices, onNotify, refresh }: any) => {
     const handleAdd = async (e: any) => {
         e.preventDefault();
         try {
-            // Content is identical to title for consistency since we only ask for heading now
-            await db.addNotice({ 
-                title: form.title, 
-                content: form.title, 
-                date: form.date, 
-                important: form.important 
-            });
+            await db.addNotice({ title: form.title, content: form.title, date: form.date, important: form.important });
             onNotify("Notice published to ticker!");
             setIsAdding(false);
             setForm({ title: '', date: new Date().toISOString().split('T')[0], important: true });
@@ -566,7 +850,7 @@ const NoticesModule = ({ notices, onNotify, refresh }: any) => {
                                 <td className="p-6"><p className="font-black text-slate-800 text-base">{n.title}</p></td>
                                 <td className="p-6 text-slate-500 font-bold">{n.date}</td>
                                 <td className="p-6"><span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${n.important ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-100 text-slate-400'}`}>{n.important ? 'Ticker Active' : 'Draft'}</span></td>
-                                <td className="p-6 text-center"><button onClick={async () => { if(confirm("Remove this notice from the ticker?")) { await db.deleteNotice(n.id); refresh(); } }} className="text-rose-400 hover:text-rose-600 p-2 bg-rose-50 rounded-xl"><Trash2 size={16}/></button></td>
+                                <td className="p-6 text-center"><button onClick={async () => { if(confirm("Remove notice?")) { await db.deleteNotice(n.id); refresh(); } }} className="text-rose-400 hover:text-rose-600 p-2 bg-rose-50 rounded-xl"><Trash2 size={16}/></button></td>
                             </tr>
                         ))}
                     </tbody>
@@ -580,10 +864,7 @@ const NoticesModule = ({ notices, onNotify, refresh }: any) => {
                             <button onClick={() => setIsAdding(false)} className="absolute top-6 right-6 text-slate-400"><X/></button>
                             <h3 className="text-2xl font-black text-slate-800 mb-6">Broadcast News</h3>
                             <form onSubmit={handleAdd} className="space-y-6">
-                                <div className="space-y-1">
-                                  <label className="text-[10px] font-black uppercase text-slate-500">Notice Heading</label>
-                                  <input required className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 outline-none font-bold" value={form.title} onChange={e => setForm({...form, title: e.target.value})} placeholder="e.g. Admission 2024 Open" />
-                                </div>
+                                <div className="space-y-1"><label className="text-[10px] font-black uppercase text-slate-500">Notice Heading</label><input required className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 outline-none font-bold" value={form.title} onChange={e => setForm({...form, title: e.target.value})} placeholder="e.g. Admission 2026 Open" /></div>
                                 <button type="submit" className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black text-xl shadow-xl">Post to Ticker</button>
                             </form>
                         </motion.div>
@@ -594,33 +875,41 @@ const NoticesModule = ({ notices, onNotify, refresh }: any) => {
     );
 };
 
+const EnquiriesModule = ({ enquiries, onNotify, refresh }: any) => {
+    return (
+        <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+            <table className="w-full text-left">
+                <thead className="bg-slate-50 text-[10px] uppercase font-black tracking-widest text-slate-400 border-b">
+                    <tr><th className="p-6">Lead Details</th><th className="p-6">Contact</th><th className="p-6">Grade</th><th className="p-6">Status</th><th className="p-6">Reason/Shift</th></tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 text-sm">
+                    {enquiries.map((e: Enquiry) => (
+                        <tr key={e.id} className="hover:bg-slate-50 transition-colors">
+                            <td className="p-6"><div><p className="font-bold text-slate-800">{e.studentName}</p><p className="text-[10px] text-slate-400 font-medium">Parent: {e.parentName}</p></div></td>
+                            <td className="p-6 text-slate-600 font-mono text-xs">{e.mobile}</td>
+                            <td className="p-6 font-bold text-slate-500">{e.grade}</td>
+                            <td className="p-6"><span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase ${e.status === 'New' ? 'bg-blue-50 text-blue-600' : 'bg-slate-100 text-slate-500'}`}>{e.status}</span></td>
+                            <td className="p-6 text-xs text-slate-400 italic max-w-xs truncate">{e.reason}</td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+            {enquiries.length === 0 && <div className="p-20 text-center text-slate-300 font-black uppercase text-xs">No Leads Registered</div>}
+        </div>
+    );
+};
+
 const SettingsModule = ({ settings, onNotify, refresh }: any) => {
     const [form, setForm] = useState(settings);
     const [activeSection, setActiveSection] = useState<'general' | 'payment'>('general');
 
     const handleSave = async (e: any) => {
         e.preventDefault();
-        try {
-            await db.updateSettings(form);
-            onNotify("System settings updated!");
-            refresh();
-        } catch (err) { alert("Error saving config."); }
+        try { await db.updateSettings(form); onNotify("System variables updated!"); refresh(); } catch (err) { alert("Error saving config."); }
     };
 
     const updateGateway = (key: string, field: string, val: any) => {
-        setForm({
-            ...form,
-            gateways: {
-                ...form.gateways,
-                [key]: {
-                    ...form.gateways[key],
-                    [field === 'enabled' ? 'enabled' : 'credentials']: field === 'enabled' ? val : {
-                        ...form.gateways[key].credentials,
-                        [field]: val
-                    }
-                }
-            }
-        });
+        setForm({ ...form, gateways: { ...form.gateways, [key]: { ...form.gateways[key], [field === 'enabled' ? 'enabled' : 'credentials']: field === 'enabled' ? val : { ...form.gateways[key].credentials, [field]: val } } } });
     };
 
     return (
@@ -629,207 +918,29 @@ const SettingsModule = ({ settings, onNotify, refresh }: any) => {
                 <button onClick={() => setActiveSection('general')} className={`flex-1 py-4 rounded-[24px] font-black text-xs uppercase tracking-widest transition-all ${activeSection === 'general' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'text-slate-400 hover:text-slate-600'}`}>System Variables</button>
                 <button onClick={() => setActiveSection('payment')} className={`flex-1 py-4 rounded-[24px] font-black text-xs uppercase tracking-widest transition-all ${activeSection === 'payment' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'text-slate-400 hover:text-slate-600'}`}>Payment Integration</button>
             </div>
-
             <form onSubmit={handleSave} className="bg-white p-10 rounded-[40px] shadow-sm border border-slate-100 space-y-8">
                  {activeSection === 'general' ? (
-                     <div className="space-y-8 animate-fade-in">
-                        <div className="flex items-center gap-4">
-                            <div className="h-14 w-14 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center shadow-inner"><Settings size={32}/></div>
-                            <div><h3 className="text-2xl font-black text-slate-800">Global Config</h3><p className="text-sm text-slate-400 font-medium">Control system-wide keys and security.</p></div>
-                        </div>
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest flex items-center gap-2"><ShieldAlert size={14}/> Google Recaptcha V2 Site Key</label>
-                            <input className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-sm shadow-inner" value={form.googleSiteKey} onChange={e => setForm({...form, googleSiteKey: e.target.value})} placeholder="VITE_RECAPTCHA_KEY" />
-                            <p className="text-[10px] text-slate-400 font-bold italic ml-2">Used for Enquiry and Student Login protection.</p>
-                        </div>
+                     <div className="space-y-8">
+                        <div className="flex items-center gap-4"><Settings size={32} className="text-indigo-600"/><h3 className="text-2xl font-black text-slate-800">Global Config</h3></div>
+                        <div className="space-y-2"><label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Recaptcha V2 Key</label><input className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-xs" value={form.googleSiteKey} onChange={e => setForm({...form, googleSiteKey: e.target.value})} /></div>
                      </div>
                  ) : (
-                     <div className="space-y-10 animate-fade-in">
-                        <div className="space-y-4">
-                            <div className="flex justify-between items-center bg-indigo-50/50 p-6 rounded-3xl border border-indigo-100">
-                                <div className="flex items-center gap-4">
-                                    <div className="p-3 bg-white rounded-2xl text-indigo-600 shadow-sm"><QrCode size={24}/></div>
-                                    <div><label className="text-sm font-black uppercase text-indigo-600 tracking-widest block">Manual UPI Gateway</label><p className="text-[10px] text-slate-400 font-bold uppercase mt-0.5">Simple UTR Verification</p></div>
-                                </div>
-                                <input type="checkbox" checked={form.gateways.manual.enabled} onChange={e => updateGateway('manual', 'enabled', e.target.checked)} className="h-6 w-6 text-indigo-600 rounded-lg cursor-pointer" />
-                            </div>
-                            <div className="grid grid-cols-1 gap-4 px-4">
-                                <div className="space-y-1"><label className="text-[10px] font-black uppercase text-slate-400">Receiver VPA (e.g. shriya@ybl)</label><input className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3.5 outline-none focus:ring-2 focus:ring-indigo-500 font-bold" value={form.gateways.manual.credentials.upiId} onChange={e => updateGateway('manual', 'upiId', e.target.value)} /></div>
-                            </div>
-                        </div>
-
-                        <div className="space-y-4">
-                            <div className="flex justify-between items-center bg-purple-50/50 p-6 rounded-3xl border border-purple-100">
-                                <div className="flex items-center gap-4">
-                                    <div className="p-3 bg-white rounded-2xl text-purple-600 shadow-sm"><Smartphone size={24}/></div>
-                                    <div><label className="text-sm font-black uppercase text-purple-600 tracking-widest block">PhonePe PG</label><p className="text-[10px] text-slate-400 font-bold uppercase mt-0.5">Live Checkout</p></div>
-                                </div>
-                                <input type="checkbox" checked={form.gateways.phonepe.enabled} onChange={e => updateGateway('phonepe', 'enabled', e.target.checked)} className="h-6 w-6 text-indigo-600 rounded-lg cursor-pointer" />
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 px-4">
-                                <div className="space-y-1"><label className="text-[10px] font-black uppercase text-slate-400">Merchant ID</label><input className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3.5 outline-none font-bold" value={form.gateways.phonepe.credentials.merchantId} onChange={e => updateGateway('phonepe', 'merchantId', e.target.value)} /></div>
-                                <div className="space-y-1"><label className="text-[10px] font-black uppercase text-slate-400">Salt Key</label><input className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3.5 outline-none font-bold" value={form.gateways.phonepe.credentials.saltKey} onChange={e => updateGateway('phonepe', 'saltKey', e.target.value)} /></div>
-                            </div>
-                        </div>
-
-                        <div className="space-y-4">
-                            <div className="flex justify-between items-center bg-blue-50/50 p-6 rounded-3xl border border-blue-100">
-                                <div className="flex items-center gap-4">
-                                    <div className="p-3 bg-white rounded-2xl text-blue-600 shadow-sm"><Globe size={24}/></div>
-                                    <div><label className="text-sm font-black uppercase text-blue-600 tracking-widest block">Paytm PG</label><p className="text-[10px] text-slate-400 font-bold uppercase mt-0.5">JS Checkout Integration</p></div>
-                                </div>
-                                <input type="checkbox" checked={form.gateways.paytm.enabled} onChange={e => updateGateway('paytm', 'enabled', e.target.checked)} className="h-6 w-6 text-indigo-600 rounded-lg cursor-pointer" />
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 px-4">
-                                <div className="space-y-1"><label className="text-[10px] font-black uppercase text-slate-400">Merchant MID</label><input className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3.5 outline-none font-bold" value={form.gateways.paytm.credentials.mid} onChange={e => updateGateway('paytm', 'mid', e.target.value)} /></div>
-                                <div className="space-y-1"><label className="text-[10px] font-black uppercase text-slate-400">Merchant Key</label><input className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3.5 outline-none font-bold" value={form.gateways.paytm.credentials.merchantKey} onChange={e => updateGateway('paytm', 'merchantKey', e.target.value)} /></div>
-                            </div>
-                        </div>
-                     </div>
-                 )}
-
-                 <button type="submit" className="w-full bg-slate-900 text-white py-5 rounded-[24px] font-black text-xl hover:shadow-2xl transition-all flex items-center justify-center gap-3 active:scale-95"><Save size={24}/> Update Configurations</button>
-            </form>
-        </div>
-    );
-};
-
-const EnquiriesModule = ({ enquiries }: any) => {
-    return (
-        <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
-            <div className="p-8 border-b border-slate-100 bg-slate-50/50 flex items-center gap-3"><MessageCircle className="text-indigo-600"/><h3 className="font-black text-slate-800 text-xl">Admission Leads</h3></div>
-            <div className="overflow-x-auto">
-                <table className="w-full text-left">
-                    <thead className="bg-slate-50 text-[10px] uppercase font-black tracking-widest text-slate-400 border-b">
-                        <tr><th className="p-6">Prospect Name</th><th className="p-6">Parent & Relation</th><th className="p-6">Target Class</th><th className="p-6">Mobile</th><th className="p-6">Connect Time</th></tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 text-sm">
-                        {enquiries.map((e: Enquiry) => (
-                            <tr key={e.id} className="hover:bg-slate-50/50 transition-colors">
-                                <td className="p-6 font-black text-slate-800 text-base">{e.studentName}</td>
-                                <td className="p-6 text-slate-600 font-bold">{e.parentName} <span className="text-[10px] bg-slate-100 px-2 py-0.5 rounded ml-1 uppercase">{e.relation}</span></td>
-                                <td className="p-6 text-indigo-600 font-black uppercase text-xs tracking-wider">{e.grade}</td>
-                                <td className="p-6 font-mono text-slate-500 font-bold">{e.mobile}</td>
-                                <td className="p-6 text-slate-400 font-black text-[10px] uppercase">{e.connectTime}</td>
-                            </tr>
-                        ))}
-                        {enquiries.length === 0 && <tr><td colSpan={5} className="p-20 text-center text-slate-400 font-bold uppercase tracking-widest text-xs">No active enquiries.</td></tr>}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    );
-};
-
-const OrdersModule = ({ orders, refresh }: any) => {
-    return (
-        <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
-            <div className="p-8 border-b border-slate-100 bg-slate-50/50 flex items-center gap-3"><ShoppingBag className="text-indigo-600"/><h3 className="font-black text-slate-800 text-xl">Store Transactions</h3></div>
-            <div className="overflow-x-auto">
-                <table className="w-full text-left">
-                    <thead className="bg-slate-50 text-[10px] uppercase font-black tracking-widest text-slate-400 border-b">
-                        <tr><th className="p-6">Customer</th><th className="p-6">Handcrafted Item</th><th className="p-6">Ref/UTR</th><th className="p-6">Status</th><th className="p-6 text-center">Action</th></tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 text-sm">
-                        {orders.map((o: Order) => (
-                            <tr key={o.id} className="hover:bg-slate-50/50 transition-colors">
-                                <td className="p-6"><p className="font-black text-slate-800">{o.studentName}</p><p className="text-[10px] text-slate-400 font-bold uppercase">{o.mobile}</p></td>
-                                <td className="p-6 font-black text-indigo-600 text-xs uppercase tracking-tighter">{o.productName} <br/><span className="text-slate-400 font-bold">₹{o.finalPrice}</span></td>
-                                <td className="p-6 font-mono text-xs font-bold text-slate-500 uppercase">{o.transactionRef || '---'}</td>
-                                <td className="p-6">
-                                     <span className={`px-3 py-1 rounded-xl text-[10px] font-black uppercase ${
-                                        o.status === 'Completed' ? 'bg-emerald-100 text-emerald-600' :
-                                        o.status === 'Processing Order' ? 'bg-blue-100 text-blue-600' : 
-                                        o.status === 'Payment Under Verification' ? 'bg-amber-100 text-amber-600' : 'bg-slate-100 text-slate-500'
-                                    }`}>{o.status}</span>
-                                </td>
-                                <td className="p-6">
-                                    <div className="flex justify-center gap-2">
-                                        {o.status === 'Payment Under Verification' && (
-                                            <button onClick={async () => { await db.updateOrder(o.id, { status: 'Processing Order' }); refresh(); }} className="bg-emerald-500 text-white px-3 py-1.5 rounded-xl text-[10px] font-black uppercase hover:shadow-lg transition-all">Approve</button>
-                                        )}
-                                        {o.status === 'Processing Order' && (
-                                            <button onClick={async () => { await db.updateOrder(o.id, { status: 'Completed' }); refresh(); }} className="bg-indigo-600 text-white px-3 py-1.5 rounded-xl text-[10px] font-black uppercase hover:shadow-lg transition-all">Shipped</button>
-                                        )}
+                    <div className="space-y-10">
+                        {Object.entries(form.gateways).map(([key, config]: [string, any]) => (
+                            <div key={key} className="p-8 bg-slate-50 rounded-[32px] border border-slate-100 relative">
+                                <div className="flex items-center justify-between mb-8">
+                                    <div className="flex items-center gap-4">
+                                        <div className={`p-3 rounded-xl ${config.enabled ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-200 text-slate-400'}`}>{key === 'manual' ? <QrCode size={24}/> : <Smartphone size={24}/>}</div>
+                                        <div><h4 className="font-bold text-slate-800 uppercase tracking-widest text-sm">{config.name}</h4><p className="text-[10px] text-slate-400 font-bold">{config.enabled ? 'Operational' : 'Disabled'}</p></div>
                                     </div>
-                                </td>
-                            </tr>
+                                    <button type="button" onClick={() => updateGateway(key, 'enabled', !config.enabled)} className={`w-14 h-8 rounded-full transition-all relative ${config.enabled ? 'bg-emerald-500' : 'bg-slate-300'}`}><div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition-all ${config.enabled ? 'right-1' : 'left-1'}`} /></button>
+                                </div>
+                                {config.enabled && key === 'manual' && <div className="space-y-4"><label className="text-[9px] font-black uppercase text-slate-400 tracking-widest ml-1">Business UPI VPA</label><input className="w-full bg-white border border-slate-200 rounded-xl px-5 py-3 outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-sm" value={config.credentials.upiId || ''} onChange={e => updateGateway(key, 'upiId', e.target.value)} placeholder="e.g. shriyas@upi" /></div>}
+                            </div>
                         ))}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    );
-};
-
-const BroadcastModule = ({ grades, subdivisions, students, onNotify }: any) => {
-    const [form, setForm] = useState({ targetType: 'all', targetId: '', type: 'announcement', title: '', message: '' });
-    const [loading, setLoading] = useState(false);
-
-    const handleSubmit = async (e: any) => {
-        e.preventDefault();
-        setLoading(true);
-        try {
-            await db.pushNotification({
-                targetType: form.targetType as any,
-                targetId: form.targetId,
-                type: form.type as any,
-                title: form.title,
-                message: form.message
-            });
-            onNotify("Message Broadcasted!");
-            setForm({ targetType: 'all', targetId: '', type: 'announcement', title: '', message: '' });
-        } catch (err) { alert("Failed to push."); } finally { setLoading(false); }
-    };
-
-    return (
-        <div className="max-w-3xl mx-auto bg-white rounded-[40px] shadow-sm border border-slate-200 overflow-hidden">
-            <div className="bg-indigo-600 p-10 text-white relative overflow-hidden">
-                 <Megaphone size={140} className="absolute -right-6 -bottom-6 opacity-10 rotate-12" />
-                 <h3 className="text-3xl font-black mb-2">Mass Broadcaster</h3>
-                 <p className="text-indigo-100 text-sm font-medium">Send real-time alerts to students and staff portals.</p>
-            </div>
-            
-            <form onSubmit={handleSubmit} className="p-10 space-y-8">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div className="space-y-1">
-                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Target Audience</label>
-                        <select className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 font-bold" value={form.targetType} onChange={e => setForm({...form, targetType: e.target.value, targetId: ''})}>
-                            <option value="all">All Students</option>
-                            <option value="student">Individual Student</option>
-                            <option value="grade">Entire Grade</option>
-                            <option value="division">Specific Division</option>
-                        </select>
                     </div>
-
-                    <AnimatePresence mode="wait">
-                        {form.targetType !== 'all' && (
-                            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} key={form.targetType} className="space-y-1">
-                                <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Select {form.targetType}</label>
-                                <select required className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 font-bold" value={form.targetId} onChange={e => setForm({...form, targetId: e.target.value})}>
-                                    <option value="">Select Target...</option>
-                                    {form.targetType === 'grade' && grades.map((g:any) => <option key={g.id} value={g.id}>{g.gradeName}</option>)}
-                                    {form.targetType === 'division' && subdivisions.map((s:any) => <option key={s.id} value={s.id}>{s.divisionName} (Grade {grades.find((g:any)=>g.id===s.gradeId)?.gradeName})</option>)}
-                                    {form.targetType === 'student' && students.map((st:any) => <option key={st.id} value={st.id}>{st.name} ({st.studentCustomId})</option>)}
-                                </select>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-                </div>
-
-                <div className="space-y-1">
-                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Alert Headline</label>
-                    <input required className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 outline-none focus:ring-2 focus:ring-indigo-500 font-black text-lg" placeholder="e.g. Fees Reminder / New Result" value={form.title} onChange={e => setForm({...form, title: e.target.value})} />
-                </div>
-
-                <div className="space-y-1">
-                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Detailed Message</label>
-                    <textarea required className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 outline-none h-36 resize-none focus:ring-2 focus:ring-indigo-500 font-medium" placeholder="Message content goes here..." value={form.message} onChange={e => setForm({...form, message: e.target.value})} />
-                </div>
-
-                <button disabled={loading} type="submit" className="w-full bg-indigo-600 text-white py-5 rounded-[24px] font-black text-xl hover:shadow-2xl transition-all flex items-center justify-center gap-3 active:scale-95 disabled:opacity-50">
-                    {loading ? <RefreshCw className="animate-spin" /> : <Send size={24}/>} {loading ? 'Broadcasting...' : 'Launch Broadcast Now'}
-                </button>
+                 )}
+                 <button type="submit" className="w-full bg-slate-900 text-white py-5 rounded-2xl font-black text-xl hover:shadow-2xl transition-all flex items-center justify-center gap-3"><Save size={24}/> Authorize Global Updates</button>
             </form>
         </div>
     );

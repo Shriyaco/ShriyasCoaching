@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, ChevronDown, Heart, Sun, Moon, CreditCard } from 'lucide-react';
+import { Menu, X, ChevronDown, Heart, Sun, Moon, CreditCard, ShoppingBag } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from '../App';
 
@@ -233,6 +233,13 @@ const Navbar: React.FC = () => {
                     </motion.div>
                   )}
                 </AnimatePresence>
+              </motion.div>
+
+              {/* Shop Link - NEW */}
+              <motion.div variants={itemVariants}>
+                <Link to="/shop" onClick={() => setIsOpen(false)} className="text-4xl md:text-5xl serif-font text-white font-light flex items-center gap-4">
+                  Shop <ShoppingBag size={28} strokeWidth={1.5} />
+                </Link>
               </motion.div>
 
               {/* Contact Us Link */}
