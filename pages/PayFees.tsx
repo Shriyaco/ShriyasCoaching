@@ -112,16 +112,16 @@ export default function PayFees() {
 
     // --- DYNAMIC QR GENERATION (FIXED FOR MODIFIABLE AMOUNT & BANKING NAME) ---
     const getDynamicQR = () => {
-        // Updated UPI VPA provided by user
+        // Updated UPI VPA and Name based on specific user identity for tejanishriya64-3@oksbi
         const upiID = "tejanishriya64-3@oksbi";
-        const name = "SHRIYA BRAHMBHATT";
+        const name = "SHRIYA TEJANI"; // Matches the handle to ensure bank name loads correctly
         const am = amount || "0";
         
-        // Mode 02 and specific parameters help apps lock the amount and resolve banking names correctly
-        const upiLink = `upi://pay?pa=${upiID}&pn=${encodeURIComponent(name)}&am=${am}&cu=INR&mode=02&purpose=00`;
+        // mode=02 ensures the amount is fixed and non-modifiable in many UPI apps
+        const upiLink = `upi://pay?pa=${upiID}&pn=${encodeURIComponent(name)}&am=${am}&cu=INR&mode=02`;
         
-        // Using high quality QR generation
-        return `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(upiLink)}&ecc=H&margin=1`;
+        // High quality QR with margin and error correction
+        return `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(upiLink)}&ecc=M&margin=1`;
     };
 
     return (

@@ -171,14 +171,14 @@ const Shop: React.FC = () => {
 
     // --- DYNAMIC QR GENERATION FOR SHOP (FIXED) ---
     const getDynamicQR = () => {
-        // Updated UPI VPA provided by user
+        // Specific UPI Identity for tejanishriya64-3@oksbi
         const upiID = "tejanishriya64-3@oksbi";
-        const name = "SHRIYA BRAHMBHATT";
+        const name = "SHRIYA TEJANI"; // Matches handle for reliability
         const am = activeOrder?.finalPrice || "0";
         
-        // mode=02 and purpose=00 help lock the amount in UPI apps
-        const upiLink = `upi://pay?pa=${upiID}&pn=${encodeURIComponent(name)}&am=${am}&cu=INR&mode=02&purpose=00`;
-        return `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(upiLink)}&ecc=H&margin=1`;
+        // mode=02 ensures the amount is fixed and non-modifiable
+        const upiLink = `upi://pay?pa=${upiID}&pn=${encodeURIComponent(name)}&am=${am}&cu=INR&mode=02`;
+        return `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(upiLink)}&ecc=M&margin=1`;
     };
 
     return (
