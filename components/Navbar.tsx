@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, ChevronDown, Heart, Sun, Moon, User as UserIcon } from 'lucide-react';
+import { Menu, X, ChevronDown, Heart, Sun, Moon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from '../App';
 
@@ -10,6 +10,7 @@ const Navbar: React.FC = () => {
   const [activeSubmenu, setActiveSubmenu] = useState<string | null>(null);
   const { theme, toggleTheme } = useTheme();
   const location = useLocation();
+  const isLoginPage = location.pathname === '/login';
   const isDashboard = location.pathname.startsWith('/admin') || location.pathname.startsWith('/student') || location.pathname.startsWith('/teacher');
 
   useEffect(() => {
@@ -69,8 +70,8 @@ const Navbar: React.FC = () => {
     <>
       <nav
         className={`fixed top-0 w-full z-[100] transition-all duration-700 ease-in-out ${
-          scrolled 
-            ? 'bg-white/90 dark:bg-black/90 backdrop-blur-lg py-3 md:py-4 shadow-sm dark:shadow-none border-b border-black/5 dark:border-white/5' 
+          scrolled || isLoginPage
+            ? 'bg-white/90 dark:bg-black/90 backdrop-blur-lg py-3 md:py-4 border-b border-black/5 dark:border-white/5' 
             : 'bg-transparent py-8'
         }`}
       >
@@ -79,7 +80,7 @@ const Navbar: React.FC = () => {
             <img 
               src="https://advedasolutions.in/sc.png" 
               alt="Shriya's Logo" 
-              className={`transition-all duration-500 ${scrolled ? 'h-10 md:h-12' : 'h-14 md:h-16'}`}
+              className={`transition-all duration-500 ${scrolled || isLoginPage ? 'h-10 md:h-12' : 'h-14 md:h-16'}`}
               style={{ filter: theme === 'dark' ? 'invert(1)' : 'invert(0) brightness(0)' }}
             />
           </Link>
@@ -134,25 +135,37 @@ const Navbar: React.FC = () => {
             </div>
           </div>
 
-          {/* Mobile Actions Header */}
-          <div className="lg:hidden relative z-[110] flex items-center gap-3">
+          {/* Mobile Actions Header - Exactly as per screenshot */}
+          <div className="lg:hidden relative z-[110] flex items-center gap-2 sm:gap-4">
             <button 
               onClick={toggleTheme}
-              className="text-slate-500 dark:text-white/40 hover:text-premium-accent dark:hover:text-white transition-colors p-2"
+              className="text-slate-600 dark:text-white/60 hover:text-premium-accent dark:hover:text-white transition-colors p-2"
             >
               {theme === 'dark' ? <Sun size={20} strokeWidth={2.5} /> : <Moon size={20} strokeWidth={2.5} />}
             </button>
             
             <Link 
               to="/login" 
-              className="bg-slate-900 dark:bg-white text-white dark:text-black px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest shadow-lg"
+              className="bg-slate-900 dark:bg-white text-white dark:text-black px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest shadow-lg flex items-center justify-center min-w-[80px]"
             >
               Log in
             </Link>
 
-            <button onClick={() => setIsOpen(true)} className="p-2 focus:outline-none">
-              <Menu size={32} strokeWidth={1} className="text-slate-900 dark:text-white" />
-            </button>
+            {isLoginPage ? (
+              <Link 
+                to="/" 
+                className="w-11 h-11 rounded-full bg-slate-900/5 dark:bg-white/5 border border-black/10 dark:border-white/10 flex items-center justify-center hover:bg-black/10 dark:hover:bg-white/10 transition-all"
+              >
+                <X size={24} strokeWidth={2} className="text-slate-900 dark:text-white" />
+              </Link>
+            ) : (
+              <button 
+                onClick={() => setIsOpen(true)} 
+                className="p-2 focus:outline-none ml-1"
+              >
+                <Menu size={32} strokeWidth={1} className="text-slate-900 dark:text-white" />
+              </button>
+            )}
           </div>
         </div>
       </nav>
