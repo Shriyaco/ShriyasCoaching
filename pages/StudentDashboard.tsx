@@ -3,20 +3,20 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../services/db';
 import { Student, Exam, Homework, Notice, TimetableEntry, StudentQuery, Subdivision, AttendanceRecord } from '../types';
-import { Rocket, Sword, Gamepad2, Radio, Zap, Bell, MessageCircle, Clock, Settings, LogOut, CheckCircle2, Target, Trophy, Flame, Lock, Save, RefreshCw, Send } from 'lucide-react';
+import { Rocket, Sword, Gamepad2, Radio, Zap, Bell, MessageCircle, Clock, Settings, LogOut, CheckCircle2, Target, Trophy, Flame, Lock, Save, RefreshCw, Send, X, CalendarDays, ShoppingBag, CreditCard } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import JitsiMeeting from '../components/JitsiMeeting';
 
 // --- GAMIFIED COMPONENTS ---
 
-const XPBar = ({ attendance }: { attendance: AttendanceRecord[] }) => {
+const XPBar = ({ attendance, onClick }: { attendance: AttendanceRecord[], onClick: () => void }) => {
     const total = attendance.length;
     const present = attendance.filter(a => a.status === 'Present').length;
     const percentage = total === 0 ? 0 : Math.round((present / total) * 100);
     const level = Math.floor(present / 5) + 1;
 
     return (
-        <div className="bg-black/40 backdrop-blur-xl border-2 border-yellow-400/50 p-4 rounded-3xl flex items-center gap-4 relative overflow-hidden group">
+        <div onClick={onClick} className="bg-black/40 backdrop-blur-xl border-2 border-yellow-400/50 p-4 rounded-3xl flex items-center gap-4 relative overflow-hidden group cursor-pointer hover:bg-white/5 transition-all">
             <div className="absolute inset-0 bg-yellow-400/5 group-hover:bg-yellow-400/10 transition-colors" />
             <div className="relative z-10 w-16 h-16 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-2xl flex flex-col items-center justify-center border-4 border-black shadow-xl transform group-hover:rotate-6 transition-transform">
                 <span className="text-[10px] font-black uppercase text-black">Lvl</span>
@@ -24,7 +24,7 @@ const XPBar = ({ attendance }: { attendance: AttendanceRecord[] }) => {
             </div>
             <div className="flex-1">
                 <div className="flex justify-between mb-1">
-                    <span className="text-[10px] font-black uppercase text-yellow-400 tracking-widest">XP Progress</span>
+                    <span className="text-[10px] font-black uppercase text-yellow-400 tracking-widest">XP Progress (Click for History)</span>
                     <span className="text-[10px] font-black text-white">{percentage}%</span>
                 </div>
                 <div className="h-3 bg-black/50 rounded-full border border-white/10 overflow-hidden">
@@ -40,6 +40,28 @@ const XPBar = ({ attendance }: { attendance: AttendanceRecord[] }) => {
         </div>
     );
 };
+
+const AttendanceModal = ({ attendance, onClose }: { attendance: AttendanceRecord[], onClose: () => void }) => (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-md p-4">
+        <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="bg-[#111] border border-white/10 rounded-[32px] w-full max-w-lg overflow-hidden flex flex-col max-h-[80vh]">
+            <div className="p-6 border-b border-white/10 flex justify-between items-center bg-white/5">
+                <h3 className="text-xl font-black text-yellow-400 uppercase tracking-widest flex items-center gap-2"><CalendarDays size={20}/> Mission Log</h3>
+                <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full text-white/50 hover:text-white transition-all"><X size={20}/></button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-6 space-y-3 custom-scrollbar">
+                {attendance.length === 0 && <p className="text-center text-white/20 py-10 font-black uppercase tracking-widest">No Records Found</p>}
+                {attendance.map((record, i) => (
+                    <div key={i} className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5">
+                        <span className="text-white/70 font-mono text-sm font-bold">{record.date}</span>
+                        <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest ${record.status === 'Present' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'}`}>
+                            {record.status}
+                        </span>
+                    </div>
+                ))}
+            </div>
+        </motion.div>
+    </motion.div>
+);
 
 const PortalCard = ({ subdivision, studentName }: { subdivision: Subdivision, studentName: string }) => {
     const [isMeetingOpen, setIsMeetingOpen] = useState(false);
@@ -207,6 +229,7 @@ export default function StudentDashboard() {
     const [subdivision, setSubdivision] = useState<Subdivision | null>(null);
     const [activeTab, setActiveTab] = useState('command');
     const [loading, setLoading] = useState(true);
+    const [showAttendanceHistory, setShowAttendanceHistory] = useState(false);
     
     // Data States
     const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
@@ -283,13 +306,15 @@ export default function StudentDashboard() {
         { id: 'missions', label: 'Quests', icon: Target },
         { id: 'challenges', label: 'Raids', icon: Sword },
         { id: 'schedule', label: 'Time', icon: Clock },
-        { id: 'intel', label: 'Intel', icon: Bell },
+        { id: 'alerts', label: 'Alerts', icon: Bell }, // Renamed from Intel
         { id: 'doubts', label: 'Comms', icon: MessageCircle },
+        { id: 'shop', label: 'Shop', icon: ShoppingBag, action: () => navigate('/shop') },
+        { id: 'fees', label: 'Fees', icon: CreditCard, action: () => navigate('/pay-fees') },
         { id: 'settings', label: 'Config', icon: Settings },
     ];
 
     return (
-        <div className="min-h-screen bg-[#0a0a0a] text-white font-sans selection:bg-cyan-500/30 overflow-x-hidden pb-32 md:pb-0 relative">
+        <div className="min-h-screen bg-[#0a0a0a] text-white font-sans selection:bg-cyan-500/30 overflow-x-hidden pb-36 md:pb-0 relative">
             {/* Playful Background */}
             <div className="fixed inset-0 z-0 pointer-events-none bg-[#050505]">
                 <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-900/40 via-[#050505] to-[#050505]" />
@@ -326,7 +351,7 @@ export default function StudentDashboard() {
                         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="space-y-10">
                             {/* Hero Section */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-                                <XPBar attendance={attendance} />
+                                <XPBar attendance={attendance} onClick={() => setShowAttendanceHistory(true)} />
                                 {subdivision && <PortalCard subdivision={subdivision} studentName={student.name} />}
                             </div>
 
@@ -345,7 +370,7 @@ export default function StudentDashboard() {
                                 <div className="bg-[#151515] p-5 rounded-3xl border border-white/5 flex flex-col items-center justify-center gap-2 group hover:border-yellow-500/50 transition-colors">
                                     <div className="w-10 h-10 bg-yellow-500/10 rounded-full flex items-center justify-center text-yellow-400 mb-1"><Bell size={20}/></div>
                                     <h3 className="text-2xl font-black text-white">{intel.length}</h3>
-                                    <p className="text-[8px] font-black uppercase tracking-widest text-white/30">New Intel</p>
+                                    <p className="text-[8px] font-black uppercase tracking-widest text-white/30">New Alerts</p>
                                 </div>
                                 <div className="bg-[#151515] p-5 rounded-3xl border border-white/5 flex flex-col items-center justify-center gap-2 group hover:border-emerald-500/50 transition-colors">
                                     <div className="w-10 h-10 bg-emerald-500/10 rounded-full flex items-center justify-center text-emerald-400 mb-1"><Trophy size={20}/></div>
@@ -389,7 +414,7 @@ export default function StudentDashboard() {
                         </motion.div>
                     )}
 
-                    {activeTab === 'intel' && (
+                    {activeTab === 'alerts' && (
                         <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6 max-w-3xl mx-auto">
                             {intel.map(n => (
                                 <div key={n.id} className="bg-[#111] border-l-4 border-cyan-500 p-8 rounded-r-3xl relative overflow-hidden group">
@@ -402,6 +427,7 @@ export default function StudentDashboard() {
                                     <p className="text-[10px] font-black uppercase tracking-widest text-white/20 mt-6">{n.date}</p>
                                 </div>
                             ))}
+                            {intel.length === 0 && <div className="text-center py-40 opacity-20 font-black uppercase tracking-[0.3em] text-xs">No Active Alerts</div>}
                         </motion.div>
                     )}
 
@@ -427,7 +453,7 @@ export default function StudentDashboard() {
                     )}
 
                     {activeTab === 'doubts' && (
-                        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="max-w-3xl mx-auto h-[75vh] flex flex-col">
+                        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="max-w-3xl mx-auto h-[calc(100vh-200px)] flex flex-col pb-32">
                             <div className="flex-1 overflow-y-auto space-y-6 mb-6 pr-2 scrollbar-hide">
                                 {doubts.map(d => (
                                     <div key={d.id} className="flex flex-col gap-2">
@@ -461,17 +487,25 @@ export default function StudentDashboard() {
                 </AnimatePresence>
             </main>
 
+            <AnimatePresence>
+                {showAttendanceHistory && <AttendanceModal attendance={attendance} onClose={() => setShowAttendanceHistory(false)} />}
+            </AnimatePresence>
+
             {/* Floating Nav Dock */}
             <nav className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-[#1a1a1a]/90 backdrop-blur-2xl border border-white/10 rounded-[32px] p-2 flex items-center gap-2 shadow-2xl z-50 max-w-[95vw] overflow-x-auto scrollbar-hide">
                 {navItems.map(item => (
                     <button
                         key={item.id}
-                        onClick={() => setActiveTab(item.id)}
-                        className={`relative w-14 h-14 rounded-2xl flex flex-col items-center justify-center gap-1 transition-all ${activeTab === item.id ? 'bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-lg scale-110 -translate-y-2' : 'text-white/40 hover:text-white hover:bg-white/5'}`}
+                        onClick={() => { 
+                            if(item.action) item.action();
+                            else setActiveTab(item.id); 
+                        }}
+                        className={`relative min-w-[60px] h-16 rounded-2xl flex flex-col items-center justify-center gap-1 transition-all ${activeTab === item.id ? 'bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-lg -translate-y-2' : 'text-white/40 hover:text-white hover:bg-white/5'}`}
                     >
                         <item.icon size={20} strokeWidth={activeTab === item.id ? 2.5 : 2} />
+                        <span className="text-[8px] font-black uppercase tracking-widest scale-75">{item.label}</span>
                         {activeTab === item.id && (
-                            <motion.span layoutId="active-dot" className="absolute -bottom-2 w-1 h-1 bg-white rounded-full" />
+                            <motion.span layoutId="active-dot" className="absolute -bottom-1 w-1 h-1 bg-white rounded-full" />
                         )}
                     </button>
                 ))}
