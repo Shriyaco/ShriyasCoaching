@@ -1,8 +1,9 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../services/db';
 import { Student, Exam, Homework, Notice, TimetableEntry, StudentQuery, Subdivision, AttendanceRecord } from '../types';
-import { Gamepad2, Radio, Zap, Bell, Settings, LogOut, CheckCircle2, Target, Trophy, Flame, Lock, Send, X, CalendarDays, ShoppingBag, CreditCard, BookOpen, PenTool, HelpCircle, AlertTriangle, ChevronRight, Star, Sparkles } from 'lucide-react';
+import { Gamepad2, Radio, Zap, Bell, Settings, LogOut, CheckCircle2, Target, Trophy, Flame, Lock, Send, X, CalendarDays, ShoppingBag, CreditCard, BookOpen, PenTool, HelpCircle, AlertTriangle, ChevronRight, ChevronLeft, Star, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence, Variants } from 'framer-motion';
 import JitsiMeeting from '../components/JitsiMeeting';
 
@@ -30,109 +31,79 @@ const itemVariants: Variants = {
 
 // --- COMPONENTS ---
 
-const XPBar = ({ attendance, onClick }: { attendance: AttendanceRecord[], onClick: () => void }) => {
-    const total = attendance.length;
-    const present = attendance.filter(a => a.status === 'Present').length;
-    const percentage = total === 0 ? 0 : Math.round((present / total) * 100);
-    const level = Math.floor(present / 5) + 1;
+const AttendanceCalendar = ({ attendance }: { attendance: AttendanceRecord[] }) => {
+    const [currentDate, setCurrentDate] = useState(new Date());
+    
+    const getDaysInMonth = (year: number, month: number) => new Date(year, month + 1, 0).getDate();
+    const getFirstDayOfMonth = (year: number, month: number) => new Date(year, month, 1).getDay();
+
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    const daysInMonth = getDaysInMonth(year, month);
+    const firstDay = getFirstDayOfMonth(year, month);
+
+    const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+    const prevMonth = () => setCurrentDate(new Date(year, month - 1, 1));
+    const nextMonth = () => setCurrentDate(new Date(year, month + 1, 1));
 
     return (
         <motion.div 
             variants={itemVariants}
-            onClick={onClick} 
-            className="col-span-full relative overflow-hidden rounded-[32px] p-[1px] bg-gradient-to-r from-yellow-500/50 via-orange-500/50 to-red-500/50 cursor-pointer group"
+            className="col-span-full h-full bg-[#0a0a0a] border border-white/10 rounded-[32px] p-8 relative overflow-hidden"
         >
-            <div className="absolute inset-0 bg-gradient-to-r from-yellow-500 via-orange-500 to-red-500 opacity-20 blur-xl group-hover:opacity-40 transition-opacity duration-500" />
-            <div className="relative bg-[#0a0a0a]/90 backdrop-blur-xl rounded-[31px] p-6 flex items-center gap-6 h-full">
-                <div className="relative w-20 h-20 flex-shrink-0">
-                    <svg className="w-full h-full transform -rotate-90">
-                        <circle cx="40" cy="40" r="36" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-white/5" />
-                        <motion.circle 
-                            initial={{ pathLength: 0 }} 
-                            animate={{ pathLength: percentage / 100 }} 
-                            transition={{ duration: 1.5, ease: "easeOut" }}
-                            cx="40" cy="40" r="36" stroke="url(#gradient)" strokeWidth="8" strokeLinecap="round" fill="transparent" className="drop-shadow-[0_0_10px_rgba(234,179,8,0.5)]" 
-                        />
-                        <defs>
-                            <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                                <stop offset="0%" stopColor="#EAB308" />
-                                <stop offset="100%" stopColor="#F97316" />
-                            </linearGradient>
-                        </defs>
-                    </svg>
-                    <div className="absolute inset-0 flex flex-col items-center justify-center">
-                        <span className="text-[10px] font-black uppercase text-white/40">Lvl</span>
-                        <span className="text-2xl font-black text-white leading-none">{level}</span>
-                    </div>
+             <div className="flex justify-between items-center mb-6">
+                <div>
+                    <h3 className="text-xl font-black text-white uppercase tracking-wide flex items-center gap-2"><CalendarDays size={20} className="text-indigo-500"/> Attendance</h3>
+                    <p className="text-[10px] font-bold text-white/30 uppercase tracking-[0.2em]">{monthNames[month]} {year}</p>
                 </div>
+                <div className="flex gap-2">
+                    <button onClick={prevMonth} className="p-2 bg-white/5 rounded-xl hover:bg-white/10 text-white/50 hover:text-white transition-colors"><ChevronLeft size={16}/></button>
+                    <button onClick={nextMonth} className="p-2 bg-white/5 rounded-xl hover:bg-white/10 text-white/50 hover:text-white transition-colors"><ChevronRight size={16}/></button>
+                </div>
+             </div>
+
+             <div className="grid grid-cols-7 gap-2 mb-2">
+                {['S','M','T','W','T','F','S'].map(d => (
+                    <div key={d} className="text-center text-[10px] font-black text-white/20 uppercase">{d}</div>
+                ))}
+             </div>
+             <div className="grid grid-cols-7 gap-2">
+                {Array.from({ length: firstDay }).map((_, i) => <div key={`empty-${i}`} />)}
                 
-                <div className="flex-1 space-y-2">
-                    <div className="flex justify-between items-center">
-                        <div>
-                            <h3 className="text-lg font-black italic text-white tracking-wide uppercase">Attendance XP</h3>
-                            <p className="text-[10px] text-white/40 font-bold uppercase tracking-wider">Click to view log</p>
+                {Array.from({ length: daysInMonth }).map((_, i) => {
+                    const day = i + 1;
+                    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                    const record = attendance.find(a => a.date === dateStr);
+                    const isToday = new Date().toDateString() === new Date(year, month, day).toDateString();
+
+                    let statusClass = "bg-white/[0.02] text-white/30 hover:bg-white/10";
+                    if (record?.status === 'Present') statusClass = "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-[0_0_10px_rgba(16,185,129,0.1)]";
+                    if (record?.status === 'Absent') statusClass = "bg-rose-500/10 text-rose-400 border border-rose-500/20";
+                    if (isToday && !record) statusClass = "bg-indigo-500/20 text-indigo-300 border border-indigo-500/30";
+
+                    return (
+                        <div key={day} className={`aspect-square rounded-xl flex items-center justify-center text-xs font-bold transition-all cursor-default ${statusClass}`}>
+                            {day}
                         </div>
-                        <div className="text-right">
-                            <span className="text-2xl font-black text-yellow-400">{percentage}%</span>
-                        </div>
-                    </div>
-                    <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
-                        <motion.div 
-                            initial={{ width: 0 }} 
-                            animate={{ width: `${percentage}%` }} 
-                            transition={{ duration: 1.5, ease: "easeOut" }}
-                            className="h-full bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full shadow-[0_0_15px_rgba(234,179,8,0.5)]" 
-                        />
-                    </div>
-                </div>
-                <ChevronRight className="text-white/20 group-hover:text-white transition-colors group-hover:translate-x-1 duration-300" />
-            </div>
+                    );
+                })}
+             </div>
+             
+             <div className="flex gap-6 mt-6 justify-center border-t border-white/5 pt-4">
+                <div className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_5px_rgba(52,211,153,0.5)]"></div><span className="text-[9px] text-white/40 uppercase font-bold tracking-wider">Present</span></div>
+                <div className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-rose-400"></div><span className="text-[9px] text-white/40 uppercase font-bold tracking-wider">Absent</span></div>
+                <div className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-indigo-400"></div><span className="text-[9px] text-white/40 uppercase font-bold tracking-wider">Today</span></div>
+             </div>
         </motion.div>
     );
 };
-
-const AttendanceModal = ({ attendance, onClose }: { attendance: AttendanceRecord[], onClose: () => void }) => (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-lg p-4">
-        <motion.div 
-            initial={{ scale: 0.9, y: 20 }} 
-            animate={{ scale: 1, y: 0 }} 
-            className="bg-[#111] border border-white/10 rounded-[40px] w-full max-w-lg overflow-hidden flex flex-col max-h-[80vh] shadow-2xl"
-        >
-            <div className="p-8 border-b border-white/10 flex justify-between items-center bg-white/5">
-                <div>
-                    <h3 className="text-2xl font-black text-white uppercase tracking-wide flex items-center gap-3">
-                        <CalendarDays className="text-yellow-400" size={24}/> Mission Log
-                    </h3>
-                    <p className="text-[10px] text-white/40 font-bold uppercase tracking-[0.2em] mt-1">Attendance History</p>
-                </div>
-                <button onClick={onClose} className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/20 flex items-center justify-center text-white/60 hover:text-white transition-all"><X size={20}/></button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-6 space-y-3 custom-scrollbar">
-                {attendance.length === 0 && <p className="text-center text-white/20 py-20 font-black uppercase tracking-widest text-xs">No Records Found</p>}
-                {attendance.map((record, i) => (
-                    <motion.div 
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: i * 0.05 }}
-                        key={i} 
-                        className="flex items-center justify-between p-4 bg-white/[0.03] rounded-2xl border border-white/5 hover:border-white/10 transition-colors"
-                    >
-                        <span className="text-white/80 font-mono text-sm font-bold tracking-tight">{record.date}</span>
-                        <span className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest border ${record.status === 'Present' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 shadow-[0_0_10px_rgba(52,211,153,0.1)]' : 'bg-rose-500/10 text-rose-400 border-rose-500/20'}`}>
-                            {record.status}
-                        </span>
-                    </motion.div>
-                ))}
-            </div>
-        </motion.div>
-    </motion.div>
-);
 
 const PortalCard = ({ subdivision, studentName }: { subdivision: Subdivision, studentName: string }) => {
     const [isMeetingOpen, setIsMeetingOpen] = useState(false);
 
     if (!subdivision?.isLive) return (
-        <motion.div variants={itemVariants} className="col-span-full bg-[#0a0a0a] border border-white/5 rounded-[32px] p-8 flex items-center gap-8 relative overflow-hidden group">
+        <motion.div variants={itemVariants} className="col-span-full bg-[#0a0a0a] border border-white/5 rounded-[32px] p-8 flex items-center gap-8 relative overflow-hidden group h-full">
             <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center shrink-0 border border-white/5 group-hover:border-white/10 transition-colors">
                 <Radio size={32} className="text-white/20" />
             </div>
@@ -151,7 +122,7 @@ const PortalCard = ({ subdivision, studentName }: { subdivision: Subdivision, st
                 whileHover={{ scale: 1.01 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => setIsMeetingOpen(true)}
-                className="col-span-full relative overflow-hidden rounded-[32px] p-[1px] cursor-pointer group"
+                className="col-span-full relative overflow-hidden rounded-[32px] p-[1px] cursor-pointer group h-full"
             >
                 <div className="absolute inset-0 bg-gradient-to-r from-violet-600 via-fuchsia-600 to-indigo-600 animate-gradient-xy opacity-80" />
                 <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/diagmonds-light.png')] opacity-30 mix-blend-overlay" />
@@ -320,7 +291,6 @@ export default function StudentDashboard() {
     const [subdivision, setSubdivision] = useState<Subdivision | null>(null);
     const [activeTab, setActiveTab] = useState('command');
     const [loading, setLoading] = useState(true);
-    const [showAttendanceHistory, setShowAttendanceHistory] = useState(false);
     
     // Data States
     const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
@@ -449,7 +419,7 @@ export default function StudentDashboard() {
                             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                                 {/* XP Bar spans full width on mobile, 2 cols on large */}
                                 <div className="lg:col-span-2">
-                                    <XPBar attendance={attendance} onClick={() => setShowAttendanceHistory(true)} />
+                                    <AttendanceCalendar attendance={attendance} />
                                 </div>
                                 {/* Portal Card (Live Class) */}
                                 <div className="lg:col-span-1 h-full">
@@ -606,10 +576,6 @@ export default function StudentDashboard() {
 
                 </AnimatePresence>
             </main>
-
-            <AnimatePresence>
-                {showAttendanceHistory && <AttendanceModal attendance={attendance} onClose={() => setShowAttendanceHistory(false)} />}
-            </AnimatePresence>
 
             {/* Enhanced Floating Dock */}
             <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50">
