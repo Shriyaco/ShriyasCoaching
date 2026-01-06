@@ -2,7 +2,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { db } from '../services/db';
 import { Student, TabView, Grade, Subdivision, Teacher, FeeSubmission, SystemSettings, Enquiry, Product, Order, Notice, Homework, Exam } from '../types';
-import { Users, Settings, LogOut, Plus, Edit2, Search, Briefcase, CreditCard, Save, Layers, UserPlus, Lock, Key, Power, X, Trash2, TrendingUp, DollarSign, RefreshCw, Menu, Check, MessageCircle, Phone, ShoppingBag, Send, MapPin, Megaphone, Bell, Image as ImageIcon, Package, FileText, BookOpen, Wand2, Eye, UserCheck, QrCode, Smartphone } from 'lucide-react';
+/* Added missing Clock icon import */
+import { Users, Settings, LogOut, Plus, Edit2, Search, Briefcase, CreditCard, Save, Layers, UserPlus, Lock, Key, Power, X, Trash2, TrendingUp, DollarSign, RefreshCw, Menu, Check, MessageCircle, Phone, ShoppingBag, Send, MapPin, Megaphone, Bell, Image as ImageIcon, Package, FileText, BookOpen, Wand2, Eye, UserCheck, QrCode, Smartphone, Upload, Camera, Clock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -209,6 +210,8 @@ export default function AdminDashboard() {
   );
 }
 
+// --- MODULE COMPONENTS ---
+
 const HomeworkAdminModule = ({ homeworkList, grades, subdivisions, onNotify, refresh }: any) => {
     const handleDelete = async (id: string) => {
         if(confirm("Are you sure you want to delete this assignment?")) {
@@ -329,6 +332,15 @@ const ProductsModule = ({ products, onNotify, refresh }: any) => {
             setForm({ name: '', description: '', basePrice: '', category: 'Decor', stockStatus: 'In Stock', imageUrl: '' });
         }
     }, [editingProduct]);
+
+    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => setForm({ ...form, imageUrl: reader.result as string });
+            reader.readAsDataURL(file);
+        }
+    };
 
     const handleSubmit = async (e: any) => {
         e.preventDefault();
@@ -475,9 +487,27 @@ const ProductsModule = ({ products, onNotify, refresh }: any) => {
                                     </div>
                                 </div>
 
-                                <div className="space-y-1">
-                                    <label className="text-[10px] font-black uppercase text-slate-400 ml-1">High-Res Image URL</label>
-                                    <input required placeholder="https://..." className="w-full bg-slate-100 border border-slate-200 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-xs text-slate-900" value={form.imageUrl} onChange={e => setForm({...form, imageUrl: e.target.value})} />
+                                <div className="space-y-3">
+                                    <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Visual Content</label>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div className="bg-slate-100 border border-slate-200 rounded-2xl p-4 text-center relative hover:bg-slate-200 transition-all cursor-pointer">
+                                            <input type="file" accept="image/*" onChange={handleImageUpload} className="absolute inset-0 opacity-0 cursor-pointer" />
+                                            <Upload className="mx-auto text-indigo-600 mb-2" size={20} />
+                                            <p className="text-[10px] font-bold uppercase text-slate-400">From gallery</p>
+                                        </div>
+                                        <div className="bg-slate-100 border border-slate-200 rounded-2xl p-4 text-center relative hover:bg-slate-200 transition-all cursor-pointer">
+                                            <input type="file" accept="image/*" capture="environment" onChange={handleImageUpload} className="absolute inset-0 opacity-0 cursor-pointer" />
+                                            <Camera className="mx-auto text-slate-600 mb-2" size={20} />
+                                            <p className="text-[10px] font-bold uppercase text-slate-400">Use Camera</p>
+                                        </div>
+                                    </div>
+                                    <input placeholder="...OR PASTE URL" className="w-full bg-slate-100 border border-slate-200 rounded-2xl px-5 py-3 outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-[10px] text-slate-900" value={form.imageUrl} onChange={e => setForm({...form, imageUrl: e.target.value})} />
+                                    {form.imageUrl && (
+                                        <div className="relative w-full aspect-video rounded-xl overflow-hidden border border-slate-200 bg-slate-50">
+                                            <img src={form.imageUrl} className="w-full h-full object-contain" />
+                                            <button onClick={() => setForm({...form, imageUrl: ''})} className="absolute top-2 right-2 p-1.5 bg-black/50 rounded-full text-white hover:bg-black/70"><X size={12}/></button>
+                                        </div>
+                                    )}
                                 </div>
 
                                 <button type="submit" className="w-full bg-slate-900 text-white py-5 rounded-2xl font-black text-xl hover:shadow-2xl transition-all mt-4 flex items-center justify-center gap-3">
@@ -701,6 +731,15 @@ const StudentsModule = ({ students, grades, subdivisions, onNotify, refresh }: a
         }
     }, [editingStudent]);
 
+    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => setForm({ ...form, imageUrl: reader.result as string });
+            reader.readAsDataURL(file);
+        }
+    };
+
     const handleSubmit = async (e: any) => {
         e.preventDefault();
         try {
@@ -784,7 +823,7 @@ const StudentsModule = ({ students, grades, subdivisions, onNotify, refresh }: a
                                             </button>
                                             <button 
                                                 onClick={async () => { if(confirm("Change status?")) { await db.updateStudentStatus(s.id, s.status === 'Active' ? 'Suspended' : 'Active'); refresh(); } }} 
-                                                className={`p-2.5 rounded-xl transition-all shadow-sm ${s.status === 'Active' ? 'text-emerald-500 bg-emerald-50 hover:bg-emerald-500 hover:text-white' : 'text-slate-400 bg-slate-100 hover:bg-slate-400 hover:text-white'}`}
+                                                className={`p-2.5 rounded-xl transition-all shadow-sm ${s.status === 'Active' ? 'text-emerald-500 bg-emerald-500 hover:bg-emerald-500 hover:text-white' : 'text-slate-400 bg-slate-100 hover:bg-slate-400 hover:text-white'}`}
                                                 title="Toggle Active/Suspended"
                                             >
                                                 <Power size={16} strokeWidth={2.5}/>
@@ -838,7 +877,31 @@ const StudentsModule = ({ students, grades, subdivisions, onNotify, refresh }: a
                                 <div className="space-y-1"><label className="text-[10px] font-black uppercase text-slate-400 ml-1">Joining Date</label><input required type="date" className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 font-bold text-slate-900" value={form.joiningDate} onChange={e => setForm({...form, joiningDate: e.target.value})} /></div>
                                 <div className="space-y-1 md:col-span-2"><label className="text-[10px] font-black uppercase text-slate-400 ml-1">School Name</label><input required className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 font-bold text-slate-900" value={form.schoolName} onChange={e => setForm({...form, schoolName: e.target.value})} /></div>
                                 <div className="space-y-1 md:col-span-2"><label className="text-[10px] font-black uppercase text-slate-400 ml-1">Address</label><textarea required className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 h-24 outline-none focus:ring-2 focus:ring-indigo-500 resize-none font-medium text-slate-900" value={form.address} onChange={e => setForm({...form, address: e.target.value})} /></div>
-                                <div className="space-y-1 md:col-span-2"><label className="text-[10px] font-black uppercase text-slate-400 ml-1">Image URL</label><input className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-xs text-slate-900" value={form.imageUrl} onChange={e => setForm({...form, imageUrl: e.target.value})} placeholder="https://..." /></div>
+                                
+                                <div className="space-y-3 md:col-span-2 p-6 bg-slate-50 rounded-3xl border border-slate-100">
+                                    <label className="text-[10px] font-black uppercase text-slate-400 block mb-3">Profile Identity Image</label>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="bg-white border border-slate-200 rounded-2xl p-4 text-center relative hover:bg-slate-100 transition-all cursor-pointer">
+                                            <input type="file" accept="image/*" onChange={handleImageUpload} className="absolute inset-0 opacity-0 cursor-pointer" />
+                                            <Upload className="mx-auto text-indigo-600 mb-2" size={20} />
+                                            <p className="text-[9px] font-bold uppercase text-slate-400">Library</p>
+                                        </div>
+                                        <div className="bg-white border border-slate-200 rounded-2xl p-4 text-center relative hover:bg-slate-100 transition-all cursor-pointer">
+                                            <input type="file" accept="image/*" capture="user" onChange={handleImageUpload} className="absolute inset-0 opacity-0 cursor-pointer" />
+                                            <Camera className="mx-auto text-slate-600 mb-2" size={20} />
+                                            <p className="text-[9px] font-bold uppercase text-slate-400">Camera</p>
+                                        </div>
+                                    </div>
+                                    <input className="w-full bg-white border border-slate-200 rounded-2xl px-5 py-3 outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-[10px] text-slate-900 mt-2" value={form.imageUrl} onChange={e => setForm({...form, imageUrl: e.target.value})} placeholder="https://..." />
+                                    {form.imageUrl && (
+                                        <div className="mt-4 flex justify-center">
+                                            <div className="relative w-24 h-24 rounded-full overflow-hidden border-4 border-white shadow-lg">
+                                                <img src={form.imageUrl} className="w-full h-full object-cover" />
+                                                <button onClick={() => setForm({...form, imageUrl: ''})} className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity text-white"><X size={20}/></button>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
                                 
                                 <div className="col-span-1 md:col-span-2 pt-6">
                                     <button type="submit" className="w-full bg-indigo-600 text-white py-5 rounded-[24px] font-black text-xl hover:shadow-2xl transition-all flex items-center justify-center gap-3">
@@ -903,70 +966,85 @@ const TeachersModule = ({ teachers, onNotify, refresh }: any) => {
     const [form, setForm] = useState({ name: '', mobile: '', specialization: '' });
 
     useEffect(() => {
-        if (editingTeacher) setForm({ name: editingTeacher.name, mobile: editingTeacher.mobile, specialization: editingTeacher.specialization });
-        else setForm({ name: '', mobile: '', specialization: '' });
+        if (editingTeacher) {
+            setForm({
+                name: editingTeacher.name,
+                mobile: editingTeacher.mobile,
+                specialization: editingTeacher.specialization
+            });
+        } else {
+            setForm({ name: '', mobile: '', specialization: '' });
+        }
     }, [editingTeacher]);
 
     const handleSubmit = async (e: any) => {
         e.preventDefault();
         try {
-            if (editingTeacher) await db.updateTeacher(editingTeacher.id, form);
-            else await db.addTeacher(form);
-            onNotify(editingTeacher ? "Teacher profile updated!" : "Faculty added successfully!");
+            if (editingTeacher) {
+                await db.updateTeacher(editingTeacher.id, form);
+                onNotify("Faculty record updated.");
+            } else {
+                await db.addTeacher(form);
+                onNotify("Faculty member registered.");
+            }
             setIsModalOpen(false);
-            setEditingTeacher(null);
             refresh();
-        } catch (err) { alert("Error saving faculty profile."); }
-    };
-
-    const handleResetPassword = async (id: string) => {
-        if (confirm("Reset teacher's password to their mobile number?")) {
-            await db.resetUserPassword('teacher', id);
-            onNotify("Password reset successful!");
-        }
+        } catch (err) { alert("Failed to save teacher."); }
     };
 
     return (
         <div className="space-y-6">
-            <div className="flex justify-end"><button onClick={() => { setEditingTeacher(null); setIsModalOpen(true); }} className="bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-lg"><Plus size={20}/> New Faculty</button></div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {teachers.map((t: Teacher) => (
-                    <div key={t.id} className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex flex-col justify-between group relative overflow-hidden">
-                        <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                             <button onClick={() => { setEditingTeacher(t); setIsModalOpen(true); }} className="p-2 text-indigo-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg"><Edit2 size={14}/></button>
-                             <button onClick={() => handleResetPassword(t.id)} className="p-2 text-amber-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg"><Key size={14}/></button>
-                        </div>
-                        <div>
-                            <div className="flex justify-between items-start mb-4">
-                                <div className="h-12 w-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center font-black text-xl">{t.name.charAt(0)}</div>
-                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${t.status === 'Active' ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-400'}`}>{t.status}</span>
-                            </div>
-                            <h4 className="font-bold text-slate-800 text-lg">{t.name}</h4>
-                            <p className="text-xs text-slate-400 font-medium mb-4 uppercase tracking-wider">{t.specialization || 'General Faculty'}</p>
-                            <div className="space-y-2 border-t border-slate-50 pt-4 text-xs text-slate-500 font-medium">
-                                <p className="flex items-center gap-2"><Phone size={12}/> {t.mobile}</p>
-                                <p className="flex items-center gap-2"><UserCheck size={12}/> ID: {t.teacherCustomId}</p>
-                            </div>
-                        </div>
-                        <div className="mt-6 flex gap-2">
-                             <button onClick={async () => { if(confirm("Change status?")) { await db.updateTeacherStatus(t.id, t.status === 'Active' ? 'Suspended' : 'Active'); refresh(); } }} className="flex-1 bg-slate-50 text-slate-500 py-2 rounded-lg font-bold text-xs hover:bg-slate-100 transition-all">Toggle State</button>
-                             <button onClick={async () => { if(confirm("Permanent Delete?")) { await db.deleteTeacher(t.id); refresh(); } }} className="p-2 text-rose-400 bg-rose-50 rounded-lg hover:bg-rose-100 transition-all"><Trash2 size={16}/></button>
-                        </div>
-                    </div>
-                ))}
+            <div className="flex justify-end">
+                <button onClick={() => { setEditingTeacher(null); setIsModalOpen(true); }} className="bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-lg hover:shadow-indigo-500/20 transition-all"><Plus size={20}/> Add Faculty</button>
+            </div>
+
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left min-w-[800px]">
+                        <thead className="bg-slate-50 text-[10px] uppercase font-black tracking-widest text-slate-400 border-b border-slate-100">
+                            <tr><th className="p-4">Faculty Member</th><th className="p-4">Mobile</th><th className="p-4">Specialization</th><th className="p-4 text-center">Actions</th></tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 text-sm">
+                            {teachers.map((t: Teacher) => (
+                                <tr key={t.id} className="hover:bg-slate-50 transition-colors">
+                                    <td className="p-4">
+                                        <p className="font-bold text-slate-800">{t.name}</p>
+                                        <p className="text-[10px] font-mono text-slate-400 uppercase tracking-tighter">{t.teacherCustomId}</p>
+                                    </td>
+                                    <td className="p-4 text-slate-500 font-mono">{t.mobile}</td>
+                                    <td className="p-4"><span className="px-3 py-1 bg-indigo-50 text-indigo-600 rounded-lg text-[10px] font-black uppercase">{t.specialization}</span></td>
+                                    <td className="p-4 text-center">
+                                        <div className="flex justify-center gap-2">
+                                            <button onClick={() => { setEditingTeacher(t); setIsModalOpen(true); }} className="p-2.5 rounded-xl text-indigo-600 bg-indigo-50 hover:bg-indigo-600 hover:text-white transition-all shadow-sm"><Edit2 size={16} strokeWidth={2.5}/></button>
+                                            <button onClick={async () => { if(confirm("Reset Password?")) { await db.resetUserPassword('teacher', t.id); onNotify("Password reset successful."); } }} className="p-2.5 rounded-xl text-amber-600 bg-amber-50 hover:bg-amber-600 hover:text-white transition-all shadow-sm"><Key size={16} strokeWidth={2.5}/></button>
+                                            <button onClick={async () => { if(confirm("Permanent Delete?")) { await db.deleteTeacher(t.id); refresh(); } }} className="p-2.5 rounded-xl text-rose-400 bg-rose-50 hover:bg-rose-600 hover:text-white transition-all shadow-sm"><Trash2 size={16} strokeWidth={2.5}/></button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
             <AnimatePresence>
                 {isModalOpen && (
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-                        <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="bg-white rounded-3xl p-8 w-full max-md shadow-2xl relative">
-                            <button onClick={() => setIsModalOpen(false)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-800"><X/></button>
-                            <h3 className="text-2xl font-black text-slate-800 mb-6 flex items-center gap-2"><Briefcase className="text-indigo-600"/> {editingTeacher ? 'Modify Profile' : 'New Teacher Profile'}</h3>
-                            <form onSubmit={handleSubmit} className="space-y-4">
-                                <div className="space-y-1"><label className="text-[10px] font-black uppercase text-slate-400">Teacher Name</label><input required className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900" value={form.name} onChange={e => setForm({...form, name: e.target.value})} /></div>
-                                <div className="space-y-1"><label className="text-[10px] font-black uppercase text-slate-400">Mobile Number (Password)</label><input required className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900" value={form.mobile} onChange={e => setForm({...form, mobile: e.target.value})} /></div>
-                                <div className="space-y-1"><label className="text-[10px] font-black uppercase text-slate-400">Specialization</label><input required className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900" value={form.specialization} onChange={e => setForm({...form, specialization: e.target.value})} /></div>
-                                <button type="submit" className="w-full bg-indigo-600 text-white py-3 rounded-xl font-black text-lg shadow-xl mt-4">Save Profile</button>
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+                        <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} className="bg-white rounded-[40px] p-10 w-full max-w-md shadow-2xl relative">
+                            <button onClick={() => setIsModalOpen(false)} className="absolute top-8 right-8 text-slate-400 hover:text-slate-800"><X/></button>
+                            <h3 className="text-3xl font-black text-slate-800 mb-6 flex items-center gap-2">
+                                {editingTeacher ? <Edit2 className="text-indigo-600"/> : <UserPlus className="text-indigo-600"/>} 
+                                {editingTeacher ? 'Modify Faculty' : 'Faculty Registration'}
+                            </h3>
+                            
+                            <form onSubmit={handleSubmit} className="space-y-6">
+                                <div className="space-y-1"><label className="text-[10px] font-black uppercase text-slate-400 ml-1">Full Name</label><input required className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 font-bold text-slate-900" value={form.name} onChange={e => setForm({...form, name: e.target.value})} /></div>
+                                <div className="space-y-1"><label className="text-[10px] font-black uppercase text-slate-400 ml-1">Mobile No</label><input required className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 font-bold text-slate-900 font-mono" value={form.mobile} onChange={e => setForm({...form, mobile: e.target.value})} /></div>
+                                <div className="space-y-1"><label className="text-[10px] font-black uppercase text-slate-400 ml-1">Specialization</label><input required className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 font-bold text-slate-900" value={form.specialization} onChange={e => setForm({...form, specialization: e.target.value})} placeholder="e.g. Mathematics" /></div>
+                                
+                                <button type="submit" className="w-full bg-indigo-600 text-white py-5 rounded-[24px] font-black text-xl hover:shadow-2xl transition-all flex items-center justify-center gap-3">
+                                    <Save size={24}/> {editingTeacher ? 'Apply Updates' : 'Confirm Registration'}
+                                </button>
                             </form>
                         </motion.div>
                     </motion.div>
@@ -977,331 +1055,279 @@ const TeachersModule = ({ teachers, onNotify, refresh }: any) => {
 };
 
 const GradesModule = ({ grades, subdivisions, onNotify, refresh }: any) => {
-    const [isAdding, setIsAdding] = useState(false);
-    const [form, setForm] = useState({ name: '', subdivisions: '' });
-
+    const [name, setName] = useState('');
+    const [subs, setSubs] = useState('');
+    
     const handleAdd = async (e: any) => {
         e.preventDefault();
         try {
-            const subs = form.subdivisions.split(',').map(s => s.trim()).filter(s => s);
-            await db.addGrade(form.name, subs);
-            onNotify("New Class and Divisions added!");
-            setIsAdding(false);
-            setForm({ name: '', subdivisions: '' });
-            refresh();
-        } catch (err) { alert("Failed to add grade."); }
+            const subdivisionNames = subs.split(',').map(s => s.trim()).filter(Boolean);
+            await db.addGrade(name, subdivisionNames);
+            setName(''); setSubs(''); refresh(); onNotify("New class architecture deployed.");
+        } catch (e) { alert("Failed to build class."); }
     };
 
     return (
-        <div className="space-y-6">
-            <div className="flex justify-between items-center">
-                 <h3 className="text-xl font-black text-slate-800 flex items-center gap-2"><Layers className="text-indigo-600"/> Class Management</h3>
-                 <button onClick={() => setIsAdding(true)} className="bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-lg hover:shadow-indigo-500/20 transition-all"><Plus size={20}/> Create Class</button>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100">
+                <h3 className="text-xl font-black mb-6">Define New Class</h3>
+                <form onSubmit={handleAdd} className="space-y-4">
+                    <input required placeholder="Grade Name (e.g. 5th)" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-indigo-500 font-bold text-slate-900" value={name} onChange={e => setName(e.target.value)} />
+                    <textarea placeholder="Subdivisions (comma separated: A, B, Rose)" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-indigo-500 h-24 resize-none font-medium text-slate-900" value={subs} onChange={e => setSubs(e.target.value)} />
+                    <p className="text-[10px] text-slate-400 italic">Sections allow for smaller mentor batches within a grade.</p>
+                    <button className="w-full bg-slate-900 text-white py-4 rounded-xl font-bold shadow-lg hover:shadow-2xl transition-all">Construct Grade Architecture</button>
+                </form>
             </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="space-y-4">
                 {grades.map((g: Grade) => (
-                    <div key={g.id} className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm group hover:shadow-xl transition-all">
-                        <div className="flex justify-between items-start mb-6">
-                            <div>
-                                <h4 className="text-2xl font-black text-slate-800">{g.gradeName}</h4>
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Management Group</p>
+                    <div key={g.id} className="bg-white p-6 rounded-2xl border border-slate-100 flex justify-between items-center shadow-sm hover:shadow-md transition-all">
+                        <div>
+                            <p className="text-lg font-black text-slate-800">Grade {g.gradeName}</p>
+                            <div className="flex flex-wrap gap-2 mt-2">
+                                {subdivisions.filter((s:any)=>s.gradeId===g.id).map((s:any)=> (
+                                    <span key={s.id} className="bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded text-[10px] font-black uppercase">{s.divisionName}</span>
+                                ))}
+                                {subdivisions.filter((s:any)=>s.gradeId===g.id).length === 0 && <span className="text-[9px] text-slate-300 font-bold uppercase italic">No Sections</span>}
                             </div>
-                            <button onClick={async () => { if(confirm("Permanently delete this Class and all Divisions?")) { await db.deleteGrade(g.id); refresh(); } }} className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all"><Trash2 size={18}/></button>
                         </div>
-                        <div className="flex flex-wrap gap-2">
-                            {subdivisions.filter((sd: any) => sd.gradeId === g.id).map((sd: Subdivision) => (
-                                <span key={sd.id} className="px-4 py-2 bg-indigo-50 text-indigo-600 rounded-xl text-xs font-black border border-indigo-100/50 uppercase shadow-sm">Div {sd.divisionName}</span>
-                            ))}
-                            <button className="px-4 py-2 border-2 border-dashed border-slate-100 text-slate-300 rounded-xl text-xs font-black hover:border-indigo-200 hover:text-indigo-400 transition-all flex items-center gap-1"><Plus size={14}/> Add Div</button>
-                        </div>
+                        <button onClick={async () => { if(confirm("Permanently Delete Grade and all its sections? This action is irreversible.")) { await db.deleteGrade(g.id); refresh(); } }} className="p-2 text-rose-400 hover:bg-rose-50 rounded-lg transition-colors"><Trash2 size={20}/></button>
                     </div>
                 ))}
             </div>
-
-            <AnimatePresence>
-                {isAdding && (
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-                        <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="bg-white rounded-[40px] p-10 w-full max-w-md shadow-2xl relative">
-                            <button onClick={() => setIsAdding(false)} className="absolute top-6 right-6 text-slate-400"><X/></button>
-                            <h3 className="text-3xl font-black text-slate-800 mb-2">New Class</h3>
-                            <p className="text-slate-400 text-sm mb-8">Define a grade and its subdivisions.</p>
-                            <form onSubmit={handleAdd} className="space-y-6">
-                                <div className="space-y-1"><label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Grade Name (e.g. 1st Grade)</label><input required className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 text-lg font-bold text-slate-900" value={form.name} onChange={e => setForm({...form, name: e.target.value})} /></div>
-                                <div className="space-y-1"><label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Divisions (Comma separated: A, B, C)</label><input required className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 text-lg font-bold text-slate-900" value={form.subdivisions} onChange={e => setForm({...form, subdivisions: e.target.value})} /></div>
-                                <button type="submit" className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-black text-xl shadow-xl mt-4 hover:shadow-indigo-500/20 transition-all">Create Class Group</button>
-                            </form>
-                        </motion.div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
         </div>
     );
 };
 
 const FeesModule = ({ fees, onNotify, refresh }: any) => {
-    const handleAction = async (id: string, status: 'Approved' | 'Rejected', studentId: string) => {
-        try {
-            await db.updateFeeSubmissionStatus(id, status, studentId);
-            onNotify(`Fee marked as ${status}`);
-            refresh();
-        } catch (err) { alert("Update failed."); }
-    };
-
     return (
         <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
-            <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/50"><h3 className="font-black text-slate-800 text-xl flex items-center gap-2"><CreditCard className="text-indigo-600"/> Payment Verification Portal</h3></div>
+            <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                <h3 className="font-black text-slate-800 text-xl flex items-center gap-2"><CreditCard className="text-emerald-500"/> Fee Submission Ledger</h3>
+            </div>
             <div className="overflow-x-auto">
                 <table className="w-full text-left min-w-[800px]">
                     <thead className="bg-slate-50 text-[10px] uppercase font-black tracking-widest text-slate-400 border-b">
-                        <tr><th className="p-6">Student Name</th><th className="p-6">Amount</th><th className="p-6">UTR / Reference</th><th className="p-6">Date</th><th className="p-6 text-center">Action</th></tr>
+                        <tr><th className="p-6">Student Participant</th><th className="p-6">Amount</th><th className="p-6">UTR Reference ID</th><th className="p-6">Verification Status</th><th className="p-6 text-center">Protocol Action</th></tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 text-sm">
                         {fees.map((f: FeeSubmission) => (
-                            <tr key={f.id} className="hover:bg-slate-50/50 transition-colors">
-                                <td className="p-6 font-black text-slate-800">{f.studentName}</td>
-                                <td className="p-6"><span className="bg-emerald-50 text-emerald-600 px-3 py-1 rounded-lg font-black">₹{f.amount}</span></td>
-                                <td className="p-6 font-mono text-xs uppercase font-bold text-indigo-600">{f.transactionRef}</td>
-                                <td className="p-6 text-slate-500 font-medium">{f.date}</td>
+                            <tr key={f.id} className="hover:bg-slate-50 transition-colors">
+                                <td className="p-6 font-bold text-slate-800">{f.studentName}</td>
+                                <td className="p-6 font-black text-emerald-600 text-lg">₹{f.amount}</td>
+                                <td className="p-6 font-mono text-xs text-slate-500 uppercase tracking-widest">{f.transactionRef}</td>
                                 <td className="p-6">
-                                    <div className="flex justify-center gap-2">
-                                        {f.status === 'Pending' ? (
-                                            <>
-                                                <button onClick={() => handleAction(f.id, 'Approved', f.studentId)} className="bg-emerald-500 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase hover:bg-emerald-600 shadow-md transition-all">Approve</button>
-                                                <button onClick={() => handleAction(f.id, 'Rejected', f.studentId)} className="bg-rose-500 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase hover:bg-rose-600 shadow-md transition-all">Reject</button>
-                                            </>
-                                        ) : (
-                                            <span className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase ${f.status === 'Approved' ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'}`}>{f.status}</span>
-                                        )}
-                                    </div>
+                                    <span className={`px-2 py-1 rounded-full text-[9px] font-black uppercase tracking-tight ${f.status === 'Approved' ? 'bg-emerald-100 text-emerald-600' : f.status === 'Rejected' ? 'bg-rose-100 text-rose-600' : 'bg-amber-100 text-amber-600'}`}>
+                                        {f.status}
+                                    </span>
+                                </td>
+                                <td className="p-6 text-center">
+                                    {f.status === 'Pending' ? (
+                                        <div className="flex justify-center gap-2">
+                                            <button onClick={async () => { await db.updateFeeSubmissionStatus(f.id, 'Approved', f.studentId); refresh(); onNotify("Transaction Authenticated."); }} className="p-2.5 bg-emerald-500 text-white rounded-xl hover:bg-emerald-600 shadow-sm transition-all active:scale-90" title="Approve Payment"><Check size={18} strokeWidth={3}/></button>
+                                            <button onClick={async () => { await db.updateFeeSubmissionStatus(f.id, 'Rejected', f.studentId); refresh(); onNotify("Transaction Denied."); }} className="p-2.5 bg-rose-500 text-white rounded-xl hover:bg-rose-600 shadow-sm transition-all active:scale-90" title="Reject Payment"><X size={18} strokeWidth={3}/></button>
+                                        </div>
+                                    ) : (
+                                        <span className="text-[10px] text-slate-300 font-black uppercase italic">Registry Closed</span>
+                                    )}
                                 </td>
                             </tr>
                         ))}
-                        {fees.length === 0 && <tr><td colSpan={5} className="p-20 text-center text-slate-400 font-bold uppercase tracking-widest text-xs">No pending verifications.</td></tr>}
                     </tbody>
                 </table>
+                {fees.length === 0 && <div className="p-20 text-center text-slate-300 font-black uppercase text-xs tracking-widest">Financial Registry Clear</div>}
             </div>
         </div>
     );
 };
 
 const NoticesModule = ({ notices, onNotify, refresh }: any) => {
-    const [isAdding, setIsAdding] = useState(false);
-    const [form, setForm] = useState({ title: '', date: new Date().toISOString().split('T')[0], important: true });
-
+    const [form, setForm] = useState({ title: '', content: '', important: false });
+    
     const handleAdd = async (e: any) => {
         e.preventDefault();
         try {
-            await db.addNotice({ title: form.title, content: form.title, date: form.date, important: form.important });
-            onNotify("Notice published to ticker!");
-            setIsAdding(false);
-            setForm({ title: '', date: new Date().toISOString().split('T')[0], important: true });
-            refresh();
-        } catch (err) { alert("Failed to save notice."); }
+            await db.addNotice({ ...form, date: new Date().toISOString().split('T')[0] });
+            setForm({ title: '', content: '', important: false }); 
+            refresh(); 
+            onNotify("Notice Board Synchronized.");
+        } catch (e) { alert("Failed to deploy notice."); }
     };
 
     return (
-        <div className="space-y-6">
-            <div className="flex justify-between items-center">
-                <h3 className="text-xl font-black text-slate-800 flex items-center gap-2"><Bell className="text-indigo-600"/> Public Notice Board</h3>
-                <button onClick={() => setIsAdding(true)} className="bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-lg"><Plus size={20}/> Create Notice</button>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+            <div className="bg-white p-10 rounded-[40px] shadow-sm border border-slate-100 sticky top-8 h-fit">
+                <h3 className="text-2xl font-black mb-8 flex items-center gap-3"><Bell className="text-indigo-600"/> Broadcast Directive</h3>
+                <form onSubmit={handleAdd} className="space-y-6">
+                    <div className="space-y-1">
+                        <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Notice Heading</label>
+                        <input required placeholder="Announcement Title" className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 font-bold text-slate-900" value={form.title} onChange={e => setForm({...form, title: e.target.value})} />
+                    </div>
+                    <div className="space-y-1">
+                        <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Directive Payload</label>
+                        <textarea required placeholder="Deployment message content..." className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 h-40 resize-none font-medium text-slate-900" value={form.content} onChange={e => setForm({...form, content: e.target.value})} />
+                    </div>
+                    <label className="flex items-center gap-3 text-xs font-bold text-slate-600 cursor-pointer group">
+                        <input type="checkbox" checked={form.important} onChange={e => setForm({...form, important: e.target.checked})} className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" /> 
+                        Mark as Urgent Priority (Critical Alert)
+                    </label>
+                    <button className="w-full bg-slate-900 text-white py-5 rounded-2xl font-black text-lg hover:shadow-2xl transition-all shadow-lg active:scale-98">Post Institutional Broadcast</button>
+                </form>
             </div>
-            
-            <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left min-w-[600px]">
-                        <thead className="bg-slate-50 text-[10px] uppercase font-black tracking-widest text-slate-400 border-b">
-                            <tr><th className="p-6">Title & Message</th><th className="p-6">Date</th><th className="p-6">Status</th><th className="p-6 text-center">Action</th></tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100 text-sm">
-                            {notices.map((n: Notice) => (
-                                <tr key={n.id} className="hover:bg-slate-50/50">
-                                    <td className="p-6"><p className="font-black text-slate-800 text-base">{n.title}</p></td>
-                                    <td className="p-6 text-slate-500 font-bold">{n.date}</td>
-                                    <td className="p-6"><span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${n.important ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-100 text-slate-400'}`}>{n.important ? 'Ticker Active' : 'Draft'}</span></td>
-                                    <td className="p-6 text-center"><button onClick={async () => { if(confirm("Remove notice?")) { await db.deleteNotice(n.id); refresh(); } }} className="text-rose-400 hover:text-rose-600 p-2 bg-rose-50 rounded-xl"><Trash2 size={16}/></button></td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+            <div className="space-y-6 max-h-[80vh] overflow-y-auto pr-3 custom-scrollbar">
+                <h4 className="text-[10px] font-black uppercase tracking-[0.5em] text-slate-400 ml-2">Active Log</h4>
+                {notices.map((n: Notice) => (
+                    <div key={n.id} className={`p-8 rounded-[32px] border flex justify-between items-start group transition-all relative overflow-hidden ${n.important ? 'bg-rose-50 border-rose-200 shadow-rose-100 shadow-lg' : 'bg-white border-slate-100 shadow-sm'}`}>
+                        <div className="flex-1 relative z-10">
+                            <div className="flex items-center gap-4 mb-4">
+                                <h4 className={`font-black text-lg leading-tight ${n.important ? 'text-rose-900' : 'text-slate-800'}`}>{n.title}</h4>
+                                {n.important && <span className="bg-rose-500 text-white text-[8px] px-2 py-0.5 rounded-full font-black uppercase tracking-widest shadow-sm animate-pulse">URGENT</span>}
+                            </div>
+                            <p className={`text-sm leading-relaxed font-medium ${n.important ? 'text-rose-700/80' : 'text-slate-500'}`}>{n.content}</p>
+                            <div className="flex items-center gap-2 mt-6">
+                                <Clock size={12} className="text-slate-400" />
+                                <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest">{n.date}</p>
+                            </div>
+                        </div>
+                        <button onClick={async () => { if(confirm("Erase from active log?")) { await db.deleteNotice(n.id); refresh(); } }} className="p-3 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all relative z-10"><Trash2 size={20}/></button>
+                    </div>
+                ))}
+                {notices.length === 0 && <div className="p-20 text-center text-slate-200 font-black uppercase text-sm tracking-[0.3em] border-4 border-dashed border-slate-100 rounded-[50px]">Log Terminal Clear</div>}
             </div>
-
-            <AnimatePresence>
-                {isAdding && (
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-                        <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="bg-white rounded-[40px] p-10 w-full max-w-md shadow-2xl relative">
-                            <button onClick={() => setIsAdding(false)} className="absolute top-6 right-6 text-slate-400"><X/></button>
-                            <h3 className="text-2xl font-black text-slate-800 mb-6">Broadcast News</h3>
-                            <form onSubmit={handleAdd} className="space-y-6">
-                                <div className="space-y-1"><label className="text-[10px] font-black uppercase text-slate-500">Notice Heading</label><input required className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 outline-none font-bold text-slate-900" value={form.title} onChange={e => setForm({...form, title: e.target.value})} placeholder="e.g. Admission 2026 Open" /></div>
-                                <button type="submit" className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black text-xl shadow-xl">Post to Ticker</button>
-                            </form>
-                        </motion.div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
         </div>
     );
 };
 
 const EnquiriesModule = ({ enquiries, onNotify, refresh }: any) => {
-    const [selectedEnquiry, setSelectedEnquiry] = useState<Enquiry | null>(null);
-
-    const handleStatusUpdate = async (id: string, status: 'New' | 'Contacted') => {
-        try {
-            await db.updateEnquiryStatus(id, status);
-            onNotify(`Enquiry marked as ${status}`);
-            refresh();
-        } catch (err) { alert("Registry update failed."); }
-    };
-
     return (
         <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
             <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                <h3 className="font-black text-slate-800 text-xl flex items-center gap-2"><MessageCircle className="text-blue-500"/> Admission Leads Dashboard</h3>
+                <h3 className="font-black text-slate-800 text-xl flex items-center gap-2"><MessageCircle className="text-blue-500"/> Candidate Lead Management</h3>
             </div>
             <div className="overflow-x-auto">
-                <table className="w-full text-left min-w-[800px]">
-                    <thead className="bg-slate-50 text-[10px] uppercase font-black tracking-widest text-slate-400 border-b border-slate-100">
-                        <tr><th className="p-6">Lead Details</th><th className="p-6">Contact</th><th className="p-6">Grade</th><th className="p-6">Status</th><th className="p-6 text-center">Action</th></tr>
+                <table className="w-full text-left min-w-[1000px]">
+                    <thead className="bg-slate-50 text-[10px] uppercase font-black tracking-widest text-slate-400 border-b">
+                        <tr><th className="p-6">Prospective Candidate</th><th className="p-6">Parent Identity</th><th className="p-6">Mobile & Availability</th><th className="p-6">Status</th><th className="p-6 text-center">Registry Action</th></tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 text-sm">
                         {enquiries.map((e: Enquiry) => (
                             <tr key={e.id} className="hover:bg-slate-50 transition-colors">
-                                <td className="p-6 whitespace-nowrap"><div><p className="font-bold text-slate-800">{e.studentName}</p><p className="text-[10px] text-slate-400 font-medium">Parent: {e.parentName}</p></div></td>
-                                <td className="p-6 text-slate-600 font-mono text-xs whitespace-nowrap">{e.mobile}</td>
-                                <td className="p-6 font-bold text-slate-500 whitespace-nowrap">{e.grade} Grade</td>
                                 <td className="p-6">
-                                    <select 
-                                        className={`px-3 py-1.5 rounded-full text-[9px] font-black uppercase outline-none shadow-sm transition-all cursor-pointer ${
-                                            e.status === 'New' ? 'bg-blue-50 text-blue-600' : 'bg-slate-100 text-slate-500'
-                                        }`}
-                                        value={e.status}
-                                        onChange={(ev) => handleStatusUpdate(e.id, ev.target.value as any)}
-                                    >
-                                        <option value="New">New Lead</option>
-                                        <option value="Contacted">Contacted</option>
-                                    </select>
+                                    <p className="font-black text-slate-800 text-base">{e.studentName}</p>
+                                    <span className="text-[10px] font-black text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-lg uppercase tracking-tight">{e.grade} Grade</span>
+                                </td>
+                                <td className="p-6">
+                                    <p className="text-slate-600 font-bold">{e.parentName}</p>
+                                    <p className="text-[10px] text-slate-400 uppercase font-black tracking-widest">{e.relation}</p>
+                                </td>
+                                <td className="p-6">
+                                    <div className="flex items-center gap-2 text-slate-500 font-mono font-bold mb-1">
+                                        <Phone size={12} /> {e.mobile}
+                                    </div>
+                                    <div className="flex items-center gap-2 text-indigo-400 font-black uppercase text-[9px] tracking-widest">
+                                        <Clock size={10} /> Call Window: {e.connectTime}
+                                    </div>
+                                </td>
+                                <td className="p-6">
+                                    <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider ${e.status === 'Contacted' ? 'bg-emerald-100 text-emerald-600' : 'bg-blue-100 text-blue-600 shadow-sm'}`}>
+                                        {e.status}
+                                    </span>
                                 </td>
                                 <td className="p-6 text-center">
                                     <button 
-                                        onClick={() => setSelectedEnquiry(e)} 
-                                        className="text-indigo-600 bg-indigo-50 px-4 py-2 rounded-xl text-[10px] font-black uppercase hover:bg-indigo-100 transition-all flex items-center gap-2 mx-auto whitespace-nowrap"
+                                        onClick={async () => { await db.updateEnquiryStatus(e.id, e.status === 'New' ? 'Contacted' : 'New'); refresh(); onNotify("Lead Status Synchronized."); }} 
+                                        className={`px-5 py-2 text-[9px] font-black uppercase tracking-widest rounded-xl transition-all shadow-md active:scale-95 ${e.status === 'New' ? 'bg-slate-900 text-white hover:bg-indigo-600' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}
                                     >
-                                        <Eye size={14}/> View Full Details
+                                        Mark {e.status === 'New' ? 'Contacted' : 'Pending'}
                                     </button>
                                 </td>
                             </tr>
                         ))}
                     </tbody>
                 </table>
+                {enquiries.length === 0 && <div className="p-20 text-center text-slate-300 font-black uppercase text-xs tracking-widest">Lead Database Dormant</div>}
             </div>
-            {enquiries.length === 0 && <div className="p-20 text-center text-slate-300 font-black uppercase text-xs">No Leads Registered</div>}
-
-            <AnimatePresence>
-                {selectedEnquiry && (
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-                        <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} className="bg-white rounded-[40px] p-10 w-full max-w-2xl shadow-2xl relative max-h-[90vh] overflow-y-auto scrollbar-hide">
-                            <button onClick={() => setSelectedEnquiry(null)} className="absolute top-8 right-8 text-slate-400 hover:text-slate-800"><X/></button>
-                            <h3 className="text-3xl font-black text-slate-800 mb-2">Lead Information</h3>
-                            <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-10">Detailed Enrollment Enquiry</p>
-                            
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
-                                <div>
-                                    <label className="text-[10px] font-black uppercase text-slate-400 block mb-1">Student Identity</label>
-                                    <p className="text-lg font-bold text-slate-900">{selectedEnquiry.studentName}</p>
-                                    <p className="text-xs text-slate-500 font-medium">Applying for {selectedEnquiry.grade} Grade</p>
-                                </div>
-                                <div>
-                                    <label className="text-[10px] font-black uppercase text-slate-400 block mb-1">Parental Lead</label>
-                                    <p className="text-lg font-bold text-slate-900">{selectedEnquiry.parentName} ({selectedEnquiry.relation})</p>
-                                    <p className="text-xs text-indigo-600 font-mono font-bold">{selectedEnquiry.mobile}</p>
-                                </div>
-                                <div>
-                                    <label className="text-[10px] font-black uppercase text-slate-400 block mb-1">Schooling Context</label>
-                                    <p className="text-lg font-bold text-slate-900">{selectedEnquiry.schoolName}</p>
-                                    <p className="text-xs text-slate-500 font-medium">Status: {selectedEnquiry.hasCoaching ? 'Already enrolled in classes' : 'No current coaching'}</p>
-                                </div>
-                                <div>
-                                    <label className="text-[10px] font-black uppercase text-slate-400 block mb-1">Call Protocol</label>
-                                    <p className="text-lg font-bold text-slate-900">{selectedEnquiry.connectTime} Preferred</p>
-                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Lead Received: {new Date(selectedEnquiry.createdAt).toLocaleString()}</p>
-                                </div>
-                            </div>
-
-                            <div className="p-8 bg-slate-50 rounded-[32px] border border-slate-100 space-y-4">
-                                <label className="text-[10px] font-black uppercase text-slate-400 block tracking-widest">Reason for Shift / Parental Expectations</label>
-                                <p className="text-slate-700 leading-relaxed italic text-lg font-medium">
-                                    "{selectedEnquiry.reason}"
-                                </p>
-                            </div>
-                            
-                            <div className="mt-12 flex gap-4">
-                                <button 
-                                    onClick={() => handleStatusUpdate(selectedEnquiry.id, 'Contacted')}
-                                    className="flex-1 bg-emerald-600 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-emerald-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/10"
-                                >
-                                    <Check size={16}/> Mark Contacted
-                                </button>
-                                <button 
-                                    onClick={() => setSelectedEnquiry(null)}
-                                    className="flex-1 bg-slate-900 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest"
-                                >
-                                    Close Details
-                                </button>
-                            </div>
-                        </motion.div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
         </div>
     );
 };
 
 const SettingsModule = ({ settings, onNotify, refresh }: any) => {
     const [form, setForm] = useState(settings);
-    const [activeSection, setActiveSection] = useState<'general' | 'payment'>('general');
-
-    const handleSave = async (e: any) => {
-        e.preventDefault();
-        try { await db.updateSettings(form); onNotify("System variables updated!"); refresh(); } catch (err) { alert("Error saving config."); }
-    };
-
-    const updateGateway = (key: string, field: string, val: any) => {
-        setForm({ ...form, gateways: { ...form.gateways, [key]: { ...form.gateways[key], [field === 'enabled' ? 'enabled' : 'credentials']: field === 'enabled' ? val : { ...form.gateways[key].credentials, [field]: val } } } });
+    
+    const save = async () => { 
+        try {
+            await db.updateSettings(form); 
+            refresh(); 
+            onNotify("System Config Secured."); 
+        } catch (e) { alert("Write error."); }
     };
 
     return (
-        <div className="max-w-4xl mx-auto space-y-6">
-            <div className="bg-white rounded-[32px] p-2 border border-slate-200 flex shadow-sm">
-                <button onClick={() => setActiveSection('general')} className={`flex-1 py-4 rounded-[24px] font-black text-xs uppercase tracking-widest transition-all ${activeSection === 'general' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'text-slate-400 hover:text-slate-600'}`}>System Variables</button>
-                <button onClick={() => setActiveSection('payment')} className={`flex-1 py-4 rounded-[24px] font-black text-xs uppercase tracking-widest transition-all ${activeSection === 'payment' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'text-slate-400 hover:text-slate-600'}`}>Payment Integration</button>
-            </div>
-            <form onSubmit={handleSave} className="bg-white p-10 rounded-[40px] shadow-sm border border-slate-100 space-y-8">
-                 {activeSection === 'general' ? (
-                     <div className="space-y-8">
-                        <div className="flex items-center gap-4"><Settings size={32} className="text-indigo-600"/><h3 className="text-2xl font-black text-slate-800">Global Config</h3></div>
-                        <div className="space-y-2"><label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Recaptcha V2 Key</label><input className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-xs text-slate-900" value={form.googleSiteKey} onChange={e => setForm({...form, googleSiteKey: e.target.value})} /></div>
-                     </div>
-                 ) : (
-                    <div className="space-y-10">
-                        {Object.entries(form.gateways).map(([key, config]: [string, any]) => (
-                            <div key={key} className="p-8 bg-slate-50 rounded-[32px] border border-slate-100 relative">
-                                <div className="flex items-center justify-between mb-8">
-                                    <div className="flex items-center gap-4">
-                                        <div className={`p-3 rounded-xl ${config.enabled ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-200 text-slate-400'}`}>{key === 'manual' ? <QrCode size={24}/> : <Smartphone size={24}/>}</div>
-                                        <div><h4 className="font-bold text-slate-800 uppercase tracking-widest text-sm">{config.name}</h4><p className="text-[10px] text-slate-400 font-bold">{config.enabled ? 'Operational' : 'Disabled'}</p></div>
-                                    </div>
-                                    <button type="button" onClick={() => updateGateway(key, 'enabled', !config.enabled)} className={`w-14 h-8 rounded-full transition-all relative ${config.enabled ? 'bg-emerald-500' : 'bg-slate-300'}`}><div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition-all ${config.enabled ? 'right-1' : 'left-1'}`} /></button>
-                                </div>
-                                {config.enabled && key === 'manual' && <div className="space-y-4"><label className="text-[9px] font-black uppercase text-slate-400 tracking-widest ml-1">Business UPI VPA</label><input className="w-full bg-white border border-slate-200 rounded-xl px-5 py-3 outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-sm text-slate-900" value={config.credentials.upiId || ''} onChange={e => updateGateway(key, 'upiId', e.target.value)} placeholder="e.g. shriyas@upi" /></div>}
-                            </div>
-                        ))}
+        <div className="max-w-4xl space-y-10">
+            <div className="bg-white p-10 rounded-[40px] shadow-sm border border-slate-100">
+                <h3 className="text-xl font-black mb-10 flex items-center gap-3"><Lock className="text-indigo-600"/> Security & Master Integrations</h3>
+                <div className="space-y-6">
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase text-slate-400 block ml-1 tracking-[0.2em]">Google Site Verification Key</label>
+                        <input className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-xs text-indigo-600" value={form.googleSiteKey} onChange={e => setForm({...form, googleSiteKey: e.target.value})} placeholder="Verification ID String..." />
+                        <p className="text-[10px] text-slate-400 italic px-1">Used for Search Console Authentication.</p>
                     </div>
-                 )}
-                 <button type="submit" className="w-full bg-slate-900 text-white py-5 rounded-2xl font-black text-xl hover:shadow-2xl transition-all flex items-center justify-center gap-3"><Save size={24}/> Authorize Global Updates</button>
-            </form>
+                </div>
+            </div>
+
+            <div className="bg-white p-10 rounded-[40px] shadow-sm border border-slate-100">
+                <div className="flex items-center gap-4 mb-10">
+                    <div className="h-12 w-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center shadow-inner"><DollarSign size={28}/></div>
+                    <div><h3 className="text-xl font-black text-slate-800">Financial Infrastructure</h3><p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Gateways & Receivables</p></div>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    {Object.entries(form.gateways).map(([key, config]: [string, any]) => (
+                        <div key={key} className="p-8 bg-slate-50 rounded-[32px] border border-slate-200 space-y-6 group hover:border-indigo-200 transition-all">
+                            <div className="flex justify-between items-center border-b border-slate-200 pb-4">
+                                <h4 className="font-black text-slate-800 uppercase tracking-widest text-[11px]">{config.name} Protocol</h4>
+                                <label className="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" checked={config.enabled} onChange={e => setForm({...form, gateways: {...form.gateways, [key]: {...config, enabled: e.target.checked}}})} className="sr-only peer" />
+                                    <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                                </label>
+                            </div>
+                            
+                            {key === 'manual' ? (
+                                <div className="space-y-2">
+                                    <label className="text-[9px] font-black uppercase text-slate-400 ml-1">Institutional VPA Address</label>
+                                    <input placeholder="institution@bank" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm font-mono font-bold text-indigo-600 outline-none focus:ring-1 focus:ring-indigo-500" value={config.credentials.upiId || ''} onChange={e => setForm({...form, gateways: {...form.gateways, [key]: {...config, credentials: {upiId: e.target.value}}}})} />
+                                </div>
+                            ) : (
+                                <div className="flex flex-col items-center justify-center py-4 bg-white/50 rounded-2xl border border-dashed border-slate-200">
+                                    <Lock size={20} className="text-slate-300 mb-2" />
+                                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">Automated API Handshake Required</p>
+                                </div>
+                            )}
+                        </div>
+                    ))}
+                </div>
+                
+                <button onClick={save} className="w-full bg-indigo-600 text-white py-6 rounded-[28px] font-black text-xl mt-12 hover:shadow-2xl transition-all shadow-indigo-600/30 flex items-center justify-center gap-3 active:scale-98">
+                    <Save size={24}/> Commit System Architecture
+                </button>
+            </div>
+            
+            <div className="p-8 bg-slate-900 text-white rounded-[40px] flex items-center justify-between border border-white/5">
+                <div className="flex items-center gap-6">
+                    <div className="p-4 bg-white/10 rounded-3xl"><Smartphone size={32} className="text-indigo-400" /></div>
+                    <div>
+                        <h4 className="text-xl font-black">SMS Terminal Sync</h4>
+                        <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Version 4.1.0 High Performance Stable</p>
+                    </div>
+                </div>
+                <div className="hidden md:flex gap-4">
+                    <div className="flex flex-col items-end">
+                        <span className="text-[10px] font-black uppercase text-slate-500">Node Status</span>
+                        <span className="text-emerald-400 text-[10px] font-bold uppercase tracking-widest flex items-center gap-2">
+                            <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" /> Operational
+                        </span>
+                    </div>
+                </div>
+            </div>
         </div>
     );
 };

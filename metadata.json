@@ -1,5 +1,7 @@
 {
   "name": "Shriya's Coaching Platform",
   "description": "A high-performance educational platform for Grades 1st to 8th, featuring immersive 3D animations for the frontend and a comprehensive Student Management System (SMS) for the administration.",
-  "requestFramePermissions": []
+  "requestFramePermissions": [
+    "camera"
+  ]
 }

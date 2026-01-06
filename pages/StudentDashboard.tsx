@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../services/db';
 import { Student, Exam, Homework, Notice, TimetableEntry, StudentQuery, Subdivision, AttendanceRecord, StudentOwnExam, LeaveApplication } from '../types';
-import { Gamepad2, Radio, Zap, Bell, Settings, LogOut, CheckCircle2, Target, Trophy, Flame, Lock, Send, X, CalendarDays, ShoppingBag, CreditCard, BookOpen, PenTool, HelpCircle, AlertTriangle, ChevronRight, ChevronLeft, Star, Sparkles, Upload, FileText, Calendar } from 'lucide-react';
+import { Gamepad2, Radio, Zap, Bell, Settings, LogOut, CheckCircle2, Target, Trophy, Flame, Lock, Send, X, CalendarDays, ShoppingBag, CreditCard, BookOpen, PenTool, HelpCircle, AlertTriangle, ChevronRight, ChevronLeft, Star, Sparkles, Upload, FileText, Calendar, Camera } from 'lucide-react';
 import { motion, AnimatePresence, Variants } from 'framer-motion';
 import JitsiMeeting from '../components/JitsiMeeting';
 
@@ -103,7 +103,7 @@ const PortalCard = ({ subdivision, studentName }: { subdivision: Subdivision, st
     const [isMeetingOpen, setIsMeetingOpen] = useState(false);
 
     if (!subdivision?.isLive) return (
-        <motion.div variants={itemVariants} className="col-span-full bg-[#0a0a0a] border border-white/5 rounded-[32px] p-8 flex items-center gap-8 relative overflow-hidden group h-full">
+        <motion.div variants={itemVariants} className="col-span-full bg-[#0a0a0a] border border-white/5 rounded-[32px] p-8 flex items-center justify-between h-full group relative overflow-hidden">
             <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center shrink-0 border border-white/5 group-hover:border-white/10 transition-colors">
                 <Radio size={32} className="text-white/20" />
             </div>
@@ -175,7 +175,8 @@ const StatCard = ({ title, value, label, icon: Icon, colorClass, borderClass }: 
 );
 
 // Expanded Homework Card with Submission Logic
-const HomeworkCard = ({ homework, studentId, onSubmission }: { homework: Homework, studentId: string, onSubmission: () => void }) => {
+// Fix: Use React.FC to correctly handle the 'key' prop in functional component
+const HomeworkCard: React.FC<{ homework: Homework, studentId: string, onSubmission: () => void }> = ({ homework, studentId, onSubmission }) => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
     const [text, setText] = useState('');
@@ -232,12 +233,27 @@ const HomeworkCard = ({ homework, studentId, onSubmission }: { homework: Homewor
                             <h3 className="text-2xl font-black text-white mb-6 flex items-center gap-2"><BookOpen className="text-emerald-500"/> Submit Work</h3>
                             <div className="space-y-4">
                                 <textarea placeholder="Type your answer or notes here..." className="w-full bg-black border border-white/10 rounded-2xl p-4 text-sm text-white outline-none focus:border-emerald-500 h-32 resize-none" value={text} onChange={e => setText(e.target.value)} />
-                                <div className="border-2 border-dashed border-white/10 rounded-2xl p-4 text-center hover:bg-white/5 transition-all relative">
-                                    <input type="file" accept="image/*" onChange={handleImageUpload} className="absolute inset-0 opacity-0 cursor-pointer" />
-                                    <Upload className="mx-auto text-emerald-500 mb-2" size={24} />
-                                    <p className="text-[10px] font-bold uppercase text-white/40">Upload Image (Optional)</p>
-                                    {image && <p className="text-[10px] text-emerald-400 mt-2 font-black">Image Selected</p>}
+                                
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="border-2 border-dashed border-white/10 rounded-2xl p-4 text-center hover:bg-white/5 transition-all relative">
+                                        <input type="file" accept="image/*" onChange={handleImageUpload} className="absolute inset-0 opacity-0 cursor-pointer" />
+                                        <Upload className="mx-auto text-emerald-500 mb-2" size={20} />
+                                        <p className="text-[9px] font-bold uppercase text-white/40 tracking-wider">From Gallery</p>
+                                    </div>
+                                    <div className="border-2 border-dashed border-white/10 rounded-2xl p-4 text-center hover:bg-white/5 transition-all relative">
+                                        <input type="file" accept="image/*" capture="environment" onChange={handleImageUpload} className="absolute inset-0 opacity-0 cursor-pointer" />
+                                        <Camera className="mx-auto text-indigo-500 mb-2" size={20} />
+                                        <p className="text-[9px] font-bold uppercase text-white/40 tracking-wider">Use Camera</p>
+                                    </div>
                                 </div>
+
+                                {image && (
+                                    <div className="relative w-full aspect-video rounded-xl overflow-hidden border border-white/10 bg-black">
+                                        <img src={image} className="w-full h-full object-contain" />
+                                        <button onClick={() => setImage('')} className="absolute top-2 right-2 p-1.5 bg-black/60 rounded-full text-white/80 hover:text-white"><X size={14}/></button>
+                                    </div>
+                                )}
+
                                 <button onClick={submit} disabled={isSubmitting} className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:bg-emerald-500 transition-all shadow-xl">
                                     {isSubmitting ? 'Uploading...' : 'Confirm Submission'}
                                 </button>
@@ -250,7 +266,8 @@ const HomeworkCard = ({ homework, studentId, onSubmission }: { homework: Homewor
     );
 };
 
-const ExamCard = ({ exam }: { exam: Exam }) => (
+// Fix: Use React.FC to correctly handle the 'key' prop in functional component
+const ExamCard: React.FC<{ exam: Exam }> = ({ exam }) => (
     <motion.div 
         variants={itemVariants}
         whileHover={{ scale: 1.02 }}
@@ -541,7 +558,7 @@ export default function StudentDashboard() {
                                                 <p className="text-[10px] font-black uppercase tracking-widest text-white/20 relative z-10">{n.date}</p>
                                             </motion.div>
                                         ))}
-                                        {intel.length === 0 && (
+                                        {intel.slice(0, 3).length === 0 && (
                                             <div className="py-12 bg-white/[0.02] rounded-[24px] border border-dashed border-white/10 text-center">
                                                 <p className="text-white/20 font-black uppercase text-xs tracking-[0.2em]">All Systems Nominal</p>
                                             </div>
