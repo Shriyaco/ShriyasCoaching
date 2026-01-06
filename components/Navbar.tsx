@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, ChevronDown, Heart, Sun, Moon, CreditCard, ShoppingBag } from 'lucide-react';
@@ -81,8 +82,7 @@ const Navbar: React.FC = () => {
             <img 
               src="https://advedasolutions.in/sc.png" 
               alt="Shriya's Logo" 
-              className={`transition-all duration-500 ${scrolled || isLoginPage ? 'h-10 md:h-12' : 'h-14 md:h-16'}`}
-              style={{ filter: 'none' }}
+              className={`transition-all duration-500 brightness-0 invert ${scrolled || isLoginPage ? 'h-10 md:h-12' : 'h-14 md:h-16'}`}
             />
           </Link>
 
