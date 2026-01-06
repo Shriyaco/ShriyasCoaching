@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { db } from '../services/db';
 import { Student, TabView, Grade, Subdivision, Teacher, FeeSubmission, SystemSettings, GatewayConfig, Enquiry, Product, Order, StudentNotification, Notice } from '../types';
@@ -256,55 +255,53 @@ const ProductsModule = ({ products, onNotify, refresh }: any) => {
             </div>
 
             <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left min-w-[700px]">
-                        <thead className="bg-slate-50 text-[10px] uppercase font-black tracking-widest text-slate-400 border-b border-slate-100">
-                            <tr><th className="p-4">Product Details</th><th className="p-4">Category</th><th className="p-4">Price</th><th className="p-4">Stock Status</th><th className="p-4 text-center">Actions</th></tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100 text-sm">
-                            {filtered.map((p: Product) => (
-                                <tr key={p.id} className="hover:bg-slate-50 transition-colors">
-                                    <td className="p-4">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-12 h-12 rounded-xl bg-slate-100 overflow-hidden border border-slate-200 shrink-0">
-                                                {p.imageUrl ? <img src={p.imageUrl} className="w-full h-full object-cover" /> : <ImageIcon className="w-full h-full p-2 text-slate-300" />}
-                                            </div>
-                                            <div>
-                                                <p className="font-bold text-slate-800">{p.name}</p>
-                                                <p className="text-[10px] text-slate-400 uppercase tracking-tighter truncate max-w-[200px]">{p.description}</p>
-                                            </div>
+                <table className="w-full text-left">
+                    <thead className="bg-slate-50 text-[10px] uppercase font-black tracking-widest text-slate-400 border-b border-slate-100">
+                        <tr><th className="p-4">Product Details</th><th className="p-4">Category</th><th className="p-4">Price</th><th className="p-4">Stock Status</th><th className="p-4 text-center">Actions</th></tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 text-sm">
+                        {filtered.map((p: Product) => (
+                            <tr key={p.id} className="hover:bg-slate-50 transition-colors">
+                                <td className="p-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-12 h-12 rounded-xl bg-slate-100 overflow-hidden border border-slate-200 shrink-0">
+                                            {p.imageUrl ? <img src={p.imageUrl} className="w-full h-full object-cover" /> : <ImageIcon className="w-full h-full p-2 text-slate-300" />}
                                         </div>
-                                    </td>
-                                    <td className="p-4"><span className="px-3 py-1 bg-indigo-50 text-indigo-600 rounded-lg text-[10px] font-black uppercase">{p.category}</span></td>
-                                    <td className="p-4 font-black text-slate-800">₹{p.basePrice}</td>
-                                    <td className="p-4">
-                                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${p.stockStatus === 'In Stock' ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'}`}>
-                                            {p.stockStatus}
-                                        </span>
-                                    </td>
-                                    <td className="p-4 text-center min-w-[120px]">
-                                        <div className="flex justify-center gap-3">
-                                            <button 
-                                                onClick={() => { setEditingProduct(p); setIsModalOpen(true); }} 
-                                                className="p-2.5 rounded-xl text-indigo-600 bg-indigo-50 hover:bg-indigo-600 hover:text-white transition-all shadow-sm"
-                                                title="Modify Product"
-                                            >
-                                                <Edit2 size={16} strokeWidth={2.5}/>
-                                            </button>
-                                            <button 
-                                                onClick={() => handleDelete(p.id)} 
-                                                className="p-2.5 rounded-xl text-rose-500 bg-rose-50 hover:bg-rose-50 hover:text-white transition-all shadow-sm"
-                                                title="Delete Product"
-                                            >
-                                                <Trash2 size={16} strokeWidth={2.5}/>
-                                            </button>
+                                        <div>
+                                            <p className="font-bold text-slate-800">{p.name}</p>
+                                            <p className="text-[10px] text-slate-400 uppercase tracking-tighter truncate max-w-[200px]">{p.description}</p>
                                         </div>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+                                    </div>
+                                </td>
+                                <td className="p-4"><span className="px-3 py-1 bg-indigo-50 text-indigo-600 rounded-lg text-[10px] font-black uppercase">{p.category}</span></td>
+                                <td className="p-4 font-black text-slate-800">₹{p.basePrice}</td>
+                                <td className="p-4">
+                                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${p.stockStatus === 'In Stock' ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'}`}>
+                                        {p.stockStatus}
+                                    </span>
+                                </td>
+                                <td className="p-4 text-center min-w-[120px]">
+                                    <div className="flex justify-center gap-3">
+                                        <button 
+                                            onClick={() => { setEditingProduct(p); setIsModalOpen(true); }} 
+                                            className="p-2.5 rounded-xl text-indigo-600 bg-indigo-50 hover:bg-indigo-600 hover:text-white transition-all shadow-sm"
+                                            title="Modify Product"
+                                        >
+                                            <Edit2 size={16} strokeWidth={2.5}/>
+                                        </button>
+                                        <button 
+                                            onClick={() => handleDelete(p.id)} 
+                                            className="p-2.5 rounded-xl text-rose-500 bg-rose-50 hover:bg-rose-50 hover:text-white transition-all shadow-sm"
+                                            title="Delete Product"
+                                        >
+                                            <Trash2 size={16} strokeWidth={2.5}/>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
                 {filtered.length === 0 && <div className="p-20 text-center text-slate-300 font-black uppercase tracking-[0.5em] text-xs">No Items Found</div>}
             </div>
 
@@ -387,7 +384,7 @@ const OrdersModule = ({ orders, onNotify, refresh }: any) => {
                 <h3 className="font-black text-slate-800 text-xl flex items-center gap-2"><ShoppingBag className="text-pink-500"/> Order Registry Tracking</h3>
             </div>
             <div className="overflow-x-auto">
-                <table className="w-full text-left min-w-[900px]">
+                <table className="w-full text-left">
                     <thead className="bg-slate-50 text-[10px] uppercase font-black tracking-widest text-slate-400 border-b">
                         <tr><th className="p-6">Client & Bespoke Details</th><th className="p-6">Shipping Destination</th><th className="p-6">UTR Reference</th><th className="p-6">Price</th><th className="p-6">Status Action</th></tr>
                     </thead>
@@ -538,7 +535,7 @@ const BroadcastModule = ({ grades, subdivisions, students, onNotify }: any) => {
                  </div>
 
                  <button disabled={isSending} className="w-full bg-slate-900 text-white py-5 rounded-2xl font-black text-xl hover:shadow-2xl transition-all flex items-center justify-center gap-3">
-                    <span className="flex items-center gap-2"><Send size={20}/> {isSending ? 'Transmitting...' : 'Authorize Broadcast'}</span>
+                    <Send size={24}/> {isSending ? 'Transmitting...' : 'Authorize Broadcast'}
                  </button>
             </form>
         </div>
@@ -592,13 +589,20 @@ const StudentsModule = ({ students, grades, subdivisions, onNotify, refresh }: a
             setIsModalOpen(false);
             setEditingStudent(null);
             refresh();
-        } catch (err) { alert("Failed to save student."); }
+        } catch (err: any) { 
+            console.error("Student Enrollment Error:", err);
+            alert("Failed to save student: " + (err.message || "Please check your network and try again.")); 
+        }
     };
 
     const handleResetPassword = async (id: string) => {
         if (confirm("Reset student's password to their mobile number?")) {
-            await db.resetUserPassword('student', id);
-            onNotify("Password reset successful!");
+            try {
+                await db.resetUserPassword('student', id);
+                onNotify("Password reset successful!");
+            } catch (err: any) {
+                alert("Reset failed: " + err.message);
+            }
         }
     };
 
@@ -615,65 +619,63 @@ const StudentsModule = ({ students, grades, subdivisions, onNotify, refresh }: a
             </div>
 
             <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left min-w-[800px]">
-                        <thead className="bg-slate-50 text-[10px] uppercase font-black tracking-widest text-slate-400 border-b border-slate-100">
-                            <tr><th className="p-4">Student</th><th className="p-4">Class</th><th className="p-4">Mobile</th><th className="p-4">Fees</th><th className="p-4 text-center">Actions</th></tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100 text-sm">
-                            {filtered.map((s: Student) => (
-                                <tr key={s.id} className="hover:bg-slate-50 transition-colors">
-                                    <td className="p-4">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-xl bg-slate-100 overflow-hidden flex items-center justify-center text-indigo-600 font-bold border border-slate-200 shrink-0">
-                                                {s.imageUrl ? <img src={s.imageUrl} className="w-full h-full object-cover" /> : s.name.charAt(0)}
-                                            </div>
-                                            <div>
-                                                <p className="font-bold text-slate-800">{s.name}</p>
-                                                <p className="text-[10px] font-mono text-slate-400 uppercase tracking-tighter">{s.studentCustomId}</p>
-                                            </div>
+                <table className="w-full text-left">
+                    <thead className="bg-slate-50 text-[10px] uppercase font-black tracking-widest text-slate-400 border-b border-slate-100">
+                        <tr><th className="p-4">Student</th><th className="p-4">Class</th><th className="p-4">Mobile</th><th className="p-4">Fees</th><th className="p-4 text-center">Actions</th></tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 text-sm">
+                        {filtered.map((s: Student) => (
+                            <tr key={s.id} className="hover:bg-slate-50 transition-colors">
+                                <td className="p-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-xl bg-slate-100 overflow-hidden flex items-center justify-center text-indigo-600 font-bold border border-slate-200 shrink-0">
+                                            {s.imageUrl ? <img src={s.imageUrl} className="w-full h-full object-cover" /> : s.name.charAt(0)}
                                         </div>
-                                    </td>
-                                    <td className="p-4 text-slate-500 font-medium">Grade {grades.find((g:any)=>g.id===s.gradeId)?.gradeName || s.gradeId}</td>
-                                    <td className="p-4 text-slate-500 font-mono">{s.mobile}</td>
-                                    <td className="p-4"><span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${s.feesStatus === 'Paid' ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'}`}>{s.feesStatus}</span></td>
-                                    <td className="p-4 text-center">
-                                        <div className="flex justify-center gap-2">
-                                            <button 
-                                                onClick={() => { setEditingStudent(s); setIsModalOpen(true); }} 
-                                                className="p-2.5 rounded-xl text-indigo-600 bg-indigo-50 hover:bg-indigo-600 hover:text-white transition-all shadow-sm" 
-                                                title="Modify Student Details"
-                                            >
-                                                <Edit2 size={16} strokeWidth={2.5}/>
-                                            </button>
-                                            <button 
-                                                onClick={() => handleResetPassword(s.id)} 
-                                                className="p-2.5 rounded-xl text-amber-600 bg-amber-50 hover:bg-amber-600 hover:text-white transition-all shadow-sm" 
-                                                title="Reset Password to Mobile No."
-                                            >
-                                                <Key size={16} strokeWidth={2.5}/>
-                                            </button>
-                                            <button 
-                                                onClick={async () => { if(confirm("Change status?")) { await db.updateStudentStatus(s.id, s.status === 'Active' ? 'Suspended' : 'Active'); refresh(); } }} 
-                                                className={`p-2.5 rounded-xl transition-all shadow-sm ${s.status === 'Active' ? 'text-emerald-500 bg-emerald-50 hover:bg-emerald-500 hover:text-white' : 'text-slate-400 bg-slate-100 hover:bg-slate-400 hover:text-white'}`}
-                                                title="Toggle Active/Suspended"
-                                            >
-                                                <Power size={16} strokeWidth={2.5}/>
-                                            </button>
-                                            <button 
-                                                onClick={async () => { if(confirm("Permanent Delete?")) { await db.deleteStudent(s.id); refresh(); } }} 
-                                                className="p-2.5 rounded-xl text-rose-400 bg-rose-50 hover:bg-rose-600 hover:text-white transition-all shadow-sm"
-                                                title="Permanently Remove student"
-                                            >
-                                                <Trash2 size={16} strokeWidth={2.5}/>
-                                            </button>
+                                        <div>
+                                            <p className="font-bold text-slate-800">{s.name}</p>
+                                            <p className="text-[10px] font-mono text-slate-400 uppercase tracking-tighter">{s.studentCustomId}</p>
                                         </div>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+                                    </div>
+                                </td>
+                                <td className="p-4 text-slate-500 font-medium">Grade {grades.find((g:any)=>g.id===s.gradeId)?.gradeName || s.gradeId}</td>
+                                <td className="p-4 text-slate-500 font-mono">{s.mobile}</td>
+                                <td className="p-4"><span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${s.feesStatus === 'Paid' ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'}`}>{s.feesStatus}</span></td>
+                                <td className="p-4 text-center">
+                                    <div className="flex justify-center gap-2">
+                                        <button 
+                                            onClick={() => { setEditingStudent(s); setIsModalOpen(true); }} 
+                                            className="p-2.5 rounded-xl text-indigo-600 bg-indigo-50 hover:bg-indigo-600 hover:text-white transition-all shadow-sm" 
+                                            title="Modify Student Details"
+                                        >
+                                            <Edit2 size={16} strokeWidth={2.5}/>
+                                        </button>
+                                        <button 
+                                            onClick={() => handleResetPassword(s.id)} 
+                                            className="p-2.5 rounded-xl text-amber-600 bg-amber-50 hover:bg-amber-600 hover:text-white transition-all shadow-sm" 
+                                            title="Reset Password to Mobile No."
+                                        >
+                                            <Key size={16} strokeWidth={2.5}/>
+                                        </button>
+                                        <button 
+                                            onClick={async () => { if(confirm("Change status?")) { await db.updateStudentStatus(s.id, s.status === 'Active' ? 'Suspended' : 'Active'); refresh(); } }} 
+                                            className={`p-2.5 rounded-xl transition-all shadow-sm ${s.status === 'Active' ? 'text-emerald-500 bg-emerald-50 hover:bg-emerald-500 hover:text-white' : 'text-slate-400 bg-slate-100 hover:bg-slate-400 hover:text-white'}`}
+                                            title="Toggle Active/Suspended"
+                                        >
+                                            <Power size={16} strokeWidth={2.5}/>
+                                        </button>
+                                        <button 
+                                            onClick={async () => { if(confirm("Permanent Delete?")) { await db.deleteStudent(s.id); refresh(); } }} 
+                                            className="p-2.5 rounded-xl text-rose-400 bg-rose-50 hover:bg-rose-600 hover:text-white transition-all shadow-sm"
+                                            title="Permanently Remove student"
+                                        >
+                                            <Trash2 size={16} strokeWidth={2.5}/>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
             </div>
 
             <AnimatePresence>
@@ -880,7 +882,7 @@ const FeesModule = ({ fees, onNotify, refresh }: any) => {
         <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
             <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/50"><h3 className="font-black text-slate-800 text-xl flex items-center gap-2"><CreditCard className="text-indigo-600"/> Payment Verification Portal</h3></div>
             <div className="overflow-x-auto">
-                <table className="w-full text-left min-w-[700px]">
+                <table className="w-full text-left">
                     <thead className="bg-slate-50 text-[10px] uppercase font-black tracking-widest text-slate-400 border-b">
                         <tr><th className="p-6">Student Name</th><th className="p-6">Amount</th><th className="p-6">UTR / Reference</th><th className="p-6">Date</th><th className="p-6 text-center">Action</th></tr>
                     </thead>
@@ -936,23 +938,21 @@ const NoticesModule = ({ notices, onNotify, refresh }: any) => {
             </div>
             
             <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left min-w-[600px]">
-                        <thead className="bg-slate-50 text-[10px] uppercase font-black tracking-widest text-slate-400 border-b">
-                            <tr><th className="p-6">Title & Message</th><th className="p-6">Date</th><th className="p-6">Status</th><th className="p-6 text-center">Action</th></tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100 text-sm">
-                            {notices.map((n: Notice) => (
-                                <tr key={n.id} className="hover:bg-slate-50/50">
-                                    <td className="p-6"><p className="font-black text-slate-800 text-base">{n.title}</p></td>
-                                    <td className="p-6 text-slate-500 font-bold">{n.date}</td>
-                                    <td className="p-6"><span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${n.important ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-100 text-slate-400'}`}>{n.important ? 'Ticker Active' : 'Draft'}</span></td>
-                                    <td className="p-6 text-center"><button onClick={async () => { if(confirm("Remove notice?")) { await db.deleteNotice(n.id); refresh(); } }} className="text-rose-400 hover:text-rose-600 p-2 bg-rose-50 rounded-xl"><Trash2 size={16}/></button></td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+                <table className="w-full text-left">
+                    <thead className="bg-slate-50 text-[10px] uppercase font-black tracking-widest text-slate-400 border-b">
+                        <tr><th className="p-6">Title & Message</th><th className="p-6">Date</th><th className="p-6">Status</th><th className="p-6 text-center">Action</th></tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 text-sm">
+                        {notices.map((n: Notice) => (
+                            <tr key={n.id} className="hover:bg-slate-50/50">
+                                <td className="p-6"><p className="font-black text-slate-800 text-base">{n.title}</p></td>
+                                <td className="p-6 text-slate-500 font-bold">{n.date}</td>
+                                <td className="p-6"><span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${n.important ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-100 text-slate-400'}`}>{n.important ? 'Ticker Active' : 'Draft'}</span></td>
+                                <td className="p-6 text-center"><button onClick={async () => { if(confirm("Remove notice?")) { await db.deleteNotice(n.id); refresh(); } }} className="text-rose-400 hover:text-rose-600 p-2 bg-rose-50 rounded-xl"><Trash2 size={16}/></button></td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
             </div>
 
             <AnimatePresence>
@@ -978,31 +978,29 @@ const EnquiriesModule = ({ enquiries, onNotify, refresh }: any) => {
 
     return (
         <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
-            <div className="overflow-x-auto">
-                <table className="w-full text-left min-w-[800px]">
-                    <thead className="bg-slate-50 text-[10px] uppercase font-black tracking-widest text-slate-400 border-b border-slate-100">
-                        <tr><th className="p-6">Lead Details</th><th className="p-6">Contact</th><th className="p-6">Grade</th><th className="p-6">Status</th><th className="p-6 text-center">Action</th></tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 text-sm">
-                        {enquiries.map((e: Enquiry) => (
-                            <tr key={e.id} className="hover:bg-slate-50 transition-colors">
-                                <td className="p-6"><div><p className="font-bold text-slate-800">{e.studentName}</p><p className="text-[10px] text-slate-400 font-medium">Parent: {e.parentName}</p></div></td>
-                                <td className="p-6 text-slate-600 font-mono text-xs">{e.mobile}</td>
-                                <td className="p-6 font-bold text-slate-500">{e.grade} Grade</td>
-                                <td className="p-6"><span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase ${e.status === 'New' ? 'bg-blue-50 text-blue-600' : 'bg-slate-100 text-slate-500'}`}>{e.status}</span></td>
-                                <td className="p-6 text-center">
-                                    <button 
-                                        onClick={() => setSelectedEnquiry(e)} 
-                                        className="text-indigo-600 bg-indigo-50 px-4 py-2 rounded-xl text-[10px] font-black uppercase hover:bg-indigo-600 hover:text-white transition-all flex items-center gap-2 mx-auto shadow-sm"
-                                    >
-                                        <Eye size={14}/> Expand Details
-                                    </button>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
+            <table className="w-full text-left">
+                <thead className="bg-slate-50 text-[10px] uppercase font-black tracking-widest text-slate-400 border-b border-slate-100">
+                    <tr><th className="p-6">Lead Details</th><th className="p-6">Contact</th><th className="p-6">Grade</th><th className="p-6">Status</th><th className="p-6 text-center">Action</th></tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 text-sm">
+                    {enquiries.map((e: Enquiry) => (
+                        <tr key={e.id} className="hover:bg-slate-50 transition-colors">
+                            <td className="p-6"><div><p className="font-bold text-slate-800">{e.studentName}</p><p className="text-[10px] text-slate-400 font-medium">Parent: {e.parentName}</p></div></td>
+                            <td className="p-6 text-slate-600 font-mono text-xs">{e.mobile}</td>
+                            <td className="p-6 font-bold text-slate-500">{e.grade} Grade</td>
+                            <td className="p-6"><span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase ${e.status === 'New' ? 'bg-blue-50 text-blue-600' : 'bg-slate-100 text-slate-500'}`}>{e.status}</span></td>
+                            <td className="p-6 text-center">
+                                <button 
+                                    onClick={() => setSelectedEnquiry(e)} 
+                                    className="text-indigo-600 bg-indigo-50 px-4 py-2 rounded-xl text-[10px] font-black uppercase hover:bg-indigo-100 transition-all flex items-center gap-2 mx-auto"
+                                >
+                                    <Eye size={14}/> View Full Details
+                                </button>
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
             {enquiries.length === 0 && <div className="p-20 text-center text-slate-300 font-black uppercase text-xs">No Leads Registered</div>}
 
             <AnimatePresence>
@@ -1052,20 +1050,12 @@ const EnquiriesModule = ({ enquiries, onNotify, refresh }: any) => {
                                 </div>
                             </div>
                             
-                            <div className="flex gap-4 mt-10">
-                                <button 
-                                    onClick={async () => { await db.updateEnquiryStatus(selectedEnquiry.id, 'Contacted'); refresh(); setSelectedEnquiry(null); }}
-                                    className="flex-1 bg-indigo-600 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:brightness-110 transition-all"
-                                >
-                                    Mark as Contacted
-                                </button>
-                                <button 
-                                    onClick={() => setSelectedEnquiry(null)}
-                                    className="flex-1 bg-slate-900 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:brightness-110 transition-all"
-                                >
-                                    Close Details
-                                </button>
-                            </div>
+                            <button 
+                                onClick={() => setSelectedEnquiry(null)}
+                                className="w-full mt-10 bg-slate-900 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:brightness-110 transition-all"
+                            >
+                                Close Details
+                            </button>
                         </motion.div>
                     </motion.div>
                 )}

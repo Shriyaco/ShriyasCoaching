@@ -1,4 +1,3 @@
-
 import { supabase } from './supabase';
 import { RealtimeChannel } from '@supabase/supabase-js';
 import { Student, Grade, Subdivision, Notice, User, Teacher, TimetableEntry, FeeSubmission, SystemSettings, GatewayConfig, AttendanceRecord, Homework, Exam, ExamResult, HomeworkSubmission, ExamSubmission, StudentQuery, Enquiry, Product, Order, StudyNote, StudentNotification } from '../types';
@@ -14,12 +13,12 @@ const mapStudent = (s: any): Student => ({
     joiningDate: s.joining_date,
     dob: s.dob,
     imageUrl: s.image_url,
-    totalFees: s.total_fees,
-    monthlyFees: s.monthly_fees,
-    schoolName: s.school_name,
-    address: s.address,
-    feesStatus: s.fees_status as any,
-    status: s.status as any,
+    totalFees: s.total_fees || '0',
+    monthlyFees: s.monthly_fees || '5000',
+    schoolName: s.school_name || '',
+    address: s.address || '',
+    feesStatus: s.fees_status as any || 'Pending',
+    status: s.status as any || 'Active',
     password: s.password,
     email: s.email
 });
@@ -32,8 +31,8 @@ const mapTeacher = (t: any): Teacher => ({
     gradeId: t.grade_id,
     subdivisionId: t.subdivision_id,
     joiningDate: t.joining_date,
-    status: t.status as any,
-    specialization: t.specialization,
+    status: t.status as any || 'Active',
+    specialization: t.specialization || 'General',
     password: t.password
 });
 
@@ -204,16 +203,19 @@ class DatabaseService {
           name: data.name,
           mobile: data.mobile,
           parent_name: data.parentName,
-          grade_id: data.gradeId,
-          subdivision_id: data.subdivisionId,
+          grade_id: data.gradeId || null,
+          subdivision_id: data.subdivisionId || null,
           joining_date: data.joiningDate,
           monthly_fees: data.monthlyFees,
+          total_fees: data.monthlyFees,
           school_name: data.schoolName,
           address: data.address,
-          dob: data.dob,
-          image_url: data.imageUrl,
+          dob: data.dob || null,
+          image_url: data.imageUrl || null,
           password: password,
-          email: `${customId.toLowerCase()}@sc.com`
+          email: `${customId.toLowerCase()}_${Date.now()}@sc.com`,
+          status: 'Active',
+          fees_status: 'Pending'
       });
 
       if (error) throw error;
@@ -232,7 +234,8 @@ class DatabaseService {
       if(data.address) payload.address = data.address;
       if(data.dob) payload.dob = data.dob;
       if(data.imageUrl) payload.image_url = data.imageUrl;
-      await supabase.from('students').update(payload).eq('id', id);
+      const { error } = await supabase.from('students').update(payload).eq('id', id);
+      if (error) throw error;
   }
 
   async updateStudentStatus(id: string, status: 'Active' | 'Suspended') {
@@ -260,11 +263,12 @@ class DatabaseService {
           teacher_custom_id: customId,
           name: data.name,
           mobile: data.mobile,
-          grade_id: data.grade_id,
-          subdivision_id: data.subdivision_id,
-          specialization: data.specialization,
+          grade_id: data.gradeId || null,
+          subdivision_id: data.subdivisionId || null,
+          specialization: data.specialization || 'General',
           joining_date: new Date().toISOString().split('T')[0],
-          password: password
+          password: password,
+          status: 'Active'
       });
       if (error) throw error;
   }
@@ -276,7 +280,8 @@ class DatabaseService {
       if(data.gradeId) payload.grade_id = data.gradeId;
       if(data.subdivisionId) payload.subdivision_id = data.subdivisionId;
       if(data.specialization) payload.specialization = data.specialization;
-      await supabase.from('teachers').update(payload).eq('id', id);
+      const { error } = await supabase.from('teachers').update(payload).eq('id', id);
+      if (error) throw error;
   }
 
   async updateTeacherStatus(id: string, status: 'Active' | 'Suspended') {
@@ -287,13 +292,12 @@ class DatabaseService {
       await supabase.from('teachers').delete().eq('id', id);
   }
 
-  async resetUserPassword(type: 'student' | 'teacher', id: string, newPassword?: string) {
+  async resetUserPassword(type: 'student' | 'teacher', id: string) {
       const table = type === 'student' ? 'students' : 'teachers';
-      if (!newPassword) {
-         const { data } = await supabase.from(table).select('mobile').eq('id', id).single();
-         if(data) newPassword = data.mobile;
-      }
-      await supabase.from(table).update({ password: newPassword }).eq('id', id);
+      const { data, error: fetchError } = await supabase.from(table).select('mobile').eq('id', id).single();
+      if (fetchError || !data) throw new Error("Could not find user mobile number.");
+      const { error } = await supabase.from(table).update({ password: data.mobile }).eq('id', id);
+      if (error) throw error;
   }
 
   async getNotices(): Promise<Notice[]> { 
@@ -372,8 +376,8 @@ class DatabaseService {
           student_id: submission.studentId,
           student_name: submission.studentName,
           amount: submission.amount,
-          transaction_ref: submission.transaction_ref,
-          payment_method: submission.payment_method,
+          transaction_ref: submission.transactionRef,
+          payment_method: submission.paymentMethod,
           status: 'Pending',
           date: new Date().toISOString().split('T')[0]
       });
