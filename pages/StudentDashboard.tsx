@@ -58,15 +58,15 @@ const StudentDashboard: React.FC = () => {
     const handleLogout = () => { sessionStorage.removeItem('sc_user'); navigate('/'); };
 
     const navItems = [
-        { id: 'dashboard', label: 'Base', icon: LayoutDashboard },
+        { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
         { id: 'homework', label: 'Homework', icon: BookOpen },
-        { id: 'notes', label: 'Vault', icon: Database },
-        { id: 'exams', label: 'Battle', icon: PenTool },
-        { id: 'results', label: 'Intel', icon: Award },
-        { id: 'upcoming-exams', label: 'Log', icon: Calendar },
-        { id: 'leave', label: 'Permit', icon: FileText },
-        { id: 'doubts', label: 'Comm', icon: MessageSquare },
-        { id: 'settings', label: 'Core', icon: Settings }
+        { id: 'notes', label: 'Notes', icon: Database },
+        { id: 'exams', label: 'Exam', icon: PenTool },
+        { id: 'results', label: 'Result', icon: Award },
+        { id: 'upcoming-exams', label: 'Upcoming School Exam', icon: Calendar },
+        { id: 'leave', label: 'Apply Leave', icon: FileText },
+        { id: 'doubts', label: 'Doubts', icon: MessageSquare },
+        { id: 'settings', label: 'Settings', icon: Settings }
     ];
 
     if (loading) return (
@@ -163,17 +163,17 @@ const DashboardModule = ({ student }: { student: Student }) => {
         <div className="space-y-12">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
                 <div>
-                    <h2 className="text-3xl md:text-5xl font-light serif-font italic luxury-text-gradient tracking-tighter">Command Hub.</h2>
-                    <p className="text-[8px] font-black uppercase tracking-[0.5em] text-white/20 mt-1">Operational Overview & Registry</p>
+                    <h2 className="text-3xl md:text-5xl font-light serif-font italic luxury-text-gradient tracking-tighter">Dashboard.</h2>
+                    <p className="text-[8px] font-black uppercase tracking-[0.5em] text-white/20 mt-1">Personnel Operation Registry</p>
                 </div>
                 <div className="flex gap-3">
                     <button onClick={() => navigate('/shop')} className="bg-white/5 border border-white/10 px-6 py-3 rounded-2xl flex items-center gap-3 hover:bg-white/10 transition-all group">
                         <ShoppingBag size={16} className="text-indigo-400 group-hover:scale-110 transition-transform" />
-                        <span className="text-[9px] font-black uppercase tracking-widest">Boutique</span>
+                        <span className="text-[9px] font-black uppercase tracking-widest">Shop</span>
                     </button>
                     <button onClick={() => navigate('/pay-fees')} className="bg-indigo-600 px-6 py-3 rounded-2xl flex items-center gap-3 shadow-lg hover:shadow-indigo-500/20 transition-all active:scale-95 group">
                         <CreditCard size={16} className="text-white group-hover:rotate-12 transition-transform" />
-                        <span className="text-[9px] font-black uppercase tracking-widest text-white">Treasury</span>
+                        <span className="text-[9px] font-black uppercase tracking-widest text-white">Pay Fees</span>
                     </button>
                 </div>
             </div>
@@ -255,14 +255,14 @@ const HomeworkModule = ({ student }: { student: Student }) => {
         await db.submitHomework(id, student.id, form.text, form.image);
         setIsSubmitting(null);
         setForm({ text: '', image: '' });
-        alert("Mission Data Transmitted.");
+        alert("Homework Data Transmitted.");
     };
 
     return (
         <div className="space-y-8">
             <div className="pb-4 border-b border-white/5">
-                <h2 className="text-3xl md:text-5xl font-light serif-font italic luxury-text-gradient tracking-tighter">Directives.</h2>
-                <p className="text-[8px] font-black uppercase tracking-[0.5em] text-white/20 mt-1">Tactical Assignments</p>
+                <h2 className="text-3xl md:text-5xl font-light serif-font italic luxury-text-gradient tracking-tighter">Homework.</h2>
+                <p className="text-[8px] font-black uppercase tracking-[0.5em] text-white/20 mt-1">Tactical Assignments Log</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {missions.map(hw => (
@@ -283,8 +283,8 @@ const HomeworkModule = ({ student }: { student: Student }) => {
                     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/90 p-4 backdrop-blur-xl">
                         <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-[#0A0A0E] border border-white/10 rounded-[48px] w-full max-w-md p-10 relative shadow-2xl">
                             <button onClick={() => setIsSubmitting(null)} className="absolute top-8 right-8 text-white/20"><X size={24}/></button>
-                            <h3 className="text-3xl font-light serif-font italic luxury-text-gradient mb-8">Report Submit.</h3>
-                            <textarea placeholder="Mission details..." className="w-full bg-black border border-white/10 rounded-2xl p-5 text-sm outline-none focus:border-indigo-500 h-32 resize-none" value={form.text} onChange={e => setForm({...form, text: e.target.value})} />
+                            <h3 className="text-3xl font-light serif-font italic luxury-text-gradient mb-8">Homework Submission.</h3>
+                            <textarea placeholder="Task findings and details..." className="w-full bg-black border border-white/10 rounded-2xl p-5 text-sm outline-none focus:border-indigo-500 h-32 resize-none" value={form.text} onChange={e => setForm({...form, text: e.target.value})} />
                             <div className="grid grid-cols-2 gap-4 mt-4">
                                 <div className="bg-white/5 border-2 border-dashed border-white/5 rounded-2xl p-5 text-center relative hover:bg-white/10 cursor-pointer">
                                     <input type="file" accept="image/*" onChange={handleUpload} className="absolute inset-0 opacity-0 cursor-pointer" />
@@ -296,7 +296,7 @@ const HomeworkModule = ({ student }: { student: Student }) => {
                                 </div>
                             </div>
                             {form.image && <div className="mt-4 aspect-video rounded-xl overflow-hidden border border-white/10"><img src={form.image} className="w-full h-full object-cover" /></div>}
-                            <button onClick={() => submit(isSubmitting)} className="w-full bg-white text-black py-5 rounded-2xl font-black text-xs uppercase tracking-[0.4em] mt-8 hover:bg-indigo-500 hover:text-white transition-all">Authorize Transmission</button>
+                            <button onClick={() => submit(isSubmitting)} className="w-full bg-white text-black py-5 rounded-2xl font-black text-xs uppercase tracking-[0.4em] mt-8 hover:bg-indigo-500 hover:text-white transition-all">Authorize Submission</button>
                         </motion.div>
                     </div>
                 )}
@@ -315,8 +315,8 @@ const NotesModule = ({ student }: { student: Student }) => {
     return (
         <div className="space-y-8">
             <div className="pb-4 border-b border-white/5">
-                <h2 className="text-3xl md:text-5xl font-light serif-font italic luxury-text-gradient tracking-tighter">Vault.</h2>
-                <p className="text-[8px] font-black uppercase tracking-[0.5em] text-white/20 mt-1">Study Archives</p>
+                <h2 className="text-3xl md:text-5xl font-light serif-font italic luxury-text-gradient tracking-tighter">Notes.</h2>
+                <p className="text-[8px] font-black uppercase tracking-[0.5em] text-white/20 mt-1">Encrypted Study Archives</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {notes.map(n => (
@@ -327,7 +327,7 @@ const NotesModule = ({ student }: { student: Student }) => {
                         <p className="text-sm text-white/30 font-medium line-clamp-3 leading-relaxed">{n.content}</p>
                         <div className="mt-8 pt-6 border-t border-white/5 flex items-center justify-between">
                              <span className="text-[7px] font-black text-white/10 uppercase tracking-widest">{n.createdAt?.split('T')[0]}</span>
-                             <button className="px-5 py-2 bg-emerald-500/10 text-emerald-400 text-[8px] font-black uppercase tracking-widest rounded-xl hover:bg-emerald-500 hover:text-white transition-all">Download Archive</button>
+                             <button className="px-5 py-2 bg-emerald-500/10 text-emerald-400 text-[8px] font-black uppercase tracking-widest rounded-xl hover:bg-emerald-500 hover:text-white transition-all">Open Note</button>
                         </div>
                     </div>
                 ))}
@@ -364,15 +364,15 @@ const ExamsModule = ({ student }: { student: Student }) => {
         if (!activeExam) return;
         // Logic to write results to DB
         await db.updateSettings(await db.getSettings()); // Mock sync
-        alert("Battle protocol terminated. Result logged.");
+        alert("Exam protocol terminated. Session logged.");
         setActiveExam(null);
     };
 
     return (
         <div className="space-y-8">
             <div className="pb-4 border-b border-white/5">
-                <h2 className="text-3xl md:text-5xl font-light serif-font italic luxury-text-gradient tracking-tighter">Arena.</h2>
-                <p className="text-[8px] font-black uppercase tracking-[0.5em] text-white/20 mt-1">Live Combat Assessments</p>
+                <h2 className="text-3xl md:text-5xl font-light serif-font italic luxury-text-gradient tracking-tighter">Exam.</h2>
+                <p className="text-[8px] font-black uppercase tracking-[0.5em] text-white/20 mt-1">Live Institutional Assessments</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8">
                 {exams.map(e => (
@@ -380,16 +380,16 @@ const ExamsModule = ({ student }: { student: Student }) => {
                         <div className="bg-[#0A0A0E] rounded-[47px] p-10 h-full relative overflow-hidden transition-all group-hover:bg-black">
                             <div className="absolute top-0 right-0 p-10 opacity-[0.03] group-hover:opacity-[0.08]"><PenTool size={160}/></div>
                             <div className="flex justify-between items-start mb-8 relative z-10">
-                                <span className="bg-rose-500/10 text-rose-400 text-[9px] font-black uppercase tracking-[0.3em] px-4 py-1.5 rounded-full border border-rose-500/20">Live Raid</span>
+                                <span className="bg-rose-500/10 text-rose-400 text-[9px] font-black uppercase tracking-[0.3em] px-4 py-1.5 rounded-full border border-rose-500/20">Live Exam</span>
                                 <Flame size={24} className="text-orange-500 animate-pulse" />
                             </div>
                             <h3 className="text-4xl font-black text-white italic uppercase mb-2">{e.subject}</h3>
                             <p className="text-white/40 text-sm font-bold mb-10 border-l border-white/10 pl-6 uppercase tracking-widest">{e.title}</p>
                             <div className="grid grid-cols-2 gap-4 mb-10">
-                                <div className="bg-white/5 rounded-2xl p-5 text-center"><p className="text-[8px] text-white/20 font-black uppercase mb-1">Timeline</p><p className="text-xl font-mono font-bold text-white">{e.duration}m</p></div>
-                                <div className="bg-white/5 rounded-2xl p-5 text-center"><p className="text-[8px] text-white/20 font-black uppercase mb-1">Max Damage</p><p className="text-xl font-mono font-bold text-white">{e.totalMarks}pt</p></div>
+                                <div className="bg-white/5 rounded-2xl p-5 text-center"><p className="text-[8px] text-white/20 font-black uppercase mb-1">Duration</p><p className="text-xl font-mono font-bold text-white">{e.duration}m</p></div>
+                                <div className="bg-white/5 rounded-2xl p-5 text-center"><p className="text-[8px] text-white/20 font-black uppercase mb-1">Max Score</p><p className="text-xl font-mono font-bold text-white">{e.totalMarks}pt</p></div>
                             </div>
-                            <button onClick={() => startExam(e)} className="w-full bg-white text-black py-5 rounded-2xl font-black text-xs uppercase tracking-[0.4em] shadow-xl hover:bg-rose-600 hover:text-white">Begin Raid</button>
+                            <button onClick={() => startExam(e)} className="w-full bg-white text-black py-5 rounded-2xl font-black text-xs uppercase tracking-[0.4em] shadow-xl hover:bg-rose-600 hover:text-white">Enter Exam</button>
                         </div>
                     </div>
                 ))}
@@ -400,7 +400,7 @@ const ExamsModule = ({ student }: { student: Student }) => {
                     <div className="fixed inset-0 z-[300] bg-black p-4 md:p-12 flex flex-col overflow-hidden">
                         <div className="max-w-4xl mx-auto w-full flex-1 flex flex-col bg-[#0A0A0E] border border-white/10 rounded-[60px] relative overflow-hidden shadow-2xl">
                             <div className="p-8 border-b border-white/5 flex items-center justify-between shrink-0">
-                                <div className="flex items-center gap-4"><div className="w-12 h-12 bg-rose-500/10 rounded-2xl flex items-center justify-center text-rose-500"><Target size={24}/></div><div><h4 className="text-xl font-bold italic serif-font">{activeExam.title}</h4><p className="text-[8px] font-black uppercase text-white/20">AUTHORIZED RAID PROTOCOL</p></div></div>
+                                <div className="flex items-center gap-4"><div className="w-12 h-12 bg-rose-500/10 rounded-2xl flex items-center justify-center text-rose-500"><Target size={24}/></div><div><h4 className="text-xl font-bold italic serif-font">{activeExam.title}</h4><p className="text-[8px] font-black uppercase text-white/20">AUTHORIZED EVALUATION MODE</p></div></div>
                                 <div className="text-right"><p className="text-[8px] font-black uppercase text-white/30 mb-1">Clock Sync</p><p className="text-3xl font-mono font-black text-rose-500 animate-pulse">{Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, '0')}</p></div>
                             </div>
                             <div className="flex-1 overflow-y-auto p-12 space-y-12 scrollbar-hide">
@@ -414,11 +414,11 @@ const ExamsModule = ({ student }: { student: Student }) => {
                                                 ))}
                                             </div>
                                         )}
-                                        {(q.type === 'short' || q.type === 'paragraph') && (<textarea placeholder="Input response..." className="w-full bg-white/5 border border-white/5 rounded-3xl p-8 ml-16 text-sm outline-none focus:border-indigo-500 h-32 resize-none" value={answers[q.id] || ''} onChange={e => setAnswers({...answers, [q.id]: e.target.value})} />)}
+                                        {(q.type === 'short' || q.type === 'paragraph') && (<textarea placeholder="Input formulated response..." className="w-full bg-white/5 border border-white/5 rounded-3xl p-8 ml-16 text-sm outline-none focus:border-indigo-500 h-32 resize-none" value={answers[q.id] || ''} onChange={e => setAnswers({...answers, [q.id]: e.target.value})} />)}
                                     </div>
                                 ))}
                             </div>
-                            <div className="p-8 border-t border-white/5 bg-black/40 flex justify-center shrink-0"><button onClick={submitExam} className="bg-white text-black px-16 py-5 rounded-2xl font-black text-xs uppercase tracking-[0.5em] shadow-xl hover:bg-emerald-500 hover:text-white transition-all">Authorize Transmission</button></div>
+                            <div className="p-8 border-t border-white/5 bg-black/40 flex justify-center shrink-0"><button onClick={submitExam} className="bg-white text-black px-16 py-5 rounded-2xl font-black text-xs uppercase tracking-[0.5em] shadow-xl hover:bg-emerald-500 hover:text-white transition-all">Authorize Finish</button></div>
                         </div>
                     </div>
                 )}
@@ -439,21 +439,21 @@ const ResultsModule = ({ student }: { student: Student }) => {
     return (
         <div className="space-y-8">
             <div className="pb-4 border-b border-white/5">
-                <h2 className="text-3xl md:text-5xl font-light serif-font italic luxury-text-gradient tracking-tighter">Intel Logs.</h2>
-                <p className="text-[8px] font-black uppercase tracking-[0.5em] text-white/20 mt-1">Operational Scores</p>
+                <h2 className="text-3xl md:text-5xl font-light serif-font italic luxury-text-gradient tracking-tighter">Result.</h2>
+                <p className="text-[8px] font-black uppercase tracking-[0.5em] text-white/20 mt-1">Post-Assessment Intel</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {results.map(r => (
                     <div key={r.id} className="bg-white/[0.02] p-8 rounded-[40px] border border-white/5 shadow-2xl relative group overflow-hidden">
                         <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity"><Award size={80}/></div>
-                        <h4 className="text-xl font-bold text-white/80 italic mb-8 border-l-2 border-indigo-500 pl-6 uppercase tracking-widest">RAID: {r.examId.slice(0, 8)}</h4>
+                        <h4 className="text-xl font-bold text-white/80 italic mb-8 border-l-2 border-indigo-500 pl-6 uppercase tracking-widest">EXAM: {r.examId.slice(0, 8)}</h4>
                         <div className="flex items-end justify-between">
-                            <div><p className="text-[8px] font-black uppercase text-white/20 mb-1">Combat Rating</p><p className="text-5xl font-light luxury-text-gradient serif-font italic">{r.totalObtained}pt</p></div>
-                            <span className="bg-emerald-500/10 text-emerald-400 text-[8px] font-black uppercase px-4 py-2 rounded-xl border border-emerald-500/20">Authenticated</span>
+                            <div><p className="text-[8px] font-black uppercase text-white/20 mb-1">Performance Rating</p><p className="text-5xl font-light luxury-text-gradient serif-font italic">{r.totalObtained}pt</p></div>
+                            <span className="bg-emerald-500/10 text-emerald-400 text-[8px] font-black uppercase px-4 py-2 rounded-xl border border-emerald-500/20">Certified</span>
                         </div>
                     </div>
                 ))}
-                {results.length === 0 && <div className="col-span-full py-40 text-center opacity-10 font-black uppercase text-[10px] tracking-[0.5em]">Intel Database Nominal</div>}
+                {results.length === 0 && <div className="col-span-full py-40 text-center opacity-10 font-black uppercase text-[10px] tracking-[0.5em]">Result Database Clear</div>}
             </div>
         </div>
     );
@@ -472,22 +472,22 @@ const UpcomingExamsModule = ({ student }: { student: Student }) => {
         await db.addStudentExam({ studentId: student.id, studentName: student.name, gradeId: student.gradeId, subdivisionId: student.subdivisionId, ...form });
         setForm({ subject: '', examDate: '', description: '' });
         load();
-        alert("Schedule Logged.");
+        alert("Upcoming exam logged.");
     };
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
             <div className="bg-white/[0.02] p-10 rounded-[50px] border border-white/5 shadow-2xl h-fit">
-                <h3 className="text-3xl font-light serif-font italic luxury-text-gradient mb-8">External Log.</h3>
+                <h3 className="text-3xl font-light serif-font italic luxury-text-gradient mb-8">Upcoming School Exam.</h3>
                 <form onSubmit={submit} className="space-y-6">
-                    <div className="space-y-1"><label className="text-[8px] font-black uppercase text-white/30 ml-2">Objective</label><input required placeholder="Subject..." value={form.subject} onChange={e => setForm({...form, subject: e.target.value})} className="w-full bg-black border border-white/10 rounded-2xl px-6 py-4 text-xs" /></div>
+                    <div className="space-y-1"><label className="text-[8px] font-black uppercase text-white/30 ml-2">Objective</label><input required placeholder="Subject Name..." value={form.subject} onChange={e => setForm({...form, subject: e.target.value})} className="w-full bg-black border border-white/10 rounded-2xl px-6 py-4 text-xs" /></div>
                     <div className="space-y-1"><label className="text-[8px] font-black uppercase text-white/30 ml-2">Timeline</label><input required type="date" value={form.examDate} onChange={e => setForm({...form, examDate: e.target.value})} className="w-full bg-black border border-white/10 rounded-2xl px-6 py-4 text-xs [color-scheme:dark]" /></div>
-                    <div className="space-y-1"><label className="text-[8px] font-black uppercase text-white/30 ml-2">Syllabus Intel</label><textarea placeholder="Add topics..." value={form.description} onChange={e => setForm({...form, description: e.target.value})} className="w-full bg-black border border-white/10 rounded-2xl px-6 py-4 text-xs h-32 resize-none" /></div>
+                    <div className="space-y-1"><label className="text-[8px] font-black uppercase text-white/30 ml-2">Syllabus Details</label><textarea placeholder="Specify topics and modules..." value={form.description} onChange={e => setForm({...form, description: e.target.value})} className="w-full bg-black border border-white/10 rounded-2xl px-6 py-4 text-xs h-32 resize-none" /></div>
                     <button className="w-full bg-white text-black py-5 rounded-2xl font-black text-xs uppercase tracking-[0.4em] shadow-xl hover:bg-indigo-600 hover:text-white transition-all">Authorize Log</button>
                 </form>
             </div>
             <div className="space-y-6 overflow-y-auto max-h-[70vh] pr-2 scrollbar-hide">
-                <h4 className="text-[9px] font-black uppercase tracking-[0.5em] text-white/20 ml-2">Schedule Registry</h4>
+                <h4 className="text-[9px] font-black uppercase tracking-[0.5em] text-white/20 ml-2">Exam Schedule Registry</h4>
                 {list.map(ex => (
                     <div key={ex.id} className="bg-white/[0.02] p-8 rounded-[40px] border border-white/5 flex items-center justify-between hover:bg-white/[0.04] transition-all group">
                         <div><h4 className="text-2xl font-black text-white italic uppercase mb-1">{ex.subject}</h4><p className="text-[8px] font-black uppercase text-white/20 tracking-widest">{ex.description}</p></div>
@@ -512,24 +512,24 @@ const LeaveModule = ({ student }: { student: Student }) => {
         await db.addLeaveApplication({ studentId: student.id, studentName: student.name, gradeId: student.gradeId, subdivisionId: student.subdivisionId, ...form });
         setForm({ startDate: '', endDate: '', reason: '' });
         load();
-        alert("Permit transmission complete.");
+        alert("Leave application transmitted.");
     };
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
             <div className="bg-white/[0.02] p-10 rounded-[50px] border border-white/5 shadow-2xl h-fit">
-                <h3 className="text-3xl font-light serif-font italic luxury-text-gradient mb-8">Absence Permit.</h3>
+                <h3 className="text-3xl font-light serif-font italic luxury-text-gradient mb-8">Apply Leave.</h3>
                 <form onSubmit={submit} className="space-y-6">
                     <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-1"><label className="text-[8px] font-black uppercase text-white/30 ml-2">Start</label><input required type="date" value={form.startDate} onChange={e => setForm({...form, startDate: e.target.value})} className="w-full bg-black border border-white/10 rounded-2xl px-6 py-4 text-xs [color-scheme:dark]" /></div>
-                        <div className="space-y-1"><label className="text-[8px] font-black uppercase text-white/30 ml-2">End</label><input required type="date" value={form.endDate} onChange={e => setForm({...form, endDate: e.target.value})} className="w-full bg-black border border-white/10 rounded-2xl px-6 py-4 text-xs [color-scheme:dark]" /></div>
+                        <div className="space-y-1"><label className="text-[8px] font-black uppercase text-white/30 ml-2">Initiation</label><input required type="date" value={form.startDate} onChange={e => setForm({...form, startDate: e.target.value})} className="w-full bg-black border border-white/10 rounded-2xl px-6 py-4 text-xs [color-scheme:dark]" /></div>
+                        <div className="space-y-1"><label className="text-[8px] font-black uppercase text-white/30 ml-2">Conclusion</label><input required type="date" value={form.endDate} onChange={e => setForm({...form, endDate: e.target.value})} className="w-full bg-black border border-white/10 rounded-2xl px-6 py-4 text-xs [color-scheme:dark]" /></div>
                     </div>
-                    <div className="space-y-1"><label className="text-[8px] font-black uppercase text-white/30 ml-2">Justification</label><textarea required placeholder="Reason for leave..." value={form.reason} onChange={e => setForm({...form, reason: e.target.value})} className="w-full bg-black border border-white/10 rounded-2xl px-6 py-4 text-xs h-32 resize-none" /></div>
-                    <button className="w-full bg-white text-black py-5 rounded-2xl font-black text-xs uppercase tracking-[0.4em] shadow-xl hover:bg-rose-600 hover:text-white transition-all">Transmit Permit</button>
+                    <div className="space-y-1"><label className="text-[8px] font-black uppercase text-white/30 ml-2">Justification</label><textarea required placeholder="Basis for leave application..." value={form.reason} onChange={e => setForm({...form, reason: e.target.value})} className="w-full bg-black border border-white/10 rounded-2xl px-6 py-4 text-xs h-32 resize-none" /></div>
+                    <button className="w-full bg-white text-black py-5 rounded-2xl font-black text-xs uppercase tracking-[0.4em] shadow-xl hover:bg-rose-600 hover:text-white transition-all">Transmit Application</button>
                 </form>
             </div>
             <div className="space-y-6 overflow-y-auto max-h-[70vh] pr-2 scrollbar-hide">
-                <h4 className="text-[9px] font-black uppercase tracking-[0.5em] text-white/20 ml-2">Request History</h4>
+                <h4 className="text-[9px] font-black uppercase tracking-[0.5em] text-white/20 ml-2">Leave Request History</h4>
                 {list.map(l => (
                     <div key={l.id} className="bg-white/[0.02] p-8 rounded-[40px] border border-white/5 group hover:bg-white/[0.04] transition-all">
                          <div className="flex items-center gap-2 mb-2"><span className={`w-1.5 h-1.5 rounded-full ${l.status === 'Approved' ? 'bg-emerald-500' : l.status === 'Rejected' ? 'bg-rose-500' : 'bg-amber-500'}`} /><span className="text-[8px] font-black uppercase tracking-widest text-white/40">{l.status} Protocol</span></div>
@@ -555,14 +555,14 @@ const DoubtsModule = ({ student }: { student: Student }) => {
         await db.addQuery({ studentId: student.id, studentName: student.name, subject: form.subject, queryText: form.text });
         setForm({ subject: '', text: '' });
         load();
-        alert("Intel Inquiry Secured.");
+        alert("Intel Doubt Inquiry Secured.");
     };
 
     return (
         <div className="max-w-4xl mx-auto space-y-12">
             <div className="pb-4 border-b border-white/5">
-                <h3 className="text-3xl md:text-5xl font-light serif-font italic luxury-text-gradient tracking-tighter">Comm Center.</h3>
-                <p className="text-[8px] font-black uppercase tracking-[0.5em] text-white/20 mt-1">Secured Doubt Transmission</p>
+                <h3 className="text-3xl md:text-5xl font-light serif-font italic luxury-text-gradient tracking-tighter">Doubts.</h3>
+                <p className="text-[8px] font-black uppercase tracking-[0.5em] text-white/20 mt-1">Faculty Transmission Channel</p>
             </div>
             
             <div className="flex flex-col gap-6 max-h-[50vh] overflow-y-auto scrollbar-hide p-4 mb-10">
@@ -574,7 +574,7 @@ const DoubtsModule = ({ student }: { student: Student }) => {
                         </div>
                         {q.status === 'Answered' && (
                             <div className="self-start bg-emerald-500/5 border border-emerald-500/10 p-6 rounded-[32px] rounded-tl-lg max-w-[85%] animate-fade-in">
-                                <div className="flex items-center gap-2 mb-3"><span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" /><span className="text-[8px] font-black uppercase text-emerald-400 tracking-widest">Faculty Response</span></div>
+                                <div className="flex items-center gap-2 mb-3"><span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" /><span className="text-[8px] font-black uppercase text-emerald-400 tracking-widest">Faculty Response Transmission</span></div>
                                 <p className="text-sm text-white/70 leading-relaxed font-bold tracking-tight">"{q.replyText}"</p>
                             </div>
                         )}
@@ -584,7 +584,7 @@ const DoubtsModule = ({ student }: { student: Student }) => {
 
             <form onSubmit={submit} className="bg-white/[0.02] p-2 rounded-[32px] border border-white/10 flex gap-2 shadow-2xl relative z-20">
                 <input required placeholder="Domain..." value={form.subject} onChange={e => setForm({...form, subject: e.target.value})} className="w-1/4 bg-transparent px-6 py-4 text-[10px] font-black uppercase tracking-widest text-white outline-none border-r border-white/5" />
-                <input required placeholder="Formulate Transmission..." value={form.text} onChange={e => setForm({...form, text: e.target.value})} className="flex-1 bg-transparent px-6 py-4 text-sm text-white outline-none font-medium italic" />
+                <input required placeholder="Formulate transmission..." value={form.text} onChange={e => setForm({...form, text: e.target.value})} className="flex-1 bg-transparent px-6 py-4 text-sm text-white outline-none font-medium italic" />
                 <button className="bg-white text-black p-4 rounded-[24px] hover:bg-indigo-600 hover:text-white transition-all shadow-xl active:scale-95"><Send size={20}/></button>
             </form>
         </div>
@@ -602,7 +602,7 @@ const SettingsModule = ({ student }: { student: Student }) => {
         setLoading(true);
         try { 
             await db.changePassword(student.id, 'student', form.current, form.new); 
-            alert('Security keys updated.'); 
+            alert('Security keys updated successfully.'); 
             setForm({current:'',new:'',confirm:''}); 
         } catch(e:any) { alert(e.message); } finally { setLoading(false); }
     };
@@ -614,7 +614,7 @@ const SettingsModule = ({ student }: { student: Student }) => {
                 <div className="w-20 h-20 bg-white/5 rounded-[30px] flex items-center justify-center mx-auto mb-10 text-indigo-400 border border-white/10 shadow-inner group">
                     <Lock size={32} className="group-hover:scale-110 transition-transform duration-500" />
                 </div>
-                <h3 className="text-3xl font-light serif-font mb-10 luxury-text-gradient italic">Security Core.</h3>
+                <h3 className="text-3xl font-light serif-font mb-10 luxury-text-gradient italic">Settings.</h3>
                 <form onSubmit={update} className="space-y-4">
                     <input required type="password" placeholder="CURRENT KEY" value={form.current} onChange={e=>setForm({...form, current:e.target.value})} className="w-full bg-black border border-white/10 rounded-2xl px-6 py-4 text-[10px] text-white font-mono tracking-[0.4em] text-center outline-none focus:border-indigo-500 uppercase" />
                     <input required type="password" placeholder="NEW KEY" value={form.new} onChange={e=>setForm({...form, new:e.target.value})} className="w-full bg-black border border-white/10 rounded-2xl px-6 py-4 text-[10px] text-white font-mono tracking-[0.4em] text-center outline-none focus:border-indigo-500 uppercase" />
