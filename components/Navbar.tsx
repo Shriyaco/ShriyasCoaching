@@ -10,6 +10,7 @@ const Navbar: React.FC = () => {
   const [activeSubmenu, setActiveSubmenu] = useState<string | null>(null);
   const { theme, toggleTheme } = useTheme();
   const location = useLocation();
+  
   const isLoginPage = location.pathname === '/login';
   const isDashboard = location.pathname.startsWith('/admin') || location.pathname.startsWith('/student') || location.pathname.startsWith('/teacher');
 
@@ -71,7 +72,7 @@ const Navbar: React.FC = () => {
       <nav
         className={`fixed top-0 w-full z-[100] transition-all duration-700 ease-in-out ${
           scrolled || isLoginPage
-            ? 'bg-white/95 dark:bg-black/95 backdrop-blur-md py-3 md:py-4 border-b border-black/5 dark:border-white/5 shadow-sm' 
+            ? 'bg-white/95 dark:bg-black/95 backdrop-blur-md py-3 md:py-4 border-b border-black/5 dark:border-white/5' 
             : 'bg-transparent py-8'
         }`}
       >
@@ -81,7 +82,7 @@ const Navbar: React.FC = () => {
               src="https://advedasolutions.in/sc.png" 
               alt="Shriya's Logo" 
               className={`transition-all duration-500 ${scrolled || isLoginPage ? 'h-10 md:h-12' : 'h-14 md:h-16'}`}
-              style={{ filter: theme === 'dark' ? 'invert(1)' : 'invert(0) brightness(0)' }}
+              style={{ filter: theme === 'dark' ? 'none' : 'none' }}
             />
           </Link>
 
@@ -135,59 +136,49 @@ const Navbar: React.FC = () => {
             </div>
           </div>
 
-          {/* Mobile Actions Header - Perfectly matches screenshot */}
-          <div className="lg:hidden relative z-[110] flex items-center gap-3 sm:gap-6">
+          {/* Mobile Actions Header - Exact match to Screenshot 1 */}
+          <div className="lg:hidden relative z-[110] flex items-center gap-4">
             <button 
               onClick={toggleTheme}
               className="text-slate-600 dark:text-white/60 hover:text-premium-accent dark:hover:text-white transition-colors p-2"
             >
-              {theme === 'dark' ? <Sun size={22} strokeWidth={2.5} /> : <Moon size={22} strokeWidth={2.5} />}
+              {theme === 'dark' ? <Sun size={24} strokeWidth={2} /> : <Moon size={24} strokeWidth={2} />}
             </button>
             
             <Link 
               to="/login" 
-              className="bg-white dark:bg-white text-black dark:text-black px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl flex items-center justify-center min-w-[85px] border border-black/5"
+              className="bg-white text-black px-6 py-2.5 rounded-full text-[11px] font-black uppercase tracking-widest shadow-xl"
             >
-              Log in
+              LOG IN
             </Link>
 
-            {isLoginPage ? (
-              <Link 
-                to="/" 
-                className="w-11 h-11 rounded-full bg-slate-900/5 dark:bg-white/5 border border-black/10 dark:border-white/10 flex items-center justify-center"
-              >
-                <X size={24} strokeWidth={2} className="text-slate-900 dark:text-white" />
-              </Link>
-            ) : (
-              <button 
-                onClick={() => setIsOpen(true)} 
-                className="p-2 focus:outline-none ml-1"
-              >
-                <Menu size={32} strokeWidth={1} className="text-slate-900 dark:text-white" />
-              </button>
-            )}
+            <button 
+              onClick={() => setIsOpen(true)} 
+              className="p-2 focus:outline-none"
+            >
+              <Menu size={36} strokeWidth={1} className="text-slate-900 dark:text-white" />
+            </button>
           </div>
         </div>
       </nav>
 
-      {/* Mobile Menu Overlay */}
+      {/* Mobile Menu Overlay - Exact match to Screenshot 2 */}
       <AnimatePresence>
         {isOpen && (
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[10000] bg-white dark:bg-black flex flex-col h-[100dvh] overflow-hidden"
+            className="fixed inset-0 z-[10000] bg-black flex flex-col h-[100dvh] overflow-hidden"
           >
             {/* Close Button */}
             <button 
               onClick={() => setIsOpen(false)} 
-              className="fixed top-8 right-6 w-12 h-12 rounded-xl bg-slate-900 dark:bg-white flex items-center justify-center shadow-xl active:translate-y-[2px] transition-all z-[11000]"
+              className="fixed top-8 right-6 w-12 h-12 rounded-xl bg-white flex items-center justify-center shadow-2xl z-[11000]"
             >
-              <X size={26} className="text-white dark:text-black" strokeWidth={3} />
+              <X size={32} className="text-black" strokeWidth={3} />
             </button>
 
-            {/* Spacer */}
             <div className="h-24 shrink-0" />
 
             <motion.div 
@@ -195,96 +186,71 @@ const Navbar: React.FC = () => {
               initial="closed"
               animate="open"
               exit="closed"
-              className="flex-1 overflow-y-auto px-8 md:px-12 flex flex-col space-y-8 pb-12"
+              className="flex-1 overflow-y-auto px-8 md:px-12 flex flex-col space-y-12 pb-24"
             >
-              {menuStructure.map((item) => (
-                <motion.div key={item.name} variants={itemVariants} className="flex flex-col items-start">
-                  {item.submenu ? (
-                    <>
-                      <button 
-                        onClick={() => toggleSubmenu(item.name)}
-                        className={`text-4xl md:text-5xl serif-font font-light tracking-tight flex items-center gap-3 transition-colors ${activeSubmenu === item.name ? 'text-premium-accent' : 'text-slate-900 dark:text-white/90'}`}
-                      >
-                        {item.name} 
-                        <ChevronDown size={20} className={`transition-transform duration-500 ${activeSubmenu === item.name ? 'rotate-180' : ''}`} />
-                      </button>
-                      
-                      <AnimatePresence>
-                        {activeSubmenu === item.name && (
-                          <motion.div 
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: 'auto', opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            className="overflow-hidden flex flex-col items-start mt-4 space-y-3 pl-6 border-l border-slate-200 dark:border-white/10"
-                          >
-                            {item.submenu.map((sub) => (
-                              <Link 
-                                key={sub.name} 
-                                to={sub.path} 
-                                onClick={() => setIsOpen(false)}
-                                className="text-xl md:text-2xl serif-font text-slate-400 dark:text-white/40 hover:text-slate-900 dark:hover:text-white transition-colors"
-                              >
-                                {sub.name}
-                              </Link>
-                            ))}
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </>
-                  ) : (
-                    <Link 
-                      to={item.path!} 
-                      onClick={() => setIsOpen(false)}
-                      className={`text-4xl md:text-5xl serif-font font-light tracking-tight transition-colors ${location.pathname === item.path ? 'text-premium-accent' : 'text-slate-900 dark:text-white/90'}`}
-                    >
-                      {item.name}
-                    </Link>
-                  )}
-                </motion.div>
-              ))}
-              
-              <motion.div variants={itemVariants} className="pt-10 flex flex-col items-start gap-8 border-t border-slate-100 dark:border-white/5">
-                 <Link 
-                   to="/login" 
-                   onClick={() => setIsOpen(false)} 
-                   className="text-slate-900 dark:text-white text-[16px] font-black uppercase tracking-[0.4em] hover:text-premium-accent transition-colors"
-                 >
-                    Log in
-                 </Link>
-                 <Link 
-                   to="/pay-fees" 
-                   onClick={() => setIsOpen(false)} 
-                   className="text-premium-accent text-[16px] font-black uppercase tracking-[0.4em] hover:brightness-125 transition-all"
-                 >
-                    Pay Fees
-                 </Link>
+              <motion.div variants={itemVariants}>
+                <Link to="/" onClick={() => setIsOpen(false)} className="text-6xl serif-font text-premium-accent font-light italic">
+                  Home
+                </Link>
               </motion.div>
+
+              <motion.div variants={itemVariants} className="flex flex-col items-start gap-4">
+                 <button 
+                    onClick={() => toggleSubmenu('Boards')}
+                    className="text-6xl serif-font text-white font-light flex items-center gap-4"
+                  >
+                    Boards <ChevronDown size={28} className={activeSubmenu === 'Boards' ? 'rotate-180' : ''} />
+                  </button>
+                  {activeSubmenu === 'Boards' && (
+                    <div className="pl-6 flex flex-col gap-4">
+                      <Link to="/cbse" onClick={() => setIsOpen(false)} className="text-3xl text-white/50 serif-font">CBSE</Link>
+                      <Link to="/icse" onClick={() => setIsOpen(false)} className="text-3xl text-white/50 serif-font">ICSE</Link>
+                      <Link to="/state-board" onClick={() => setIsOpen(false)} className="text-3xl text-white/50 serif-font">State Board</Link>
+                    </div>
+                  )}
+              </motion.div>
+
+              <motion.div variants={itemVariants}>
+                <button 
+                  onClick={() => toggleSubmenu('About')}
+                  className="text-6xl serif-font text-white font-light flex items-center gap-4"
+                >
+                  About Us <ChevronDown size={28} className={activeSubmenu === 'About' ? 'rotate-180' : ''} />
+                </button>
+                {activeSubmenu === 'About' && (
+                  <div className="pl-6 flex flex-col gap-4">
+                    <Link to="/why-us" onClick={() => setIsOpen(false)} className="text-3xl text-white/50 serif-font">Why Us</Link>
+                    <Link to="/vision" onClick={() => setIsOpen(false)} className="text-3xl text-white/50 serif-font">Vision</Link>
+                  </div>
+                )}
+              </motion.div>
+
+              <motion.div variants={itemVariants}>
+                <Link to="/contact" onClick={() => setIsOpen(false)} className="text-6xl serif-font text-white font-light">
+                  Connect
+                </Link>
+              </motion.div>
+              
+              <div className="pt-12 flex flex-col gap-10">
+                 <motion.div variants={itemVariants}>
+                    <Link to="/login" onClick={() => setIsOpen(false)} className="text-3xl font-black uppercase tracking-[0.3em] text-white">LOG IN</Link>
+                 </motion.div>
+                 <motion.div variants={itemVariants}>
+                    <Link to="/pay-fees" onClick={() => setIsOpen(false)} className="text-3xl font-black uppercase tracking-[0.3em] text-premium-accent">PAY FEES</Link>
+                 </motion.div>
+              </div>
             </motion.div>
 
-            {/* Bottom Menu Footer */}
-            <div className="shrink-0 py-6 border-t border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-black/40 px-8 md:px-12">
-               <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <span className="text-slate-400 dark:text-white/30 text-[8px] font-bold uppercase tracking-[0.15em]">Privacy</span>
-                    <span className="text-slate-400 dark:text-white/30 text-[8px] font-bold uppercase tracking-[0.15em]">T&C</span>
-                  </div>
-                  
-                  <div className="flex items-center gap-2">
-                    <span className="text-slate-500 dark:text-white/40 text-[8px] font-bold uppercase tracking-[0.15em] flex items-center gap-1">
-                      Developed by
-                    </span>
-                    <a 
-                      href="https://www.advedasolutions.in" 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="bg-slate-200 dark:bg-white/10 p-1 rounded-md ml-1 hover:scale-105 transition-transform"
-                    >
-                      <img 
-                        src="https://advedasolutions.in/logo.png" 
-                        alt="Adveda Solutions" 
-                        className="h-3.5 w-auto object-contain dark:invert" 
-                      />
-                    </a>
+            {/* Menu Footer */}
+            <div className="shrink-0 py-8 px-8 border-t border-white/10 flex items-center justify-between">
+               <div className="flex gap-6">
+                  <span className="text-white/40 text-[10px] font-black uppercase tracking-widest">PRIVACY</span>
+                  <span className="text-white/40 text-[10px] font-black uppercase tracking-widest">T&C</span>
+               </div>
+               <div className="flex items-center gap-3">
+                  <span className="text-white/40 text-[10px] font-black uppercase tracking-widest">DEVELOPED BY</span>
+                  <div className="bg-white/10 p-1 rounded">
+                    <img src="https://advedasolutions.in/logo.png" className="h-4 w-auto dark:invert" />
                   </div>
                </div>
             </div>

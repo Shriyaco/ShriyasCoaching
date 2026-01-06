@@ -4,8 +4,8 @@ import ThreeHero from '../components/ThreeHero';
 import Footer from '../components/Footer';
 import { db } from '../services/db';
 import { Notice } from '../types';
-import { ArrowRight, X, Sparkles, CheckCircle2 } from 'lucide-react';
-import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
+import { ArrowRight, X, CheckCircle2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const PublicHome: React.FC = () => {
   const [notices, setNotices] = useState<Notice[]>([]);
@@ -16,9 +16,6 @@ const PublicHome: React.FC = () => {
     hasCoaching: null as boolean | null, coachingName: '', shiftingReason: '',
     expectations: '', mobile: '', connectTime: '' 
   });
-
-  const { scrollYProgress } = useScroll();
-  const opacityHero = useTransform(scrollYProgress, [0, 0.4], [1, 0]);
 
   useEffect(() => {
     const load = async () => {
@@ -47,103 +44,71 @@ const PublicHome: React.FC = () => {
   };
 
   const closeEnquiryModal = () => { setIsEnquiryModalOpen(false); setEnquirySubmitted(false); };
-  const marqueeNotices = [...notices, ...notices, ...notices, ...notices];
 
   return (
-    <div className="min-h-screen bg-premium-black text-white selection:bg-premium-accent selection:text-black overflow-x-hidden">
+    <div className="min-h-screen bg-black text-white selection:bg-premium-accent overflow-x-hidden">
       
-      {/* --- HERO --- */}
-      <section className="relative h-screen flex flex-col items-center justify-center overflow-hidden px-6">
-        <motion.div style={{ opacity: opacityHero }} className="absolute inset-0 z-0">
+      {/* --- HERO SECTION (Matches Screenshot 1) --- */}
+      <section className="relative h-screen flex flex-col items-center justify-center overflow-hidden">
+        {/* Background Animation */}
+        <div className="absolute inset-0 z-0">
           <ThreeHero />
-          <div className="absolute inset-0 bg-black/50" />
-        </motion.div>
+          <div className="absolute inset-0 bg-black/40" />
+        </div>
         
-        <div className="max-w-[1400px] w-full mx-auto relative z-10 text-center">
-             <motion.div
-                initial={{ opacity: 0, y: 40 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 1.5, ease: [0.77, 0, 0.175, 1] }}
-                className="flex flex-col items-center"
-             >
-                <div className="mt-12 mb-8 inline-block">
-                  <h1 className="text-5xl md:text-[8rem] font-light leading-[1] tracking-tight serif-font uppercase luxury-text-gradient">
-                    Your Future <br /> Crafted Here.
-                  </h1>
-                </div>
+        <div className="relative z-10 w-full max-w-7xl mx-auto px-6 flex flex-col items-center">
+            {/* The Main Feature Box (from Screenshot 1) */}
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 1 }}
+              className="w-full max-w-3xl aspect-video bg-white/90 backdrop-blur-sm rounded-2xl shadow-[0_0_100px_rgba(255,255,255,0.1)] mb-16"
+            />
 
-                <div className="mb-4">
-                  <button 
-                    onClick={() => setIsEnquiryModalOpen(true)}
-                    className="group text-white dark:text-white text-[11px] font-bold uppercase tracking-[0.5em] flex items-center gap-3 hover:text-premium-accent transition-all"
-                  >
-                    Enroll Now <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform"/>
-                  </button>
-                </div>
+            {/* Styled Enroll Now Button (from Screenshot 1) */}
+            <button 
+              onClick={() => setIsEnquiryModalOpen(true)}
+              className="group flex items-center gap-4 text-white hover:text-premium-accent transition-all"
+            >
+              <span className="text-[14px] md:text-[18px] font-bold uppercase tracking-[0.8em] ml-[0.8em]">ENROLL NOW</span>
+              <ArrowRight size={24} className="group-hover:translate-x-2 transition-transform" strokeWidth={1.5} />
+            </button>
+        </div>
 
-                <div className="mt-16 w-screen border-y border-white/5 bg-black/40 backdrop-blur-md py-4 overflow-hidden">
-                     <div className="flex animate-marquee whitespace-nowrap">
-                        {marqueeNotices.length > 0 ? marqueeNotices.map((notice, idx) => (
-                            <div key={idx} className="flex items-center mx-12">
-                                 <span className="text-white/40 text-[8px] font-black tracking-[0.3em] uppercase mr-3">Alert</span>
-                                 <span className="text-white/80 font-bold text-[10px] tracking-[0.1em] uppercase serif-font">
-                                     {notice.title}
-                                 </span>
-                            </div>
-                        )) : (
-                            <div className="flex items-center mx-16 text-white/30 text-[9px] uppercase font-bold tracking-[0.6em]">Admissions Open 2025-26 • Academic Excellence Redefined • NEP 2020 Aligned</div>
-                        )}
-                     </div>
+        {/* Bottom Alert Ticker (from Screenshot 1) */}
+        <div className="absolute bottom-0 w-full bg-black/80 backdrop-blur-md border-t border-white/5 py-4 z-20">
+            <div className="max-w-[1800px] mx-auto px-6 md:px-12 flex items-center justify-between">
+                <div className="flex items-center gap-6">
+                    <span className="text-white/40 text-[10px] font-black uppercase tracking-[0.4em]">ALERT</span>
+                    <p className="text-white/90 text-[11px] md:text-[13px] font-black uppercase tracking-[0.2em]">
+                        ADMISSION OPENS FOR 2026-27. LIMITED SEATS AVAILABLE.
+                    </p>
                 </div>
-             </motion.div>
+            </div>
         </div>
       </section>
 
-      {/* Philosophy Section */}
-      <section className="py-24 md:py-32 px-6">
-          <div className="max-w-[1200px] mx-auto text-center md:text-left">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-24 items-start">
-                  <motion.div initial={{ opacity: 0, x: -30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}>
-                      <h2 className="text-4xl md:text-6xl font-light serif-font uppercase tracking-tight leading-tight mb-8">
-                        Precision <br /> Mastery.
-                      </h2>
-                  </motion.div>
-                  <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} viewport={{ once: true }}>
-                      <p className="text-lg md:text-xl text-white/50 leading-relaxed font-light mb-10">
-                        The most sophisticated coaching environment for primary years. Our collective experience and tailored methodology elevate education to a whole new level.
-                      </p>
-                      <Link to="/why-us" className="text-premium-accent text-[11px] font-bold uppercase tracking-[0.5em] border-b border-premium-accent/30 pb-1">
-                        Our Vision
-                      </Link>
-                  </motion.div>
-              </div>
-          </div>
-      </section>
-
-      {/* Board Grid Section */}
-      <section className="bg-premium-black">
-          <div className="grid grid-cols-1 lg:grid-cols-3">
-              {[
-                  { title: "CBSE", img: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1000", path: "/cbse" },
-                  { title: "ICSE", img: "https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?q=80&w=1000", path: "/icse" },
-                  { title: "STATE", img: "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?q=80&w=1000", path: "/state-board" }
-              ].map((vert, i) => (
-                  <Link to={vert.path} key={i} className="relative h-[70vh] md:h-[80vh] group overflow-hidden border-r last:border-0 border-white/5">
-                      <img src={vert.img} alt={vert.title} className="w-full h-full object-cover grayscale opacity-20 group-hover:scale-105 group-hover:grayscale-0 group-hover:opacity-40 transition-all duration-1000" />
-                      <div className="absolute inset-0 bg-black/40 group-hover:bg-transparent transition-colors duration-700" />
-                      <div className="absolute bottom-12 left-10">
-                          <h3 className="text-5xl md:text-7xl font-light text-white uppercase tracking-tight serif-font mb-4">{vert.title}</h3>
-                          <div className="text-white/40 text-[10px] font-bold uppercase tracking-[0.4em] group-hover:text-premium-accent transition-colors">
-                             Explore Tracks
-                          </div>
-                      </div>
+      {/* --- Philosophy Section --- */}
+      <section className="py-32 px-6">
+          <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-24 items-center">
+              <div className="space-y-8">
+                  <h2 className="text-5xl md:text-7xl font-light serif-font uppercase leading-tight">Precision <br /> Mastery.</h2>
+                  <p className="text-lg text-white/40 leading-relaxed font-light">
+                      The most sophisticated coaching environment for primary years. Our collective experience and tailored methodology elevate education to a whole new level.
+                  </p>
+                  <Link to="/why-us" className="inline-block text-premium-accent text-[11px] font-black uppercase tracking-[0.5em] border-b border-premium-accent/20 pb-1 hover:border-premium-accent transition-all">
+                    OUR VISION
                   </Link>
-              ))}
+              </div>
+              <div className="h-[500px] bg-white/5 rounded-[60px] border border-white/5 overflow-hidden">
+                <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1000" className="w-full h-full object-cover opacity-30 grayscale hover:grayscale-0 hover:opacity-60 transition-all duration-1000" />
+              </div>
           </div>
       </section>
 
       <Footer />
 
+      {/* Enquiry Modal */}
       <AnimatePresence>
         {isEnquiryModalOpen && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[200] flex items-center justify-center bg-black/95 p-4 backdrop-blur-xl">
@@ -151,7 +116,7 @@ const PublicHome: React.FC = () => {
                     <button onClick={closeEnquiryModal} className="absolute top-6 right-6 text-white/40 hover:text-white z-20 p-2"><X size={24}/></button>
                     <div className="p-8 md:p-10 max-h-[90vh] overflow-y-auto custom-scrollbar">
                         {enquirySubmitted ? (
-                            <div className="text-center py-10 animate-fade-in"><CheckCircle2 className="mx-auto text-premium-accent mb-4" size={48} /><h3 className="text-3xl serif-font uppercase mb-2 luxury-text-gradient">Thank You.</h3><p className="text-white/40 uppercase tracking-widest text-[10px] font-bold">We will connect with you shortly.</p></div>
+                            <div className="text-center py-10 animate-fade-in"><CheckCircle2 className="mx-auto text-premium-accent mb-4" size={48} /><h3 className="text-3xl serif-font uppercase mb-2">Thank You.</h3><p className="text-white/40 uppercase tracking-widest text-[10px] font-bold">We will connect with you shortly.</p></div>
                         ) : (
                             <form onSubmit={handleEnquirySubmit} className="space-y-4 text-left">
                                 <h3 className="text-2xl md:text-3xl serif-font uppercase mb-4 luxury-text-gradient">Enquiry Form</h3>
@@ -173,7 +138,6 @@ const PublicHome: React.FC = () => {
                                 </div>
                                 <div className="space-y-1"><label className="text-[9px] font-black uppercase text-white/20 ml-1 tracking-wider">Current School</label><input required placeholder="Name of school" className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-2.5 outline-none focus:border-premium-accent text-xs text-white" value={enquiryForm.schoolName} onChange={e => setEnquiryForm({...enquiryForm, schoolName: e.target.value})} /></div>
                                 
-                                {/* Dynamic Coaching Question */}
                                 <div className="space-y-3 p-3 bg-white/[0.02] border border-white/[0.05] rounded-2xl">
                                   <label className="text-[9px] font-black uppercase text-white/30 ml-1 tracking-widest">Attending any other coaching?</label>
                                   <div className="flex gap-6 px-1 mt-1">
