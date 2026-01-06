@@ -292,7 +292,7 @@ const ProductsModule = ({ products, onNotify, refresh }: any) => {
                                         </button>
                                         <button 
                                             onClick={() => handleDelete(p.id)} 
-                                            className="p-2.5 rounded-xl text-rose-500 bg-rose-50 hover:bg-rose-500 hover:text-white transition-all shadow-sm"
+                                            className="p-2.5 rounded-xl text-rose-500 bg-rose-50 hover:bg-rose-50 hover:text-white transition-all shadow-sm"
                                             title="Delete Product"
                                         >
                                             <Trash2 size={16} strokeWidth={2.5}/>
@@ -652,7 +652,7 @@ const StudentsModule = ({ students, grades, subdivisions, onNotify, refresh }: a
                                         </button>
                                         <button 
                                             onClick={async () => { if(confirm("Change status?")) { await db.updateStudentStatus(s.id, s.status === 'Active' ? 'Suspended' : 'Active'); refresh(); } }} 
-                                            className={`p-2.5 rounded-xl transition-all shadow-sm ${s.status === 'Active' ? 'text-emerald-500 bg-emerald-50 hover:bg-emerald-500 hover:text-white' : 'text-slate-400 bg-slate-100 hover:bg-slate-400 hover:text-white'}`}
+                                            className={`p-2.5 rounded-xl transition-all shadow-sm ${s.status === 'Active' ? 'text-emerald-500 bg-emerald-500 hover:bg-emerald-500 hover:text-white' : 'text-slate-400 bg-slate-100 hover:bg-slate-400 hover:text-white'}`}
                                             title="Toggle Active/Suspended"
                                         >
                                             <Power size={16} strokeWidth={2.5}/>
