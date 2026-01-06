@@ -48,39 +48,38 @@ const PublicHome: React.FC = () => {
   return (
     <div className="min-h-screen bg-black text-white selection:bg-premium-accent overflow-x-hidden">
       
-      {/* --- HERO SECTION (Matches Screenshot 1) --- */}
+      {/* --- HERO SECTION --- */}
       <section className="relative h-screen flex flex-col items-center justify-center overflow-hidden">
         {/* Background Animation */}
         <div className="absolute inset-0 z-0">
           <ThreeHero />
-          <div className="absolute inset-0 bg-black/40" />
+          <div className="absolute inset-0 bg-black/30" />
         </div>
         
-        <div className="relative z-10 w-full max-w-7xl mx-auto px-6 flex flex-col items-center">
-            {/* The Main Feature Box (from Screenshot 1) */}
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 1 }}
-              className="w-full max-w-3xl aspect-video bg-white/90 backdrop-blur-sm rounded-2xl shadow-[0_0_100px_rgba(255,255,255,0.1)] mb-16"
-            />
-
-            {/* Styled Enroll Now Button (from Screenshot 1) */}
-            <button 
+        <div className="relative z-10 w-full max-w-7xl mx-auto px-6 flex flex-col items-center justify-center mb-20">
+            {/* White placeholder block removed as per request */}
+            
+            {/* Styled Enroll Now Button */}
+            <motion.button 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5, duration: 1 }}
               onClick={() => setIsEnquiryModalOpen(true)}
-              className="group flex items-center gap-4 text-white hover:text-premium-accent transition-all"
+              className="group flex flex-col items-center gap-6 text-white hover:text-premium-accent transition-all"
             >
-              <span className="text-[14px] md:text-[18px] font-bold uppercase tracking-[0.8em] ml-[0.8em]">ENROLL NOW</span>
-              <ArrowRight size={24} className="group-hover:translate-x-2 transition-transform" strokeWidth={1.5} />
-            </button>
+              <div className="flex items-center gap-4">
+                <span className="text-[14px] md:text-[20px] font-black uppercase tracking-[1em] ml-[1em]">ENROLL NOW</span>
+                <ArrowRight size={28} className="group-hover:translate-x-2 transition-transform" strokeWidth={1.5} />
+              </div>
+            </motion.button>
         </div>
 
-        {/* Bottom Alert Ticker (from Screenshot 1) */}
-        <div className="absolute bottom-0 w-full bg-black/80 backdrop-blur-md border-t border-white/5 py-4 z-20">
+        {/* Bottom Alert Ticker */}
+        <div className="absolute bottom-0 w-full bg-black/60 backdrop-blur-md border-t border-white/5 py-5 z-20">
             <div className="max-w-[1800px] mx-auto px-6 md:px-12 flex items-center justify-between">
                 <div className="flex items-center gap-6">
                     <span className="text-white/40 text-[10px] font-black uppercase tracking-[0.4em]">ALERT</span>
-                    <p className="text-white/90 text-[11px] md:text-[13px] font-black uppercase tracking-[0.2em]">
+                    <p className="text-white/90 text-[11px] md:text-[14px] font-black uppercase tracking-[0.2em]">
                         ADMISSION OPENS FOR 2026-27. LIMITED SEATS AVAILABLE.
                     </p>
                 </div>
