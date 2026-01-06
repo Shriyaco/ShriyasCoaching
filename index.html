@@ -13,7 +13,7 @@
     <style>
       body {
         font-family: 'Inter', sans-serif;
-        background-color: #050505;
+        transition: background-color 0.5s ease, color 0.5s ease;
       }
       h1, h2, h3, h4, h5, h6, .serif-font {
         font-family: 'Playfair Display', serif;
@@ -22,18 +22,29 @@
         width: 4px;
       }
       ::-webkit-scrollbar-track {
-        background: #050505;
+        background: transparent;
       }
       ::-webkit-scrollbar-thumb {
         background: #333;
+        border-radius: 10px;
       }
       .luxury-text-gradient {
         background: linear-gradient(180deg, #fff 0%, #aaa 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
       }
+      .dark .luxury-text-gradient {
+        background: linear-gradient(180deg, #fff 0%, #aaa 100%);
+      }
+      /* Handle non-dark mode gradient if needed */
+      html:not(.dark) .luxury-text-gradient {
+        background: linear-gradient(180deg, #111 0%, #444 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+
       .menu-bg-gradient {
-        background: #1a0505;
+        background: #000;
       }
       
       .pseudo-3d-orb {
@@ -117,7 +128,7 @@
 }
 </script>
 </head>
-  <body>
+  <body class="bg-slate-50 text-slate-900 dark:bg-premium-black dark:text-white">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
   </body>

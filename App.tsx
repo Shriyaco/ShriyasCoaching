@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, ErrorInfo, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
+import WhatsAppSupport from './components/WhatsAppSupport';
 import PublicHome from './pages/PublicHome';
 import AdminDashboard from './pages/AdminDashboard';
 import StudentDashboard from './pages/StudentDashboard';
@@ -41,7 +42,6 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error("FATAL ERROR CAUGHT BY BOUNDARY:", error, errorInfo);
-    // If it's a WebGL error, we might want to reload silently once
     if (error.message.includes('WebGL')) {
       console.warn("Detected WebGL crash. Attempting component-level recovery...");
     }
@@ -49,7 +49,6 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
 
   render() {
     if (this.state.hasError) {
-      // If WebGL fails, we show a simplified recovery page
       const isWebGL = this.state.error?.message.includes('WebGL');
       
       return (
@@ -118,6 +117,7 @@ export default function App() {
       <ThemeProvider>
         <Router>
           <Navbar />
+          <WhatsAppSupport />
           <Suspense fallback={<div className="min-h-screen bg-[#050505] flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#C5A059]"></div></div>}>
             <Routes>
               <Route path="/" element={<PublicHome />} />
