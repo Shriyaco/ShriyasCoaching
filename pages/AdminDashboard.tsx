@@ -221,7 +221,10 @@ const ProductsModule = ({ products, onNotify, refresh }: any) => {
             setIsModalOpen(false);
             setEditingProduct(null);
             refresh();
-        } catch (err) { alert("Failed to save product."); }
+        } catch (err: any) { 
+            console.error("Product Save Error:", err);
+            alert(`Failed to save product: ${err.message || 'Unknown database error'}. Check if products table exists in Supabase.`); 
+        }
     };
 
     const handleDelete = async (id: string) => {
@@ -242,7 +245,7 @@ const ProductsModule = ({ products, onNotify, refresh }: any) => {
             <div className="flex justify-between items-center">
                 <div className="relative w-72">
                     <Search className="absolute left-3 top-2.5 text-slate-400" size={18} />
-                    <input className="w-full bg-white border border-slate-200 rounded-xl pl-10 pr-4 py-2 text-sm outline-none" placeholder="Search products..." value={search} onChange={e => setSearch(e.target.value)} />
+                    <input className="w-full bg-white border border-slate-200 rounded-xl pl-10 pr-4 py-2 text-sm outline-none text-slate-900" placeholder="Search products..." value={search} onChange={e => setSearch(e.target.value)} />
                 </div>
                 <button onClick={() => { setEditingProduct(null); setIsModalOpen(true); }} className="bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-lg"><Plus size={20}/> Add Product</button>
             </div>
@@ -300,11 +303,11 @@ const ProductsModule = ({ products, onNotify, refresh }: any) => {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="space-y-1">
                                         <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Product Name</label>
-                                        <input required className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 font-bold" value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
+                                        <input required className="w-full bg-slate-100 border border-slate-200 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 font-bold text-slate-900" value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
                                     </div>
                                     <div className="space-y-1">
                                         <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Category</label>
-                                        <select className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 font-bold" value={form.category} onChange={e => setForm({...form, category: e.target.value})}>
+                                        <select className="w-full bg-slate-100 border border-slate-200 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 font-bold text-slate-900" value={form.category} onChange={e => setForm({...form, category: e.target.value})}>
                                             <option value="Decor">Resin Decor</option>
                                             <option value="Jewelry">Jewelry</option>
                                             <option value="Stationery">Stationery</option>
@@ -315,17 +318,17 @@ const ProductsModule = ({ products, onNotify, refresh }: any) => {
 
                                 <div className="space-y-1">
                                     <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Description</label>
-                                    <textarea required className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 h-28 outline-none focus:ring-2 focus:ring-indigo-500 resize-none font-medium text-sm" value={form.description} onChange={e => setForm({...form, description: e.target.value})} />
+                                    <textarea required className="w-full bg-slate-100 border border-slate-200 rounded-2xl px-5 py-4 h-28 outline-none focus:ring-2 focus:ring-indigo-500 resize-none font-medium text-sm text-slate-900" value={form.description} onChange={e => setForm({...form, description: e.target.value})} />
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="space-y-1">
                                         <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Base Price (₹)</label>
-                                        <input required type="number" className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-lg font-black" value={form.basePrice} onChange={e => setForm({...form, basePrice: e.target.value})} />
+                                        <input required type="number" className="w-full bg-slate-100 border border-slate-200 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-lg font-black text-slate-900" value={form.basePrice} onChange={e => setForm({...form, basePrice: e.target.value})} />
                                     </div>
                                     <div className="space-y-1">
                                         <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Stock Status</label>
-                                        <select className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 font-bold" value={form.stockStatus} onChange={e => setForm({...form, stockStatus: e.target.value as any})}>
+                                        <select className="w-full bg-slate-100 border border-slate-200 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 font-bold text-slate-900" value={form.stockStatus} onChange={e => setForm({...form, stockStatus: e.target.value as any})}>
                                             <option value="In Stock">Active (In Stock)</option>
                                             <option value="Out of Stock">Unavailable (Out of Stock)</option>
                                         </select>
@@ -334,7 +337,7 @@ const ProductsModule = ({ products, onNotify, refresh }: any) => {
 
                                 <div className="space-y-1">
                                     <label className="text-[10px] font-black uppercase text-slate-400 ml-1">High-Res Image URL</label>
-                                    <input required placeholder="https://..." className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-xs" value={form.imageUrl} onChange={e => setForm({...form, imageUrl: e.target.value})} />
+                                    <input required placeholder="https://..." className="w-full bg-slate-100 border border-slate-200 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-xs text-slate-900" value={form.imageUrl} onChange={e => setForm({...form, imageUrl: e.target.value})} />
                                 </div>
 
                                 <button type="submit" className="w-full bg-slate-900 text-white py-5 rounded-2xl font-black text-xl hover:shadow-2xl transition-all mt-4 flex items-center justify-center gap-3">
@@ -436,7 +439,7 @@ const BroadcastModule = ({ grades, subdivisions, students, onNotify }: any) => {
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-1">
                         <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Target Group</label>
-                        <select className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 font-bold" value={targetType} onChange={e => { setTargetType(e.target.value as any); setTargetId(''); }}>
+                        <select className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 font-bold text-slate-900" value={targetType} onChange={e => { setTargetType(e.target.value as any); setTargetId(''); }}>
                             <option value="all">Entire Institution</option>
                             <option value="grade">Specific Grade</option>
                             <option value="division">Specific Division</option>
@@ -446,7 +449,7 @@ const BroadcastModule = ({ grades, subdivisions, students, onNotify }: any) => {
                     {targetType !== 'all' && (
                         <div className="space-y-1">
                             <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Target Identity</label>
-                            <select className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 font-bold" value={targetId} onChange={e => setTargetId(e.target.value)}>
+                            <select className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 font-bold text-slate-900" value={targetId} onChange={e => setTargetId(e.target.value)}>
                                 <option value="">Select ID</option>
                                 {targetType === 'grade' && grades.map((g:any) => <option key={g.id} value={g.id}>{g.gradeName}</option>)}
                                 {targetType === 'division' && subdivisions.map((s:any) => <option key={s.id} value={s.id}>Grade {s.gradeId} - {s.divisionName}</option>)}
@@ -459,11 +462,11 @@ const BroadcastModule = ({ grades, subdivisions, students, onNotify }: any) => {
                  <div className="space-y-6">
                     <div className="space-y-1">
                         <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Alert Heading</label>
-                        <input required placeholder="URGENT: TITLE" className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 font-bold" value={title} onChange={e => setTitle(e.target.value)} />
+                        <input required placeholder="URGENT: TITLE" className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 font-bold text-slate-900" value={title} onChange={e => setTitle(e.target.value)} />
                     </div>
                     <div className="space-y-1">
                         <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Alert Payload (Message)</label>
-                        <textarea required placeholder="Deployment message content..." className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 h-32 resize-none font-medium" value={message} onChange={e => setMessage(e.target.value)} />
+                        <textarea required placeholder="Deployment message content..." className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 h-32 resize-none font-medium text-slate-900" value={message} onChange={e => setMessage(e.target.value)} />
                     </div>
                  </div>
 
@@ -539,7 +542,7 @@ const StudentsModule = ({ students, grades, subdivisions, onNotify, refresh }: a
             <div className="flex justify-between items-center">
                 <div className="relative w-72">
                     <Search className="absolute left-3 top-2.5 text-slate-400" size={18} />
-                    <input className="w-full bg-white border border-slate-200 rounded-xl pl-10 pr-4 py-2 text-sm outline-none" placeholder="Search ID or Name..." value={search} onChange={e => setSearch(e.target.value)} />
+                    <input className="w-full bg-white border border-slate-200 rounded-xl pl-10 pr-4 py-2 text-sm outline-none text-slate-900" placeholder="Search ID or Name..." value={search} onChange={e => setSearch(e.target.value)} />
                 </div>
                 <button onClick={() => { setEditingStudent(null); setIsModalOpen(true); }} className="bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-lg hover:shadow-indigo-500/20 transition-all"><Plus size={20}/> New Enrollment</button>
             </div>
@@ -591,29 +594,29 @@ const StudentsModule = ({ students, grades, subdivisions, onNotify, refresh }: a
                             </h3>
                             
                             <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="space-y-1"><label className="text-[10px] font-black uppercase text-slate-400">Full Name</label><input required className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-500" value={form.name} onChange={e => setForm({...form, name: e.target.value})} /></div>
-                                <div className="space-y-1"><label className="text-[10px] font-black uppercase text-slate-400">Mobile No (Used as ID/Pass)</label><input required className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-500" value={form.mobile} onChange={e => setForm({...form, mobile: e.target.value})} /></div>
-                                <div className="space-y-1"><label className="text-[10px] font-black uppercase text-slate-400">Parent/Guardian Name</label><input required className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-500" value={form.parentName} onChange={e => setForm({...form, parentName: e.target.value})} /></div>
-                                <div className="space-y-1"><label className="text-[10px] font-black uppercase text-slate-400">Date of Birth</label><input required type="date" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-500" value={form.dob} onChange={e => setForm({...form, dob: e.target.value})} /></div>
+                                <div className="space-y-1"><label className="text-[10px] font-black uppercase text-slate-400">Full Name</label><input required className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900" value={form.name} onChange={e => setForm({...form, name: e.target.value})} /></div>
+                                <div className="space-y-1"><label className="text-[10px] font-black uppercase text-slate-400">Mobile No (Used as ID/Pass)</label><input required className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900" value={form.mobile} onChange={e => setForm({...form, mobile: e.target.value})} /></div>
+                                <div className="space-y-1"><label className="text-[10px] font-black uppercase text-slate-400">Parent/Guardian Name</label><input required className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900" value={form.parentName} onChange={e => setForm({...form, parentName: e.target.value})} /></div>
+                                <div className="space-y-1"><label className="text-[10px] font-black uppercase text-slate-400">Date of Birth</label><input required type="date" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900" value={form.dob} onChange={e => setForm({...form, dob: e.target.value})} /></div>
                                 
                                 <div className="space-y-1"><label className="text-[10px] font-black uppercase text-slate-400">Grade / Class</label>
-                                    <select required className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 outline-none" value={form.gradeId} onChange={e => setForm({...form, gradeId: e.target.value})}>
+                                    <select required className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 outline-none text-slate-900" value={form.gradeId} onChange={e => setForm({...form, gradeId: e.target.value})}>
                                         <option value="">Select Grade</option>
                                         {grades.map((g: any) => <option key={g.id} value={g.id}>{g.gradeName}</option>)}
                                     </select>
                                 </div>
                                 <div className="space-y-1"><label className="text-[10px] font-black uppercase text-slate-400">Division</label>
-                                    <select required className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 outline-none" value={form.subdivisionId} onChange={e => setForm({...form, subdivisionId: e.target.value})}>
+                                    <select required className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 outline-none text-slate-900" value={form.subdivisionId} onChange={e => setForm({...form, subdivisionId: e.target.value})}>
                                         <option value="">Select Division</option>
                                         {subdivisions.filter((sd: any) => sd.gradeId === form.gradeId).map((sd: any) => <option key={sd.id} value={sd.id}>{sd.divisionName}</option>)}
                                     </select>
                                 </div>
 
-                                <div className="space-y-1"><label className="text-[10px] font-black uppercase text-slate-400">Monthly Fees (₹)</label><input required type="number" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-500" value={form.monthlyFees} onChange={e => setForm({...form, monthlyFees: e.target.value})} /></div>
-                                <div className="space-y-1"><label className="text-[10px] font-black uppercase text-slate-400">Joining Date</label><input required type="date" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-500" value={form.joiningDate} onChange={e => setForm({...form, joiningDate: e.target.value})} /></div>
-                                <div className="space-y-1 md:col-span-2"><label className="text-[10px] font-black uppercase text-slate-400">School Name</label><input required className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-500" value={form.schoolName} onChange={e => setForm({...form, schoolName: e.target.value})} /></div>
-                                <div className="space-y-1 md:col-span-2"><label className="text-[10px] font-black uppercase text-slate-400">Address</label><textarea required className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-500 h-20" value={form.address} onChange={e => setForm({...form, address: e.target.value})} /></div>
-                                <div className="space-y-1 md:col-span-2"><label className="text-[10px] font-black uppercase text-slate-400">Image URL</label><input className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-500" value={form.imageUrl} onChange={e => setForm({...form, imageUrl: e.target.value})} placeholder="https://..." /></div>
+                                <div className="space-y-1"><label className="text-[10px] font-black uppercase text-slate-400">Monthly Fees (₹)</label><input required type="number" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900" value={form.monthlyFees} onChange={e => setForm({...form, monthlyFees: e.target.value})} /></div>
+                                <div className="space-y-1"><label className="text-[10px] font-black uppercase text-slate-400">Joining Date</label><input required type="date" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900" value={form.joiningDate} onChange={e => setForm({...form, joiningDate: e.target.value})} /></div>
+                                <div className="space-y-1 md:col-span-2"><label className="text-[10px] font-black uppercase text-slate-400">School Name</label><input required className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900" value={form.schoolName} onChange={e => setForm({...form, schoolName: e.target.value})} /></div>
+                                <div className="space-y-1 md:col-span-2"><label className="text-[10px] font-black uppercase text-slate-400">Address</label><textarea required className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-500 h-20 text-slate-900" value={form.address} onChange={e => setForm({...form, address: e.target.value})} /></div>
+                                <div className="space-y-1 md:col-span-2"><label className="text-[10px] font-black uppercase text-slate-400">Image URL</label><input className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900" value={form.imageUrl} onChange={e => setForm({...form, imageUrl: e.target.value})} placeholder="https://..." /></div>
                                 
                                 <div className="col-span-1 md:col-span-2 pt-4">
                                     <button type="submit" className="w-full bg-indigo-600 text-white py-4 rounded-xl font-black text-lg hover:shadow-xl transition-all">
@@ -695,9 +698,9 @@ const TeachersModule = ({ teachers, onNotify, refresh }: any) => {
                             <button onClick={() => setIsModalOpen(false)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-800"><X/></button>
                             <h3 className="text-2xl font-black text-slate-800 mb-6 flex items-center gap-2"><Briefcase className="text-indigo-600"/> {editingTeacher ? 'Modify Profile' : 'New Teacher Profile'}</h3>
                             <form onSubmit={handleSubmit} className="space-y-4">
-                                <div className="space-y-1"><label className="text-[10px] font-black uppercase text-slate-400">Teacher Name</label><input required className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-500" value={form.name} onChange={e => setForm({...form, name: e.target.value})} /></div>
-                                <div className="space-y-1"><label className="text-[10px] font-black uppercase text-slate-400">Mobile Number (Password)</label><input required className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-500" value={form.mobile} onChange={e => setForm({...form, mobile: e.target.value})} /></div>
-                                <div className="space-y-1"><label className="text-[10px] font-black uppercase text-slate-400">Specialization</label><input required className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-500" value={form.specialization} onChange={e => setForm({...form, specialization: e.target.value})} /></div>
+                                <div className="space-y-1"><label className="text-[10px] font-black uppercase text-slate-400">Teacher Name</label><input required className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900" value={form.name} onChange={e => setForm({...form, name: e.target.value})} /></div>
+                                <div className="space-y-1"><label className="text-[10px] font-black uppercase text-slate-400">Mobile Number (Password)</label><input required className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900" value={form.mobile} onChange={e => setForm({...form, mobile: e.target.value})} /></div>
+                                <div className="space-y-1"><label className="text-[10px] font-black uppercase text-slate-400">Specialization</label><input required className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900" value={form.specialization} onChange={e => setForm({...form, specialization: e.target.value})} /></div>
                                 <button type="submit" className="w-full bg-indigo-600 text-white py-3 rounded-xl font-black text-lg shadow-xl mt-4">Save Profile</button>
                             </form>
                         </motion.div>
@@ -759,8 +762,8 @@ const GradesModule = ({ grades, subdivisions, onNotify, refresh }: any) => {
                             <h3 className="text-3xl font-black text-slate-800 mb-2">New Class</h3>
                             <p className="text-slate-400 text-sm mb-8">Define a grade and its subdivisions.</p>
                             <form onSubmit={handleAdd} className="space-y-6">
-                                <div className="space-y-1"><label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Grade Name (e.g. 1st Grade)</label><input required className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 text-lg font-bold" value={form.name} onChange={e => setForm({...form, name: e.target.value})} /></div>
-                                <div className="space-y-1"><label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Divisions (Comma separated: A, B, C)</label><input required className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 text-lg font-bold" value={form.subdivisions} onChange={e => setForm({...form, subdivisions: e.target.value})} /></div>
+                                <div className="space-y-1"><label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Grade Name (e.g. 1st Grade)</label><input required className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 text-lg font-bold text-slate-900" value={form.name} onChange={e => setForm({...form, name: e.target.value})} /></div>
+                                <div className="space-y-1"><label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Divisions (Comma separated: A, B, C)</label><input required className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 text-lg font-bold text-slate-900" value={form.subdivisions} onChange={e => setForm({...form, subdivisions: e.target.value})} /></div>
                                 <button type="submit" className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-black text-xl shadow-xl mt-4 hover:shadow-indigo-500/20 transition-all">Create Class Group</button>
                             </form>
                         </motion.div>
@@ -864,7 +867,7 @@ const NoticesModule = ({ notices, onNotify, refresh }: any) => {
                             <button onClick={() => setIsAdding(false)} className="absolute top-6 right-6 text-slate-400"><X/></button>
                             <h3 className="text-2xl font-black text-slate-800 mb-6">Broadcast News</h3>
                             <form onSubmit={handleAdd} className="space-y-6">
-                                <div className="space-y-1"><label className="text-[10px] font-black uppercase text-slate-500">Notice Heading</label><input required className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 outline-none font-bold" value={form.title} onChange={e => setForm({...form, title: e.target.value})} placeholder="e.g. Admission 2026 Open" /></div>
+                                <div className="space-y-1"><label className="text-[10px] font-black uppercase text-slate-500">Notice Heading</label><input required className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 outline-none font-bold text-slate-900" value={form.title} onChange={e => setForm({...form, title: e.target.value})} placeholder="e.g. Admission 2026 Open" /></div>
                                 <button type="submit" className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black text-xl shadow-xl">Post to Ticker</button>
                             </form>
                         </motion.div>
@@ -922,7 +925,7 @@ const SettingsModule = ({ settings, onNotify, refresh }: any) => {
                  {activeSection === 'general' ? (
                      <div className="space-y-8">
                         <div className="flex items-center gap-4"><Settings size={32} className="text-indigo-600"/><h3 className="text-2xl font-black text-slate-800">Global Config</h3></div>
-                        <div className="space-y-2"><label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Recaptcha V2 Key</label><input className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-xs" value={form.googleSiteKey} onChange={e => setForm({...form, googleSiteKey: e.target.value})} /></div>
+                        <div className="space-y-2"><label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Recaptcha V2 Key</label><input className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-xs text-slate-900" value={form.googleSiteKey} onChange={e => setForm({...form, googleSiteKey: e.target.value})} /></div>
                      </div>
                  ) : (
                     <div className="space-y-10">
@@ -935,7 +938,7 @@ const SettingsModule = ({ settings, onNotify, refresh }: any) => {
                                     </div>
                                     <button type="button" onClick={() => updateGateway(key, 'enabled', !config.enabled)} className={`w-14 h-8 rounded-full transition-all relative ${config.enabled ? 'bg-emerald-500' : 'bg-slate-300'}`}><div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition-all ${config.enabled ? 'right-1' : 'left-1'}`} /></button>
                                 </div>
-                                {config.enabled && key === 'manual' && <div className="space-y-4"><label className="text-[9px] font-black uppercase text-slate-400 tracking-widest ml-1">Business UPI VPA</label><input className="w-full bg-white border border-slate-200 rounded-xl px-5 py-3 outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-sm" value={config.credentials.upiId || ''} onChange={e => updateGateway(key, 'upiId', e.target.value)} placeholder="e.g. shriyas@upi" /></div>}
+                                {config.enabled && key === 'manual' && <div className="space-y-4"><label className="text-[9px] font-black uppercase text-slate-400 tracking-widest ml-1">Business UPI VPA</label><input className="w-full bg-white border border-slate-200 rounded-xl px-5 py-3 outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-sm text-slate-900" value={config.credentials.upiId || ''} onChange={e => updateGateway(key, 'upiId', e.target.value)} placeholder="e.g. shriyas@upi" /></div>}
                             </div>
                         ))}
                     </div>
