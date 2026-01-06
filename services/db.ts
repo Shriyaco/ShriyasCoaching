@@ -456,10 +456,28 @@ class DatabaseService {
       }));
   }
 
+  async getAllHomework(): Promise<Homework[]> {
+      const { data } = await supabase.from('homework').select('*').order('created_at', { ascending: false });
+       return (data || []).map(h => ({
+          id: h.id, 
+          gradeId: h.grade_id, 
+          subdivisionId: h.subdivision_id, 
+          subject: h.subject, 
+          task: h.task, 
+          dueDate: h.due_date, 
+          assignedBy: h.assigned_by
+      }));
+  }
+
   async addHomework(data: Omit<Homework, 'id'>) {
       await supabase.from('homework').insert({
           grade_id: data.gradeId, subdivision_id: data.subdivisionId, subject: data.subject, task: data.task, due_date: data.dueDate, assigned_by: data.assignedBy
       });
+  }
+
+  async deleteHomework(id: string) {
+      const { error } = await supabase.from('homework').delete().eq('id', id);
+      if (error) throw error;
   }
 
   async getHomeworkSubmission(homeworkId: string, studentId: string): Promise<HomeworkSubmission | undefined> {

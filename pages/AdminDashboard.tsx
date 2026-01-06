@@ -1,8 +1,8 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { db } from '../services/db';
-import { Student, TabView, Grade, Subdivision, Teacher, FeeSubmission, SystemSettings, GatewayConfig, Enquiry, Product, Order, StudentNotification, Notice } from '../types';
-import { Users, Settings, LogOut, Plus, Edit2, Search, Briefcase, CreditCard, Save, Layers, UserPlus, Lock, ShieldAlert, Key, Power, X, Trash2, GraduationCap, TrendingUp, DollarSign, RefreshCw, Menu, Check, Upload, Calendar, MessageCircle, Phone, Clock, ShoppingBag, Send, MapPin, Truck, Megaphone, Bell, Info, AlertTriangle, User, UserCheck, AlertCircle, Globe, Smartphone, QrCode, Package, Image as ImageIcon, Filter, CheckCircle2, Wand2, Eye } from 'lucide-react';
+import { Student, TabView, Grade, Subdivision, Teacher, FeeSubmission, SystemSettings, GatewayConfig, Enquiry, Product, Order, StudentNotification, Notice, Homework, Exam } from '../types';
+import { Users, Settings, LogOut, Plus, Edit2, Search, Briefcase, CreditCard, Save, Layers, UserPlus, Lock, ShieldAlert, Key, Power, X, Trash2, GraduationCap, TrendingUp, DollarSign, RefreshCw, Menu, Check, Upload, Calendar, MessageCircle, Phone, Clock, ShoppingBag, Send, MapPin, Truck, Megaphone, Bell, Info, AlertTriangle, User, UserCheck, AlertCircle, Globe, Smartphone, QrCode, Package, Image as ImageIcon, Filter, CheckCircle2, Wand2, Eye, FileText, BookOpen } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -21,6 +21,8 @@ export default function AdminDashboard() {
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [notices, setNotices] = useState<Notice[]>([]);
+  const [homeworkList, setHomeworkList] = useState<Homework[]>([]);
+  const [examList, setExamList] = useState<Exam[]>([]);
   const [loading, setLoading] = useState(true);
   
   // UI State
@@ -29,7 +31,7 @@ export default function AdminDashboard() {
 
   const refreshData = useCallback(async () => {
     try {
-        const [s, g, sd, t, f, set, enq, p, o, n] = await Promise.all([
+        const [s, g, sd, t, f, set, enq, p, o, n, hw, ex] = await Promise.all([
             db.getStudents(),
             db.getGrades(),
             db.getSubdivisions(),
@@ -39,7 +41,9 @@ export default function AdminDashboard() {
             db.getEnquiries(),
             db.getProducts(),
             db.getOrders(),
-            db.getNotices()
+            db.getNotices(),
+            db.getAllHomework(),
+            db.getExams()
         ]);
         setStudents(s);
         setGrades(g);
@@ -51,6 +55,8 @@ export default function AdminDashboard() {
         setProducts(p);
         setOrders(o);
         setNotices(n);
+        setHomeworkList(hw);
+        setExamList(ex);
     } catch(e) {
         console.error(e);
     }
@@ -73,7 +79,9 @@ export default function AdminDashboard() {
         db.subscribe('shop_orders', refreshData),
         db.subscribe('products', refreshData),
         db.subscribe('notices', refreshData),
-        db.subscribe('app_notifications', refreshData)
+        db.subscribe('app_notifications', refreshData),
+        db.subscribe('homework', refreshData),
+        db.subscribe('exams', refreshData)
     ];
     return () => { channels.forEach(c => db.unsubscribe(c)); };
   }, [navigate, refreshData]);
@@ -131,12 +139,14 @@ export default function AdminDashboard() {
         <div className="flex-1 py-6 space-y-1 overflow-y-auto scrollbar-hide">
           <SidebarItem tab="dashboard" icon={TrendingUp} label="Insights" />
           <SidebarItem tab="broadcast" icon={Megaphone} label="Push Alerts" />
-          <SidebarItem tab="products" icon={Package} label="Product Catalog" />
-          <SidebarItem tab="shop" icon={ShoppingBag} label="Orders Tracking" />
-          <SidebarItem tab="fees" icon={CreditCard} label="Fee Records" />
           <SidebarItem tab="students" icon={Users} label="Students" />
           <SidebarItem tab="teachers" icon={Briefcase} label="Faculty" />
           <SidebarItem tab="grades" icon={Layers} label="Classes" />
+          <SidebarItem tab="exams" icon={FileText} label="Exams" />
+          <SidebarItem tab="homework" icon={BookOpen} label="Assignments" />
+          <SidebarItem tab="fees" icon={CreditCard} label="Fee Records" />
+          <SidebarItem tab="products" icon={Package} label="Product Catalog" />
+          <SidebarItem tab="shop" icon={ShoppingBag} label="Orders Tracking" />
           <SidebarItem tab="notices" icon={Bell} label="Notice Board" />
           <SidebarItem tab="enquiries" icon={MessageCircle} label="Enquiries" />
           <SidebarItem tab="settings" icon={Settings} label="Config" />
@@ -177,6 +187,8 @@ export default function AdminDashboard() {
                 {activeTab === 'notices' && <NoticesModule notices={notices} onNotify={showNotification} refresh={refreshData} />}
                 {activeTab === 'enquiries' && <EnquiriesModule enquiries={enquiries} onNotify={showNotification} refresh={refreshData} />}
                 {activeTab === 'settings' && settings && <SettingsModule settings={settings} onNotify={showNotification} refresh={refreshData} />}
+                {activeTab === 'homework' && <HomeworkAdminModule homeworkList={homeworkList} grades={grades} subdivisions={subdivisions} onNotify={showNotification} refresh={refreshData} />}
+                {activeTab === 'exams' && <ExamsAdminModule examList={examList} grades={grades} subdivisions={subdivisions} onNotify={showNotification} refresh={refreshData} />}
               </motion.div>
             </AnimatePresence>
           </div>
@@ -185,6 +197,106 @@ export default function AdminDashboard() {
     </div>
   );
 }
+
+const HomeworkAdminModule = ({ homeworkList, grades, subdivisions, onNotify, refresh }: any) => {
+    const handleDelete = async (id: string) => {
+        if(confirm("Are you sure you want to delete this assignment?")) {
+            try {
+                await db.deleteHomework(id);
+                onNotify("Assignment deleted successfully.");
+                refresh();
+            } catch (e) { alert("Delete failed"); }
+        }
+    };
+
+    return (
+        <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+            <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                <h3 className="font-black text-slate-800 text-xl flex items-center gap-2"><BookOpen className="text-indigo-600"/> Homework Management</h3>
+            </div>
+            <div className="overflow-x-auto">
+                <table className="w-full text-left min-w-[800px]">
+                    <thead className="bg-slate-50 text-[10px] uppercase font-black tracking-widest text-slate-400 border-b">
+                        <tr><th className="p-6">Class Context</th><th className="p-6">Subject</th><th className="p-6">Task Description</th><th className="p-6">Due Date</th><th className="p-6 text-center">Action</th></tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 text-sm">
+                        {homeworkList.map((hw: Homework) => (
+                            <tr key={hw.id} className="hover:bg-slate-50/50 transition-colors">
+                                <td className="p-6">
+                                    <p className="font-bold text-slate-800">Grade {grades.find((g:any)=>g.id===hw.gradeId)?.gradeName}</p>
+                                    <p className="text-[10px] text-slate-400 font-bold uppercase">Div {subdivisions.find((s:any)=>s.id===hw.subdivisionId)?.divisionName}</p>
+                                </td>
+                                <td className="p-6 font-bold text-indigo-600">{hw.subject}</td>
+                                <td className="p-6 max-w-xs truncate text-slate-600 font-medium" title={hw.task}>{hw.task}</td>
+                                <td className="p-6 text-slate-500 font-mono text-xs">{hw.dueDate}</td>
+                                <td className="p-6 text-center">
+                                    <button onClick={() => handleDelete(hw.id)} className="p-2.5 rounded-xl text-rose-500 bg-rose-50 hover:bg-rose-500 hover:text-white transition-all shadow-sm">
+                                        <Trash2 size={16} strokeWidth={2.5}/>
+                                    </button>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+            {homeworkList.length === 0 && <div className="p-20 text-center text-slate-300 font-black uppercase text-xs tracking-widest">No Active Assignments</div>}
+        </div>
+    );
+};
+
+const ExamsAdminModule = ({ examList, grades, subdivisions, onNotify, refresh }: any) => {
+    const handleDelete = async (id: string) => {
+        if(confirm("Are you sure you want to delete this exam?")) {
+            try {
+                await db.deleteExam(id);
+                onNotify("Exam deleted successfully.");
+                refresh();
+            } catch (e) { alert("Delete failed"); }
+        }
+    };
+
+    return (
+        <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+            <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                <h3 className="font-black text-slate-800 text-xl flex items-center gap-2"><FileText className="text-indigo-600"/> Exam Management</h3>
+            </div>
+            <div className="overflow-x-auto">
+                <table className="w-full text-left min-w-[800px]">
+                    <thead className="bg-slate-50 text-[10px] uppercase font-black tracking-widest text-slate-400 border-b">
+                        <tr><th className="p-6">Class Context</th><th className="p-6">Title & Subject</th><th className="p-6">Schedule</th><th className="p-6">Details</th><th className="p-6 text-center">Action</th></tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 text-sm">
+                        {examList.map((ex: Exam) => (
+                            <tr key={ex.id} className="hover:bg-slate-50/50 transition-colors">
+                                <td className="p-6">
+                                    <p className="font-bold text-slate-800">Grade {grades.find((g:any)=>g.id===ex.gradeId)?.gradeName}</p>
+                                    <p className="text-[10px] text-slate-400 font-bold uppercase">Div {subdivisions.find((s:any)=>s.id===ex.subdivisionId)?.divisionName}</p>
+                                </td>
+                                <td className="p-6">
+                                    <p className="font-bold text-slate-900">{ex.title}</p>
+                                    <span className="text-[10px] font-black uppercase text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded">{ex.subject}</span>
+                                </td>
+                                <td className="p-6">
+                                    <p className="text-xs font-bold text-slate-600">{ex.examDate}</p>
+                                    <p className="text-[10px] text-slate-400 uppercase font-black">{ex.startTime}</p>
+                                </td>
+                                <td className="p-6 text-xs font-bold text-slate-500">{ex.duration} mins • {ex.totalMarks} Marks</td>
+                                <td className="p-6 text-center">
+                                    <button onClick={() => handleDelete(ex.id)} className="p-2.5 rounded-xl text-rose-500 bg-rose-50 hover:bg-rose-500 hover:text-white transition-all shadow-sm">
+                                        <Trash2 size={16} strokeWidth={2.5}/>
+                                    </button>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+            {examList.length === 0 && <div className="p-20 text-center text-slate-300 font-black uppercase text-xs tracking-widest">No Exams Scheduled</div>}
+        </div>
+    );
+};
+
+// ... (Rest of existing modules: ProductsModule, OrdersModule, BroadcastModule, StudentsModule, TeachersModule, GradesModule, FeesModule, NoticesModule, EnquiriesModule, SettingsModule) ...
 
 const ProductsModule = ({ products, onNotify, refresh }: any) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -372,7 +484,6 @@ const ProductsModule = ({ products, onNotify, refresh }: any) => {
     );
 };
 
-// ... OrdersModule (kept same) ...
 const OrdersModule = ({ orders, onNotify, refresh }: any) => {
     const handleStatusUpdate = async (id: string, status: Order['status']) => {
         try {
@@ -479,7 +590,6 @@ const OrdersModule = ({ orders, onNotify, refresh }: any) => {
 };
 
 const BroadcastModule = ({ grades, subdivisions, students, onNotify }: any) => {
-    // ... BroadcastModule logic (kept same) ...
     const [targetType, setTargetType] = useState<'all' | 'grade' | 'division' | 'student'>('all');
     const [targetId, setTargetId] = useState('');
     const [title, setTitle] = useState('');
@@ -500,7 +610,6 @@ const BroadcastModule = ({ grades, subdivisions, students, onNotify }: any) => {
     return (
         <div className="max-w-4xl mx-auto">
             <form onSubmit={handleSend} className="bg-white p-10 rounded-[40px] shadow-sm border border-slate-100 space-y-8">
-                 {/* ... form content ... */}
                  <div className="flex items-center gap-4">
                     <div className="h-14 w-14 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center shadow-inner"><Megaphone size={32}/></div>
                     <div><h3 className="text-2xl font-black text-slate-800">Push Deployment</h3><p className="text-sm text-slate-400 font-medium">Broadcast academic or financial alerts.</p></div>
@@ -780,10 +889,6 @@ const StudentsModule = ({ students, grades, subdivisions, onNotify, refresh }: a
 };
 
 const TeachersModule = ({ teachers, onNotify, refresh }: any) => {
-    // ... TeachersModule kept same for brevity, assuming user only asked for Students/Products/Enquiries updates ...
-    // If user needs updates here too, I'd apply them similarly. 
-    // For now, retaining existing logic but ensuring imports etc are fine.
-    
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingTeacher, setEditingTeacher] = useState<Teacher | null>(null);
     const [form, setForm] = useState({ name: '', mobile: '', specialization: '' });
@@ -863,7 +968,6 @@ const TeachersModule = ({ teachers, onNotify, refresh }: any) => {
 };
 
 const GradesModule = ({ grades, subdivisions, onNotify, refresh }: any) => {
-    // ... GradesModule (kept same) ...
     const [isAdding, setIsAdding] = useState(false);
     const [form, setForm] = useState({ name: '', subdivisions: '' });
 
@@ -927,7 +1031,6 @@ const GradesModule = ({ grades, subdivisions, onNotify, refresh }: any) => {
 };
 
 const FeesModule = ({ fees, onNotify, refresh }: any) => {
-    // ... FeesModule (kept same) ...
     const handleAction = async (id: string, status: 'Approved' | 'Rejected', studentId: string) => {
         try {
             await db.updateFeeSubmissionStatus(id, status, studentId);
@@ -974,7 +1077,6 @@ const FeesModule = ({ fees, onNotify, refresh }: any) => {
 };
 
 const NoticesModule = ({ notices, onNotify, refresh }: any) => {
-    // ... NoticesModule (kept same) ...
     const [isAdding, setIsAdding] = useState(false);
     const [form, setForm] = useState({ title: '', date: new Date().toISOString().split('T')[0], important: true });
 
