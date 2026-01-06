@@ -28,19 +28,23 @@
         background: #333;
         border-radius: 10px;
       }
+      
+      /* Robust Gradient Text Implementation */
       .luxury-text-gradient {
-        background: linear-gradient(180deg, #fff 0%, #aaa 100%);
+        background: linear-gradient(180deg, #111111 0%, #444444 100%);
+        background-clip: text;
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
+        color: transparent;
+        display: inline-block;
       }
+
       .dark .luxury-text-gradient {
-        background: linear-gradient(180deg, #fff 0%, #aaa 100%);
-      }
-      /* Handle non-dark mode gradient if needed */
-      html:not(.dark) .luxury-text-gradient {
-        background: linear-gradient(180deg, #111 0%, #444 100%);
+        background: linear-gradient(180deg, #ffffff 0%, #999999 100%);
+        background-clip: text;
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
+        color: transparent;
       }
 
       .menu-bg-gradient {

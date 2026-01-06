@@ -66,14 +66,16 @@ const PublicHome: React.FC = () => {
                 transition={{ duration: 1.5, ease: [0.77, 0, 0.175, 1] }}
                 className="flex flex-col items-center"
              >
-                <h1 className="mt-12 text-5xl md:text-[8rem] font-light leading-[1] tracking-tight serif-font uppercase mb-8 luxury-text-gradient">
-                  Your Future <br /> Crafted Here.
-                </h1>
+                <div className="mt-12 mb-8 inline-block">
+                  <h1 className="text-5xl md:text-[8rem] font-light leading-[1] tracking-tight serif-font uppercase luxury-text-gradient">
+                    Your Future <br /> Crafted Here.
+                  </h1>
+                </div>
 
                 <div className="mb-4">
                   <button 
                     onClick={() => setIsEnquiryModalOpen(true)}
-                    className="group text-white text-[11px] font-bold uppercase tracking-[0.5em] flex items-center gap-3 hover:text-premium-accent transition-all"
+                    className="group text-white dark:text-white text-[11px] font-bold uppercase tracking-[0.5em] flex items-center gap-3 hover:text-premium-accent transition-all"
                   >
                     Enroll Now <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform"/>
                   </button>
@@ -102,7 +104,7 @@ const PublicHome: React.FC = () => {
           <div className="max-w-[1200px] mx-auto text-center md:text-left">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-24 items-start">
                   <motion.div initial={{ opacity: 0, x: -30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}>
-                      <h2 className="text-4xl md:text-7xl font-light serif-font uppercase tracking-tight leading-tight mb-8">
+                      <h2 className="text-4xl md:text-6xl font-light serif-font uppercase tracking-tight leading-tight mb-8">
                         Precision <br /> Mastery.
                       </h2>
                   </motion.div>
