@@ -30,26 +30,32 @@ export default function PayFees() {
     const [isSearching, setIsSearching] = useState(false);
 
     useEffect(() => {
-        const storedUser = sessionStorage.getItem('sc_user');
-        if (storedUser) {
-            const parsed = JSON.parse(storedUser);
-            if (parsed.role === 'student') {
-                setUser(parsed);
-                // Fetch ONLY the logged in student
-                db.getStudentById(parsed.id).then(me => {
-                    if (me) {
-                        setIdentifiedStudent(me);
-                        setAmount(me.monthlyFees || '5000');
-                    }
-                });
-            }
-        }
-        
         const load = async () => {
-             const s = await db.getSettings();
-             setSettings(s);
-             const firstKey = Object.keys(s.gateways).find(k => s.gateways[k].enabled);
-             if (firstKey) setSelectedGatewayKey(firstKey);
+            const storedUser = sessionStorage.getItem('sc_user');
+            
+            // Parallelize fetching settings and student details
+            const promises: any[] = [db.getSettings()];
+            
+            if (storedUser) {
+                const parsed = JSON.parse(storedUser);
+                if (parsed.role === 'student') {
+                    setUser(parsed);
+                    promises.push(db.getStudentById(parsed.id));
+                }
+            }
+
+            const results = await Promise.all(promises);
+            const s = results[0] as SystemSettings;
+            const me = results[1] as Student | undefined;
+
+            setSettings(s);
+            const firstKey = Object.keys(s.gateways).find(k => s.gateways[k].enabled);
+            if (firstKey) setSelectedGatewayKey(firstKey);
+
+            if (me) {
+                setIdentifiedStudent(me);
+                setAmount(me.monthlyFees || '5000');
+            }
         }
         load();
     }, []);

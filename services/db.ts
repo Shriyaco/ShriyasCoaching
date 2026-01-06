@@ -1,4 +1,3 @@
-
 import { supabase } from './supabase';
 import { RealtimeChannel } from '@supabase/supabase-js';
 import { Student, Grade, Subdivision, Notice, User, Teacher, TimetableEntry, FeeSubmission, SystemSettings, GatewayConfig, AttendanceRecord, Homework, Exam, ExamResult, HomeworkSubmission, ExamSubmission, StudentQuery, Enquiry, Product, Order, StudyNote, StudentNotification } from '../types';
@@ -95,10 +94,11 @@ class DatabaseService {
       return { id: 'admin1', username: 'Shriya Admin', role: 'admin', status: 'Active' };
     }
     
-    // Execute teacher and student lookups in parallel for speed
+    // OPTIMIZATION: Select ONLY columns needed for auth verification to speed up response time.
+    // Avoid fetching 'image_url' or other large text fields here.
     const [teacherRes, studentRes] = await Promise.all([
         supabase.from('teachers').select('id, name, teacher_custom_id, password, mobile, status').or(`teacher_custom_id.eq.${username},name.eq.${username}`),
-        supabase.from('students').select('id, name, student_custom_id, password, mobile, status, subdivision_id, image_url').or(`student_custom_id.eq.${username},name.eq.${username}`)
+        supabase.from('students').select('id, name, student_custom_id, password, mobile, status, subdivision_id').or(`student_custom_id.eq.${username},name.eq.${username}`)
     ]);
 
     if (teacherRes.data && teacherRes.data.length > 0) {
@@ -111,7 +111,8 @@ class DatabaseService {
     if (studentRes.data && studentRes.data.length > 0) {
         const s = studentRes.data.find(student => student.password === password || student.mobile === password);
         if (s && s.status === 'Active') {
-            return { id: s.id, username: s.name, role: 'student', divisionId: s.subdivision_id, status: 'Active', imageUrl: s.image_url };
+            // Note: imageUrl is not fetched here for speed, it will be fetched when dashboard loads profile
+            return { id: s.id, username: s.name, role: 'student', divisionId: s.subdivision_id, status: 'Active' };
         }
     }
     return null;
