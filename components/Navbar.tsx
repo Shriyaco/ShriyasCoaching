@@ -71,7 +71,7 @@ const Navbar: React.FC = () => {
       <nav
         className={`fixed top-0 w-full z-[100] transition-all duration-700 ease-in-out ${
           scrolled || isLoginPage
-            ? 'bg-white/90 dark:bg-black/90 backdrop-blur-lg py-3 md:py-4 border-b border-black/5 dark:border-white/5' 
+            ? 'bg-white/90 dark:bg-black/90 backdrop-blur-lg py-3 md:py-4 border-b border-black/5 dark:border-white/5 shadow-sm dark:shadow-none' 
             : 'bg-transparent py-8'
         }`}
       >
@@ -135,7 +135,7 @@ const Navbar: React.FC = () => {
             </div>
           </div>
 
-          {/* Mobile Actions Header - Exactly as per screenshot */}
+          {/* Mobile Actions Header - Match Screenshot */}
           <div className="lg:hidden relative z-[110] flex items-center gap-2 sm:gap-4">
             <button 
               onClick={toggleTheme}
@@ -177,15 +177,17 @@ const Navbar: React.FC = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[200] bg-white dark:bg-black flex flex-col h-[100dvh] overflow-hidden"
+            className="fixed inset-0 z-[10000] bg-white dark:bg-black flex flex-col h-[100dvh] overflow-hidden"
           >
+            {/* Close Button */}
             <button 
               onClick={() => setIsOpen(false)} 
-              className="fixed top-8 right-6 w-12 h-12 rounded-xl bg-slate-900 dark:bg-white flex items-center justify-center shadow-xl active:translate-y-[2px] transition-all z-[300]"
+              className="fixed top-8 right-6 w-12 h-12 rounded-xl bg-slate-900 dark:bg-white flex items-center justify-center shadow-xl active:translate-y-[2px] transition-all z-[11000]"
             >
               <X size={26} className="text-white dark:text-black" strokeWidth={3} />
             </button>
 
+            {/* Spacer */}
             <div className="h-24 shrink-0" />
 
             <motion.div 
@@ -241,29 +243,24 @@ const Navbar: React.FC = () => {
                 </motion.div>
               ))}
               
+              {/* Footer Links in Menu */}
               <motion.div variants={itemVariants} className="pt-8 flex flex-col items-start gap-6 border-t border-slate-100 dark:border-white/5">
-                 <Link 
-                   to="/login" 
-                   onClick={() => setIsOpen(false)} 
-                   className="text-slate-900 dark:text-white text-[14px] font-black uppercase tracking-[0.4em] hover:text-premium-accent transition-colors"
-                 >
-                    Account Portal
-                 </Link>
                  <Link 
                    to="/pay-fees" 
                    onClick={() => setIsOpen(false)} 
                    className="text-premium-accent text-[14px] font-black uppercase tracking-[0.4em] hover:brightness-125 transition-all"
                  >
-                    Financial Hub
+                    Pay Fees
                  </Link>
               </motion.div>
             </motion.div>
 
+            {/* Bottom Menu Footer */}
             <div className="shrink-0 py-6 border-t border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-black/40 px-8 md:px-12">
                <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <span className="text-slate-400 dark:text-white/30 text-[8px] font-bold uppercase tracking-[0.15em]">Privacy</span>
-                    <span className="text-slate-400 dark:text-white/30 text-[8px] font-bold uppercase tracking-[0.15em]">Terms</span>
+                    <span className="text-slate-400 dark:text-white/30 text-[8px] font-bold uppercase tracking-[0.15em]">T&C</span>
                   </div>
                   
                   <div className="flex items-center gap-2">
