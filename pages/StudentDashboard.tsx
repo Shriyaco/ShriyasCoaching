@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../services/db';
 import { Student, Exam, Homework, Notice, TimetableEntry, StudentQuery, Subdivision, AttendanceRecord } from '../types';
-import { Rocket, Sword, Gamepad2, Radio, Zap, Bell, MessageCircle, Clock, Settings, LogOut, CheckCircle2, Target, Trophy, Flame, Lock, Save, RefreshCw, Send, X, CalendarDays, ShoppingBag, CreditCard } from 'lucide-react';
+import { Gamepad2, Radio, Zap, Bell, Settings, LogOut, CheckCircle2, Target, Trophy, Flame, Lock, Send, X, CalendarDays, ShoppingBag, CreditCard, BookOpen, PenTool, HelpCircle, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import JitsiMeeting from '../components/JitsiMeeting';
 
@@ -24,7 +24,7 @@ const XPBar = ({ attendance, onClick }: { attendance: AttendanceRecord[], onClic
             </div>
             <div className="flex-1">
                 <div className="flex justify-between mb-1">
-                    <span className="text-[10px] font-black uppercase text-yellow-400 tracking-widest">XP Progress (Click for History)</span>
+                    <span className="text-[10px] font-black uppercase text-yellow-400 tracking-widest">XP Progress (History)</span>
                     <span className="text-[10px] font-black text-white">{percentage}%</span>
                 </div>
                 <div className="h-3 bg-black/50 rounded-full border border-white/10 overflow-hidden">
@@ -45,7 +45,7 @@ const AttendanceModal = ({ attendance, onClose }: { attendance: AttendanceRecord
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-md p-4">
         <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="bg-[#111] border border-white/10 rounded-[32px] w-full max-w-lg overflow-hidden flex flex-col max-h-[80vh]">
             <div className="p-6 border-b border-white/10 flex justify-between items-center bg-white/5">
-                <h3 className="text-xl font-black text-yellow-400 uppercase tracking-widest flex items-center gap-2"><CalendarDays size={20}/> Mission Log</h3>
+                <h3 className="text-xl font-black text-yellow-400 uppercase tracking-widest flex items-center gap-2"><CalendarDays size={20}/> Attendance Log</h3>
                 <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full text-white/50 hover:text-white transition-all"><X size={20}/></button>
             </div>
             <div className="flex-1 overflow-y-auto p-6 space-y-3 custom-scrollbar">
@@ -72,8 +72,8 @@ const PortalCard = ({ subdivision, studentName }: { subdivision: Subdivision, st
                 <Radio size={32} className="text-white/20" />
             </div>
             <div>
-                <h3 className="text-xl font-black text-white/40 uppercase tracking-widest">Portal Offline</h3>
-                <p className="text-xs font-bold text-white/20 mt-1">No active warp signatures detected.</p>
+                <h3 className="text-xl font-black text-white/40 uppercase tracking-widest">Class Offline</h3>
+                <p className="text-xs font-bold text-white/20 mt-1">No active session detected.</p>
             </div>
         </div>
     );
@@ -91,10 +91,10 @@ const PortalCard = ({ subdivision, studentName }: { subdivision: Subdivision, st
                     <div>
                         <div className="flex items-center gap-2 mb-2">
                             <span className="w-3 h-3 bg-red-500 rounded-full animate-ping" />
-                            <span className="text-white font-black text-[10px] uppercase tracking-[0.2em] bg-red-500/20 px-2 py-1 rounded">Live Event</span>
+                            <span className="text-white font-black text-[10px] uppercase tracking-[0.2em] bg-red-500/20 px-2 py-1 rounded">Live Now</span>
                         </div>
-                        <h3 className="text-3xl font-black text-white italic tracking-wide drop-shadow-lg">WARP GATE OPEN</h3>
-                        <p className="text-indigo-100 text-xs font-bold mt-2 opacity-80">Tap to teleport to class</p>
+                        <h3 className="text-3xl font-black text-white italic tracking-wide drop-shadow-lg">JOIN CLASS</h3>
+                        <p className="text-indigo-100 text-xs font-bold mt-2 opacity-80">Tap to enter classroom</p>
                     </div>
                     <div className="w-20 h-20 bg-white text-indigo-600 rounded-full flex items-center justify-center border-4 border-indigo-400 shadow-xl group-hover:scale-110 transition-transform duration-500">
                         <Zap size={36} fill="currentColor" className="animate-bounce" />
@@ -112,7 +112,7 @@ const PortalCard = ({ subdivision, studentName }: { subdivision: Subdivision, st
     );
 };
 
-const QuestCard = ({ homework }: { homework: Homework }) => (
+const HomeworkCard = ({ homework }: { homework: Homework }) => (
     <motion.div 
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
@@ -120,35 +120,35 @@ const QuestCard = ({ homework }: { homework: Homework }) => (
         className="bg-[#1a1a1a] border-2 border-gray-800 p-6 rounded-3xl group relative overflow-hidden hover:border-emerald-400 transition-colors"
     >
         <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-            <Target size={100} />
+            <BookOpen size={100} />
         </div>
         <div className="flex justify-between items-start mb-4">
             <span className="px-3 py-1 rounded-lg bg-emerald-400/10 text-emerald-400 text-[10px] font-black uppercase tracking-widest border border-emerald-400/20">
                 {homework.subject}
             </span>
-            <Trophy size={20} className="text-emerald-500/20 group-hover:text-emerald-500 transition-colors" />
+            <Target size={20} className="text-emerald-500/20 group-hover:text-emerald-500 transition-colors" />
         </div>
         <h4 className="text-lg font-bold text-white mb-2 line-clamp-2 group-hover:text-emerald-300 transition-colors">"{homework.task}"</h4>
         <div className="mt-4 pt-4 border-t border-white/5 flex items-center gap-2">
-            <Clock size={14} className="text-emerald-400" />
-            <span className="text-xs font-mono font-bold text-white/40">Complete by: {homework.dueDate}</span>
+            <CalendarDays size={14} className="text-emerald-400" />
+            <span className="text-xs font-mono font-bold text-white/40">Due: {homework.dueDate}</span>
         </div>
     </motion.div>
 );
 
-const RaidCard = ({ exam }: { exam: Exam }) => (
+const ExamCard = ({ exam }: { exam: Exam }) => (
     <motion.div 
         whileHover={{ scale: 1.02 }}
         className="bg-gradient-to-br from-rose-600 to-orange-600 p-1 rounded-[32px] shadow-2xl relative group"
     >
         <div className="bg-black/90 rounded-[28px] p-8 h-full relative overflow-hidden">
             <div className="absolute -right-10 -top-10 text-rose-500/10 group-hover:text-rose-500/20 transition-colors">
-                <Sword size={150} />
+                <PenTool size={150} />
             </div>
             
             <div className="relative z-10">
                 <div className="flex justify-between items-start mb-6">
-                    <span className="text-rose-400 font-black text-[10px] uppercase tracking-[0.3em] bg-rose-500/10 px-3 py-1 rounded border border-rose-500/20">Boss Raid</span>
+                    <span className="text-rose-400 font-black text-[10px] uppercase tracking-[0.3em] bg-rose-500/10 px-3 py-1 rounded border border-rose-500/20">Upcoming Exam</span>
                     <Flame size={24} className="text-orange-500 animate-pulse" fill="currentColor" />
                 </div>
                 
@@ -157,11 +157,11 @@ const RaidCard = ({ exam }: { exam: Exam }) => (
                 
                 <div className="grid grid-cols-2 gap-4">
                     <div className="bg-white/5 rounded-xl p-3 border border-white/5 text-center">
-                        <p className="text-[9px] text-orange-400 font-black uppercase">Battle Date</p>
+                        <p className="text-[9px] text-orange-400 font-black uppercase">Date</p>
                         <p className="text-white font-mono text-xs font-bold">{exam.examDate}</p>
                     </div>
                     <div className="bg-white/5 rounded-xl p-3 border border-white/5 text-center">
-                        <p className="text-[9px] text-orange-400 font-black uppercase">Start Time</p>
+                        <p className="text-[9px] text-orange-400 font-black uppercase">Time</p>
                         <p className="text-white font-mono text-xs font-bold">{exam.startTime}</p>
                     </div>
                 </div>
@@ -180,7 +180,7 @@ const SettingsPanel = ({ student, refresh }: { student: Student, refresh: () => 
         setLoading(true);
         try {
             await db.changePassword(student.id, 'student', form.current, form.new);
-            alert("Secret identity updated successfully!");
+            alert("Password updated successfully!");
             setForm({ current: '', new: '', confirm: '' });
         } catch (e: any) {
             alert(e.message);
@@ -196,24 +196,24 @@ const SettingsPanel = ({ student, refresh }: { student: Student, refresh: () => 
                 <div className="w-20 h-20 bg-cyan-500/10 rounded-full flex items-center justify-center mx-auto mb-8 text-cyan-400 border border-cyan-500/30">
                     <Lock size={32} />
                 </div>
-                <h3 className="text-2xl font-black text-white mb-8 uppercase tracking-widest">Secret Config</h3>
+                <h3 className="text-2xl font-black text-white mb-8 uppercase tracking-widest">Security Config</h3>
                 
                 <form onSubmit={handleUpdate} className="space-y-4">
                     <div className="space-y-1 text-left">
-                        <label className="text-[9px] font-black uppercase text-white/30 ml-2">Current Passcode</label>
+                        <label className="text-[9px] font-black uppercase text-white/30 ml-2">Current Password</label>
                         <input type="password" required value={form.current} onChange={e => setForm({...form, current:e.target.value})} className="w-full bg-black border border-white/10 rounded-2xl px-6 py-4 text-xs text-white outline-none focus:border-cyan-500 transition-all font-mono" />
                     </div>
                     <div className="space-y-1 text-left">
-                        <label className="text-[9px] font-black uppercase text-white/30 ml-2">New Passcode</label>
+                        <label className="text-[9px] font-black uppercase text-white/30 ml-2">New Password</label>
                         <input type="password" required value={form.new} onChange={e => setForm({...form, new:e.target.value})} className="w-full bg-black border border-white/10 rounded-2xl px-6 py-4 text-xs text-white outline-none focus:border-cyan-500 transition-all font-mono" />
                     </div>
                     <div className="space-y-1 text-left">
-                        <label className="text-[9px] font-black uppercase text-white/30 ml-2">Verify Passcode</label>
+                        <label className="text-[9px] font-black uppercase text-white/30 ml-2">Verify Password</label>
                         <input type="password" required value={form.confirm} onChange={e => setForm({...form, confirm:e.target.value})} className="w-full bg-black border border-white/10 rounded-2xl px-6 py-4 text-xs text-white outline-none focus:border-cyan-500 transition-all font-mono" />
                     </div>
                     
                     <button disabled={loading} className="w-full py-5 bg-gradient-to-r from-cyan-600 to-blue-600 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:shadow-lg hover:shadow-cyan-500/20 transition-all mt-6 disabled:opacity-50">
-                        {loading ? 'Encrypting...' : 'Save Configuration'}
+                        {loading ? 'Updating...' : 'Update Password'}
                     </button>
                 </form>
             </div>
@@ -236,7 +236,6 @@ export default function StudentDashboard() {
     const [missions, setMissions] = useState<Homework[]>([]);
     const [challenges, setChallenges] = useState<Exam[]>([]);
     const [intel, setIntel] = useState<Notice[]>([]);
-    const [timetable, setTimetable] = useState<TimetableEntry[]>([]);
     const [doubts, setDoubts] = useState<StudentQuery[]>([]);
     const [doubtForm, setDoubtForm] = useState({ subject: '', queryText: '' });
 
@@ -256,12 +255,11 @@ export default function StudentDashboard() {
                     const mySub = subs.find(s => s.id === me.subdivisionId);
                     setSubdivision(mySub || null);
 
-                    const [att, hw, ex, not, tt, q] = await Promise.all([
+                    const [att, hw, ex, not, q] = await Promise.all([
                         db.getAttendance(me.id),
                         db.getHomeworkForStudent(me.gradeId, me.subdivisionId),
                         db.getExamsForStudent(me.gradeId, me.subdivisionId),
                         db.getNotices(),
-                        db.getTimetable(me.subdivisionId),
                         db.getQueries(me.id)
                     ]);
 
@@ -269,7 +267,6 @@ export default function StudentDashboard() {
                     setMissions(hw);
                     setChallenges(ex);
                     setIntel(not);
-                    setTimetable(tt);
                     setDoubts(q);
                 }
             } catch (e) {
@@ -303,11 +300,10 @@ export default function StudentDashboard() {
 
     const navItems = [
         { id: 'command', label: 'Base', icon: Gamepad2 },
-        { id: 'missions', label: 'Quests', icon: Target },
-        { id: 'challenges', label: 'Raids', icon: Sword },
-        { id: 'schedule', label: 'Time', icon: Clock },
-        { id: 'alerts', label: 'Alerts', icon: Bell }, // Renamed from Intel
-        { id: 'doubts', label: 'Comms', icon: MessageCircle },
+        { id: 'homework', label: 'Homework', icon: BookOpen }, // Renamed from Missions/Quest
+        { id: 'exams', label: 'Exam', icon: PenTool }, // Renamed from Challenges/Raid
+        // Removed Time (Schedule) and Alerts (Intel)
+        { id: 'doubts', label: 'Doubt', icon: HelpCircle }, // Renamed from Comms/Doubts
         { id: 'shop', label: 'Shop', icon: ShoppingBag, action: () => navigate('/shop') },
         { id: 'fees', label: 'Fees', icon: CreditCard, action: () => navigate('/pay-fees') },
         { id: 'settings', label: 'Config', icon: Settings },
@@ -358,19 +354,19 @@ export default function StudentDashboard() {
                             {/* Stats Grid */}
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                 <div className="bg-[#151515] p-5 rounded-3xl border border-white/5 flex flex-col items-center justify-center gap-2 group hover:border-cyan-500/50 transition-colors">
-                                    <div className="w-10 h-10 bg-cyan-500/10 rounded-full flex items-center justify-center text-cyan-400 mb-1"><Target size={20}/></div>
+                                    <div className="w-10 h-10 bg-cyan-500/10 rounded-full flex items-center justify-center text-cyan-400 mb-1"><BookOpen size={20}/></div>
                                     <h3 className="text-2xl font-black text-white">{missions.length}</h3>
-                                    <p className="text-[8px] font-black uppercase tracking-widest text-white/30">Active Quests</p>
+                                    <p className="text-[8px] font-black uppercase tracking-widest text-white/30">Pending HW</p>
                                 </div>
                                 <div className="bg-[#151515] p-5 rounded-3xl border border-white/5 flex flex-col items-center justify-center gap-2 group hover:border-rose-500/50 transition-colors">
-                                    <div className="w-10 h-10 bg-rose-500/10 rounded-full flex items-center justify-center text-rose-400 mb-1"><Sword size={20}/></div>
+                                    <div className="w-10 h-10 bg-rose-500/10 rounded-full flex items-center justify-center text-rose-400 mb-1"><PenTool size={20}/></div>
                                     <h3 className="text-2xl font-black text-white">{challenges.length}</h3>
-                                    <p className="text-[8px] font-black uppercase tracking-widest text-white/30">Raids Pending</p>
+                                    <p className="text-[8px] font-black uppercase tracking-widest text-white/30">Upcoming Exams</p>
                                 </div>
                                 <div className="bg-[#151515] p-5 rounded-3xl border border-white/5 flex flex-col items-center justify-center gap-2 group hover:border-yellow-500/50 transition-colors">
                                     <div className="w-10 h-10 bg-yellow-500/10 rounded-full flex items-center justify-center text-yellow-400 mb-1"><Bell size={20}/></div>
                                     <h3 className="text-2xl font-black text-white">{intel.length}</h3>
-                                    <p className="text-[8px] font-black uppercase tracking-widest text-white/30">New Alerts</p>
+                                    <p className="text-[8px] font-black uppercase tracking-widest text-white/30">Notices</p>
                                 </div>
                                 <div className="bg-[#151515] p-5 rounded-3xl border border-white/5 flex flex-col items-center justify-center gap-2 group hover:border-emerald-500/50 transition-colors">
                                     <div className="w-10 h-10 bg-emerald-500/10 rounded-full flex items-center justify-center text-emerald-400 mb-1"><Trophy size={20}/></div>
@@ -379,16 +375,40 @@ export default function StudentDashboard() {
                                 </div>
                             </div>
 
-                            {/* Recent Missions */}
+                            {/* Notices / Alerts on Dashboard */}
+                            <div className="space-y-6">
+                                <div className="flex items-center gap-2 mb-2 px-2">
+                                    <AlertTriangle className="text-yellow-500" size={20} />
+                                    <h3 className="text-xl font-black italic tracking-wide text-white uppercase">Latest Alerts</h3>
+                                </div>
+                                {intel.slice(0, 3).map(n => (
+                                    <div key={n.id} className="bg-[#111] border-l-4 border-yellow-500 p-6 rounded-r-3xl relative overflow-hidden group">
+                                        <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity"><Bell size={32}/></div>
+                                        <div className="flex justify-between items-start mb-2">
+                                            <h4 className="text-lg font-bold text-white group-hover:text-yellow-400 transition-colors">{n.title}</h4>
+                                            {n.important && <span className="bg-rose-500 text-white text-[8px] font-black uppercase px-2 py-1 rounded">Urgent</span>}
+                                        </div>
+                                        <p className="text-white/50 text-sm leading-relaxed mb-4">{n.content}</p>
+                                        <p className="text-[9px] font-black uppercase tracking-widest text-white/20">{n.date}</p>
+                                    </div>
+                                ))}
+                                {intel.length === 0 && (
+                                    <div className="py-10 bg-white/5 rounded-3xl border border-dashed border-white/10 text-center">
+                                        <p className="text-white/20 font-black uppercase text-xs tracking-widest">No Active Alerts</p>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Recent Homework */}
                             <div>
                                 <div className="flex justify-between items-end mb-6 px-2">
                                     <h3 className="text-xl font-black italic tracking-wide text-white uppercase flex items-center gap-2">
-                                        <Rocket size={20} className="text-purple-500"/> Priority Quests
+                                        <BookOpen size={20} className="text-purple-500"/> Priority Homework
                                     </h3>
-                                    <button onClick={() => setActiveTab('missions')} className="text-[10px] font-bold uppercase tracking-widest text-purple-400 hover:text-white transition-colors">View All</button>
+                                    <button onClick={() => setActiveTab('homework')} className="text-[10px] font-bold uppercase tracking-widest text-purple-400 hover:text-white transition-colors">View All</button>
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    {missions.slice(0, 2).map(m => <QuestCard key={m.id} homework={m} />)}
+                                    {missions.slice(0, 2).map(m => <HomeworkCard key={m.id} homework={m} />)}
                                     {missions.length === 0 && (
                                         <div className="col-span-full py-16 bg-white/5 rounded-[32px] border border-dashed border-white/10 text-center">
                                             <CheckCircle2 size={48} className="mx-auto text-emerald-500 mb-4 opacity-50"/>
@@ -400,55 +420,17 @@ export default function StudentDashboard() {
                         </motion.div>
                     )}
 
-                    {activeTab === 'missions' && (
+                    {activeTab === 'homework' && (
                         <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {missions.map(m => <QuestCard key={m.id} homework={m} />)}
-                            {missions.length === 0 && <div className="col-span-full text-center py-40 text-white/20 font-black uppercase tracking-widest">Quest Log Empty</div>}
+                            {missions.map(m => <HomeworkCard key={m.id} homework={m} />)}
+                            {missions.length === 0 && <div className="col-span-full text-center py-40 text-white/20 font-black uppercase tracking-widest">Homework Log Empty</div>}
                         </motion.div>
                     )}
 
-                    {activeTab === 'challenges' && (
+                    {activeTab === 'exams' && (
                         <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            {challenges.map(c => <RaidCard key={c.id} exam={c} />)}
-                            {challenges.length === 0 && <div className="col-span-full text-center py-40 text-white/20 font-black uppercase tracking-widest">No Raids Detected</div>}
-                        </motion.div>
-                    )}
-
-                    {activeTab === 'alerts' && (
-                        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6 max-w-3xl mx-auto">
-                            {intel.map(n => (
-                                <div key={n.id} className="bg-[#111] border-l-4 border-cyan-500 p-8 rounded-r-3xl relative overflow-hidden group">
-                                    <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity"><Bell size={40}/></div>
-                                    <div className="flex justify-between items-start mb-4">
-                                        <h4 className="text-xl font-bold text-white group-hover:text-cyan-400 transition-colors">{n.title}</h4>
-                                        {n.important && <span className="bg-rose-500 text-white text-[8px] font-black uppercase px-2 py-1 rounded">Urgent</span>}
-                                    </div>
-                                    <p className="text-white/50 text-sm leading-relaxed">{n.content}</p>
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-white/20 mt-6">{n.date}</p>
-                                </div>
-                            ))}
-                            {intel.length === 0 && <div className="text-center py-40 opacity-20 font-black uppercase tracking-[0.3em] text-xs">No Active Alerts</div>}
-                        </motion.div>
-                    )}
-
-                    {activeTab === 'schedule' && (
-                        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map(day => {
-                                const entries = timetable.filter(t => t.day === day);
-                                return (
-                                    <div key={day} className="bg-[#111] border border-white/5 rounded-3xl p-6 hover:border-purple-500/30 transition-colors">
-                                        <h4 className="text-purple-400 font-black uppercase tracking-widest text-xs mb-4 border-b border-white/5 pb-2">{day}</h4>
-                                        <div className="space-y-3">
-                                            {entries.length > 0 ? entries.map(t => (
-                                                <div key={t.id} className="flex gap-4 items-center">
-                                                    <div className="px-3 py-1 bg-white/5 rounded-lg text-[10px] font-mono font-bold text-purple-200 w-20 text-center">{t.startTime}</div>
-                                                    <div className="text-sm font-bold text-white">{t.subject}</div>
-                                                </div>
-                                            )) : <p className="text-white/10 text-[10px] uppercase font-bold tracking-widest italic">Rest Cycle</p>}
-                                        </div>
-                                    </div>
-                                )
-                            })}
+                            {challenges.map(c => <ExamCard key={c.id} exam={c} />)}
+                            {challenges.length === 0 && <div className="col-span-full text-center py-40 text-white/20 font-black uppercase tracking-widest">No Exams Detected</div>}
                         </motion.div>
                     )}
 
