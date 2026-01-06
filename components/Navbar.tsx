@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, ChevronDown, Heart, Sun, Moon } from 'lucide-react';
+import { Menu, X, ChevronDown, Heart, Sun, Moon, CreditCard } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from '../App';
 
@@ -239,6 +239,13 @@ const Navbar: React.FC = () => {
               <motion.div variants={itemVariants}>
                 <Link to="/contact" onClick={() => setIsOpen(false)} className="text-4xl md:text-5xl serif-font text-white font-light">
                   Contact Us
+                </Link>
+              </motion.div>
+
+              {/* Pay Fees Link - NEW */}
+              <motion.div variants={itemVariants}>
+                <Link to="/pay-fees" onClick={() => setIsOpen(false)} className="text-4xl md:text-5xl serif-font text-premium-accent font-light flex items-center gap-4">
+                  Pay Fees <CreditCard size={28} strokeWidth={1.5} />
                 </Link>
               </motion.div>
             </motion.div>

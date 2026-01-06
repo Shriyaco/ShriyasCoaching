@@ -4,7 +4,7 @@ import ThreeHero from '../components/ThreeHero';
 import Footer from '../components/Footer';
 import { db } from '../services/db';
 import { Notice } from '../types';
-import { ArrowRight, X, CheckCircle2 } from 'lucide-react';
+import { ArrowRight, X, CheckCircle2, Zap } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const PublicHome: React.FC = () => {
@@ -45,6 +45,15 @@ const PublicHome: React.FC = () => {
 
   const closeEnquiryModal = () => { setIsEnquiryModalOpen(false); setEnquirySubmitted(false); };
 
+  const headlineVariants = {
+    hidden: { opacity: 0, y: 30 },
+    visible: { 
+      opacity: 1, 
+      y: 0,
+      transition: { duration: 1.2, ease: [0.22, 1, 0.36, 1] }
+    }
+  };
+
   return (
     <div className="min-h-screen bg-black text-white selection:bg-premium-accent overflow-x-hidden">
       
@@ -53,19 +62,27 @@ const PublicHome: React.FC = () => {
         {/* Background Animation */}
         <div className="absolute inset-0 z-0">
           <ThreeHero />
-          <div className="absolute inset-0 bg-black/40" />
+          <div className="absolute inset-0 bg-black/50" />
         </div>
         
         <div className="relative z-10 w-full max-w-7xl mx-auto px-6 flex flex-col items-center justify-center text-center">
-            {/* Big Designed Heading */}
+            {/* Ultra Modern High-Contrast Heading */}
             <motion.div
-              initial={{ opacity: 0, y: 40 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
-              className="mb-8"
+              initial="hidden"
+              animate="visible"
+              variants={headlineVariants}
+              className="flex flex-col items-center mb-10"
             >
-              <h1 className="text-6xl md:text-[8rem] lg:text-[10rem] font-light serif-font leading-[1] tracking-tighter luxury-text-gradient">
-                Future <br /> Crafted here.
+              <span className="text-[11px] font-black uppercase tracking-[0.8em] text-premium-accent mb-6 block opacity-70">
+                The Zenith of Learning
+              </span>
+              <h1 className="flex flex-col items-center">
+                <span className="text-7xl md:text-[9rem] font-black uppercase tracking-tighter leading-none luxury-text-gradient font-[Montserrat]">
+                  Future
+                </span>
+                <span className="text-5xl md:text-[7.5rem] font-light serif-font italic leading-none text-white/90 -mt-2 md:-mt-6">
+                  Crafted here.
+                </span>
               </h1>
             </motion.div>
 
@@ -75,37 +92,56 @@ const PublicHome: React.FC = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.8, duration: 1 }}
               onClick={() => setIsEnquiryModalOpen(true)}
-              className="group flex items-center gap-3 px-8 py-3.5 border border-white/20 rounded-full hover:bg-white hover:text-black transition-all duration-500 backdrop-blur-md"
+              className="group relative flex items-center gap-3 px-10 py-4 border border-white/20 rounded-full hover:bg-white hover:text-black transition-all duration-700 backdrop-blur-xl hover:shadow-[0_0_40px_rgba(255,255,255,0.2)] mb-12"
             >
-              <span className="text-[10px] md:text-[12px] font-black uppercase tracking-[0.4em] ml-[0.4em]">ENROLL NOW</span>
-              <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" strokeWidth={2} />
+              <span className="text-[11px] md:text-[13px] font-black uppercase tracking-[0.5em] ml-[0.5em]">ENROLL NOW</span>
+              <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" strokeWidth={2.5} />
             </motion.button>
+
+            {/* Integrated Ticker (Now below Enroll button) */}
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 1.2, duration: 1 }}
+              className="w-full max-w-4xl bg-white/5 backdrop-blur-2xl border border-white/10 py-5 rounded-[2rem] overflow-hidden"
+            >
+                <div className="flex whitespace-nowrap">
+                  <motion.div 
+                    animate={{ x: ["0%", "-50%"] }}
+                    transition={{ duration: 40, repeat: Infinity, ease: "linear" }}
+                    className="flex items-center gap-20 px-8 min-w-full shrink-0"
+                  >
+                    {[1, 2, 3, 4].map((i) => (
+                      <div key={i} className="flex items-center gap-10 shrink-0">
+                        <div className="flex items-center gap-2">
+                           <Zap size={14} className="text-premium-accent fill-premium-accent" />
+                           <span className="text-premium-accent text-[10px] font-black uppercase tracking-[0.4em]">ALERT</span>
+                        </div>
+                        <p className="text-white/80 text-[11px] md:text-[13px] font-bold uppercase tracking-[0.2em]">
+                            ADMISSION OPENS FOR 2026-27. LIMITED SEATS AVAILABLE.
+                        </p>
+                        <div className="w-1.5 h-1.5 bg-white/20 rounded-full" />
+                      </div>
+                    ))}
+                  </motion.div>
+                </div>
+            </motion.div>
         </div>
 
-        {/* Ongoing Scrolling Ticker */}
-        <div className="absolute bottom-0 w-full bg-black/70 backdrop-blur-xl border-t border-white/5 py-4 z-20 overflow-hidden">
-            <div className="flex whitespace-nowrap">
-              <motion.div 
-                animate={{ x: ["0%", "-50%"] }}
-                transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
-                className="flex items-center gap-16 px-8 min-w-full shrink-0"
-              >
-                {/* Replicated content for seamless loop */}
-                {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="flex items-center gap-8 shrink-0">
-                    <span className="text-premium-accent text-[9px] font-black uppercase tracking-[0.4em] px-3 py-1 bg-premium-accent/10 rounded-lg border border-premium-accent/20">ALERT</span>
-                    <p className="text-white/90 text-[11px] md:text-[13px] font-black uppercase tracking-[0.2em]">
-                        ADMISSION OPENS FOR 2026-27. LIMITED SEATS AVAILABLE. SECURE YOUR LEGACY AT SHRIYA'S GURUKUL.
-                    </p>
-                  </div>
-                ))}
-              </motion.div>
-            </div>
-        </div>
+        {/* Scroll Indicator */}
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 2 }}
+          className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-3 opacity-30"
+        >
+          <div className="w-[1px] h-12 bg-gradient-to-b from-white to-transparent" />
+          <span className="text-[8px] font-black uppercase tracking-widest">Scroll</span>
+        </motion.div>
       </section>
 
       {/* --- Philosophy Section --- */}
-      <section className="py-32 px-6">
+      <section className="py-32 px-6 bg-[#050505]">
           <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-24 items-center">
               <div className="space-y-8">
                   <h2 className="text-5xl md:text-7xl font-light serif-font uppercase leading-tight">Precision <br /> Mastery.</h2>
