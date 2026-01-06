@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, ChevronDown, Heart, Sun, Moon, User as UserIcon } from 'lucide-react';
+import { Menu, X, ChevronDown, Heart, Sun, Moon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from '../App';
 
@@ -71,7 +71,7 @@ const Navbar: React.FC = () => {
       <nav
         className={`fixed top-0 w-full z-[100] transition-all duration-700 ease-in-out ${
           scrolled || isLoginPage
-            ? 'bg-white/90 dark:bg-black/90 backdrop-blur-lg py-3 md:py-4 border-b border-black/5 dark:border-white/5 shadow-sm dark:shadow-none' 
+            ? 'bg-white/95 dark:bg-black/95 backdrop-blur-md py-3 md:py-4 border-b border-black/5 dark:border-white/5 shadow-sm' 
             : 'bg-transparent py-8'
         }`}
       >
@@ -135,18 +135,18 @@ const Navbar: React.FC = () => {
             </div>
           </div>
 
-          {/* Mobile Actions Header */}
-          <div className="lg:hidden relative z-[110] flex items-center gap-2 sm:gap-4">
+          {/* Mobile Actions Header - Perfectly matches screenshot */}
+          <div className="lg:hidden relative z-[110] flex items-center gap-3 sm:gap-6">
             <button 
               onClick={toggleTheme}
               className="text-slate-600 dark:text-white/60 hover:text-premium-accent dark:hover:text-white transition-colors p-2"
             >
-              {theme === 'dark' ? <Sun size={20} strokeWidth={2.5} /> : <Moon size={20} strokeWidth={2.5} />}
+              {theme === 'dark' ? <Sun size={22} strokeWidth={2.5} /> : <Moon size={22} strokeWidth={2.5} />}
             </button>
             
             <Link 
               to="/login" 
-              className="bg-slate-900 dark:bg-white text-white dark:text-black px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest shadow-lg flex items-center justify-center min-w-[80px]"
+              className="bg-white dark:bg-white text-black dark:text-black px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl flex items-center justify-center min-w-[85px] border border-black/5"
             >
               Log in
             </Link>
@@ -154,7 +154,7 @@ const Navbar: React.FC = () => {
             {isLoginPage ? (
               <Link 
                 to="/" 
-                className="w-11 h-11 rounded-full bg-slate-900/5 dark:bg-white/5 border border-black/10 dark:border-white/10 flex items-center justify-center hover:bg-black/10 dark:hover:bg-white/10 transition-all"
+                className="w-11 h-11 rounded-full bg-slate-900/5 dark:bg-white/5 border border-black/10 dark:border-white/10 flex items-center justify-center"
               >
                 <X size={24} strokeWidth={2} className="text-slate-900 dark:text-white" />
               </Link>
@@ -195,7 +195,7 @@ const Navbar: React.FC = () => {
               initial="closed"
               animate="open"
               exit="closed"
-              className="flex-1 overflow-y-auto px-8 md:px-12 flex flex-col space-y-6 pb-12"
+              className="flex-1 overflow-y-auto px-8 md:px-12 flex flex-col space-y-8 pb-12"
             >
               {menuStructure.map((item) => (
                 <motion.div key={item.name} variants={itemVariants} className="flex flex-col items-start">
@@ -243,13 +243,20 @@ const Navbar: React.FC = () => {
                 </motion.div>
               ))}
               
-              <motion.div variants={itemVariants} className="pt-8 flex flex-col items-start gap-6 border-t border-slate-100 dark:border-white/5">
+              <motion.div variants={itemVariants} className="pt-10 flex flex-col items-start gap-8 border-t border-slate-100 dark:border-white/5">
+                 <Link 
+                   to="/login" 
+                   onClick={() => setIsOpen(false)} 
+                   className="text-slate-900 dark:text-white text-[16px] font-black uppercase tracking-[0.4em] hover:text-premium-accent transition-colors"
+                 >
+                    Log in
+                 </Link>
                  <Link 
                    to="/pay-fees" 
                    onClick={() => setIsOpen(false)} 
-                   className="text-premium-accent text-[14px] font-black uppercase tracking-[0.4em] hover:brightness-125 transition-all"
+                   className="text-premium-accent text-[16px] font-black uppercase tracking-[0.4em] hover:brightness-125 transition-all"
                  >
-                    Financial Hub
+                    Pay Fees
                  </Link>
               </motion.div>
             </motion.div>
@@ -264,7 +271,7 @@ const Navbar: React.FC = () => {
                   
                   <div className="flex items-center gap-2">
                     <span className="text-slate-500 dark:text-white/40 text-[8px] font-bold uppercase tracking-[0.15em] flex items-center gap-1">
-                      Developed with <Heart size={8} className="inline text-rose-500 fill-current" /> by
+                      Developed by
                     </span>
                     <a 
                       href="https://www.advedasolutions.in" 
@@ -275,7 +282,7 @@ const Navbar: React.FC = () => {
                       <img 
                         src="https://advedasolutions.in/logo.png" 
                         alt="Adveda Solutions" 
-                        className="h-3.5 w-auto object-contain" 
+                        className="h-3.5 w-auto object-contain dark:invert" 
                       />
                     </a>
                   </div>
