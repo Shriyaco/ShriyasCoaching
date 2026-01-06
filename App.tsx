@@ -1,7 +1,9 @@
+
 import React, { createContext, useContext, useEffect, useState, ErrorInfo, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import WhatsAppSupport from './components/WhatsAppSupport';
+import CustomCursor from './components/CustomCursor';
 import PublicHome from './pages/PublicHome';
 import AdminDashboard from './pages/AdminDashboard';
 import StudentDashboard from './pages/StudentDashboard';
@@ -116,6 +118,7 @@ export default function App() {
     <ErrorBoundary>
       <ThemeProvider>
         <Router>
+          <CustomCursor />
           <Navbar />
           <WhatsAppSupport />
           <Suspense fallback={<div className="min-h-screen bg-[#050505] flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#C5A059]"></div></div>}>
