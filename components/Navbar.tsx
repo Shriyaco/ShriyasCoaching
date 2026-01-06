@@ -122,6 +122,18 @@ const Navbar: React.FC = () => {
             ))}
             
             <div className="flex items-center gap-6 pl-6 border-l border-slate-200 dark:border-white/10">
+              {/* Web View Shop Button */}
+              <Link to="/shop" className="text-slate-400 dark:text-white/60 hover:text-premium-accent dark:hover:text-white transition-colors flex items-center gap-2" title="Shop">
+                <ShoppingBag size={18} strokeWidth={2} />
+                <span className="hidden xl:block text-[9px] font-bold uppercase tracking-widest">Shop</span>
+              </Link>
+
+              {/* Web View Pay Fees Button */}
+              <Link to="/pay-fees" className="text-slate-400 dark:text-white/60 hover:text-premium-accent dark:hover:text-white transition-colors flex items-center gap-2" title="Pay Fees">
+                <CreditCard size={18} strokeWidth={2} />
+                <span className="hidden xl:block text-[9px] font-bold uppercase tracking-widest">Fees</span>
+              </Link>
+
               <button 
                 onClick={toggleTheme}
                 className="text-slate-400 dark:text-white/40 hover:text-premium-accent dark:hover:text-white transition-colors p-2"
