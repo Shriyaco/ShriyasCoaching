@@ -442,7 +442,6 @@ class DatabaseService {
   async getHomeworkSubmission(homeworkId: string, studentId: string): Promise<HomeworkSubmission | undefined> {
       const { data } = await supabase.from('homework_submissions').select('*').eq('homework_id', homeworkId).eq('student_id', studentId).single();
       if (!data) return undefined;
-      // Fix: Corrected property name from 'submission_text' to 'submissionText' to align with HomeworkSubmission interface.
       return {
           id: data.id, homeworkId: data.homework_id, studentId: data.student_id, submissionText: data.submission_text, submittedAt: data.submitted_at, status: data.status as any
       };
@@ -500,7 +499,6 @@ class DatabaseService {
           gradeId: e.grade_id, 
           subdivisionId: e.subdivision_id, 
           subject: e.subject, 
-          // Fix: Corrected property name from 'exam_date' to 'examDate' to align with Exam interface.
           examDate: e.exam_date, 
           startTime: e.start_time, 
           duration: e.duration, 
@@ -597,6 +595,10 @@ class DatabaseService {
           createdAt: e.created_at,
           status: e.status
       }));
+  }
+
+  async updateEnquiryStatus(id: string, status: 'New' | 'Contacted') {
+      await supabase.from('enquiries').update({ status }).eq('id', id);
   }
 
   async getProducts(): Promise<Product[]> {
