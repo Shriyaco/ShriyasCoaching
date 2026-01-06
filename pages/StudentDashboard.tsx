@@ -1,13 +1,34 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../services/db';
 import { Student, Exam, Homework, Notice, TimetableEntry, StudentQuery, Subdivision, AttendanceRecord } from '../types';
-import { Gamepad2, Radio, Zap, Bell, Settings, LogOut, CheckCircle2, Target, Trophy, Flame, Lock, Send, X, CalendarDays, ShoppingBag, CreditCard, BookOpen, PenTool, HelpCircle, AlertTriangle } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Gamepad2, Radio, Zap, Bell, Settings, LogOut, CheckCircle2, Target, Trophy, Flame, Lock, Send, X, CalendarDays, ShoppingBag, CreditCard, BookOpen, PenTool, HelpCircle, AlertTriangle, ChevronRight, Star, Sparkles } from 'lucide-react';
+import { motion, AnimatePresence, Variants } from 'framer-motion';
 import JitsiMeeting from '../components/JitsiMeeting';
 
-// --- GAMIFIED COMPONENTS ---
+// --- ANIMATION VARIANTS ---
+const containerVariants: Variants = {
+    hidden: { opacity: 0 },
+    visible: { 
+        opacity: 1,
+        transition: { 
+            staggerChildren: 0.1,
+            delayChildren: 0.2
+        }
+    },
+    exit: { opacity: 0 }
+};
+
+const itemVariants: Variants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: { 
+        y: 0, 
+        opacity: 1,
+        transition: { type: 'spring', stiffness: 300, damping: 24 }
+    }
+};
+
+// --- COMPONENTS ---
 
 const XPBar = ({ attendance, onClick }: { attendance: AttendanceRecord[], onClick: () => void }) => {
     const total = attendance.length;
@@ -16,47 +37,91 @@ const XPBar = ({ attendance, onClick }: { attendance: AttendanceRecord[], onClic
     const level = Math.floor(present / 5) + 1;
 
     return (
-        <div onClick={onClick} className="bg-black/40 backdrop-blur-xl border-2 border-yellow-400/50 p-4 rounded-3xl flex items-center gap-4 relative overflow-hidden group cursor-pointer hover:bg-white/5 transition-all">
-            <div className="absolute inset-0 bg-yellow-400/5 group-hover:bg-yellow-400/10 transition-colors" />
-            <div className="relative z-10 w-16 h-16 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-2xl flex flex-col items-center justify-center border-4 border-black shadow-xl transform group-hover:rotate-6 transition-transform">
-                <span className="text-[10px] font-black uppercase text-black">Lvl</span>
-                <span className="text-2xl font-black text-black leading-none">{level}</span>
-            </div>
-            <div className="flex-1">
-                <div className="flex justify-between mb-1">
-                    <span className="text-[10px] font-black uppercase text-yellow-400 tracking-widest">XP Progress (History)</span>
-                    <span className="text-[10px] font-black text-white">{percentage}%</span>
+        <motion.div 
+            variants={itemVariants}
+            onClick={onClick} 
+            className="col-span-full relative overflow-hidden rounded-[32px] p-[1px] bg-gradient-to-r from-yellow-500/50 via-orange-500/50 to-red-500/50 cursor-pointer group"
+        >
+            <div className="absolute inset-0 bg-gradient-to-r from-yellow-500 via-orange-500 to-red-500 opacity-20 blur-xl group-hover:opacity-40 transition-opacity duration-500" />
+            <div className="relative bg-[#0a0a0a]/90 backdrop-blur-xl rounded-[31px] p-6 flex items-center gap-6 h-full">
+                <div className="relative w-20 h-20 flex-shrink-0">
+                    <svg className="w-full h-full transform -rotate-90">
+                        <circle cx="40" cy="40" r="36" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-white/5" />
+                        <motion.circle 
+                            initial={{ pathLength: 0 }} 
+                            animate={{ pathLength: percentage / 100 }} 
+                            transition={{ duration: 1.5, ease: "easeOut" }}
+                            cx="40" cy="40" r="36" stroke="url(#gradient)" strokeWidth="8" strokeLinecap="round" fill="transparent" className="drop-shadow-[0_0_10px_rgba(234,179,8,0.5)]" 
+                        />
+                        <defs>
+                            <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" stopColor="#EAB308" />
+                                <stop offset="100%" stopColor="#F97316" />
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                        <span className="text-[10px] font-black uppercase text-white/40">Lvl</span>
+                        <span className="text-2xl font-black text-white leading-none">{level}</span>
+                    </div>
                 </div>
-                <div className="h-3 bg-black/50 rounded-full border border-white/10 overflow-hidden">
-                    <motion.div 
-                        initial={{ width: 0 }} 
-                        animate={{ width: `${percentage}%` }} 
-                        className="h-full bg-gradient-to-r from-yellow-400 to-orange-500 relative"
-                    >
-                        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20"></div>
-                    </motion.div>
+                
+                <div className="flex-1 space-y-2">
+                    <div className="flex justify-between items-center">
+                        <div>
+                            <h3 className="text-lg font-black italic text-white tracking-wide uppercase">Attendance XP</h3>
+                            <p className="text-[10px] text-white/40 font-bold uppercase tracking-wider">Click to view log</p>
+                        </div>
+                        <div className="text-right">
+                            <span className="text-2xl font-black text-yellow-400">{percentage}%</span>
+                        </div>
+                    </div>
+                    <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
+                        <motion.div 
+                            initial={{ width: 0 }} 
+                            animate={{ width: `${percentage}%` }} 
+                            transition={{ duration: 1.5, ease: "easeOut" }}
+                            className="h-full bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full shadow-[0_0_15px_rgba(234,179,8,0.5)]" 
+                        />
+                    </div>
                 </div>
+                <ChevronRight className="text-white/20 group-hover:text-white transition-colors group-hover:translate-x-1 duration-300" />
             </div>
-        </div>
+        </motion.div>
     );
 };
 
 const AttendanceModal = ({ attendance, onClose }: { attendance: AttendanceRecord[], onClose: () => void }) => (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-md p-4">
-        <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="bg-[#111] border border-white/10 rounded-[32px] w-full max-w-lg overflow-hidden flex flex-col max-h-[80vh]">
-            <div className="p-6 border-b border-white/10 flex justify-between items-center bg-white/5">
-                <h3 className="text-xl font-black text-yellow-400 uppercase tracking-widest flex items-center gap-2"><CalendarDays size={20}/> Attendance Log</h3>
-                <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full text-white/50 hover:text-white transition-all"><X size={20}/></button>
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-lg p-4">
+        <motion.div 
+            initial={{ scale: 0.9, y: 20 }} 
+            animate={{ scale: 1, y: 0 }} 
+            className="bg-[#111] border border-white/10 rounded-[40px] w-full max-w-lg overflow-hidden flex flex-col max-h-[80vh] shadow-2xl"
+        >
+            <div className="p-8 border-b border-white/10 flex justify-between items-center bg-white/5">
+                <div>
+                    <h3 className="text-2xl font-black text-white uppercase tracking-wide flex items-center gap-3">
+                        <CalendarDays className="text-yellow-400" size={24}/> Mission Log
+                    </h3>
+                    <p className="text-[10px] text-white/40 font-bold uppercase tracking-[0.2em] mt-1">Attendance History</p>
+                </div>
+                <button onClick={onClose} className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/20 flex items-center justify-center text-white/60 hover:text-white transition-all"><X size={20}/></button>
             </div>
             <div className="flex-1 overflow-y-auto p-6 space-y-3 custom-scrollbar">
-                {attendance.length === 0 && <p className="text-center text-white/20 py-10 font-black uppercase tracking-widest">No Records Found</p>}
+                {attendance.length === 0 && <p className="text-center text-white/20 py-20 font-black uppercase tracking-widest text-xs">No Records Found</p>}
                 {attendance.map((record, i) => (
-                    <div key={i} className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5">
-                        <span className="text-white/70 font-mono text-sm font-bold">{record.date}</span>
-                        <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest ${record.status === 'Present' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'}`}>
+                    <motion.div 
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: i * 0.05 }}
+                        key={i} 
+                        className="flex items-center justify-between p-4 bg-white/[0.03] rounded-2xl border border-white/5 hover:border-white/10 transition-colors"
+                    >
+                        <span className="text-white/80 font-mono text-sm font-bold tracking-tight">{record.date}</span>
+                        <span className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest border ${record.status === 'Present' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 shadow-[0_0_10px_rgba(52,211,153,0.1)]' : 'bg-rose-500/10 text-rose-400 border-rose-500/20'}`}>
                             {record.status}
                         </span>
-                    </div>
+                    </motion.div>
                 ))}
             </div>
         </motion.div>
@@ -67,37 +132,48 @@ const PortalCard = ({ subdivision, studentName }: { subdivision: Subdivision, st
     const [isMeetingOpen, setIsMeetingOpen] = useState(false);
 
     if (!subdivision?.isLive) return (
-        <div className="bg-black/40 border-2 border-dashed border-white/10 rounded-[32px] p-8 flex items-center gap-6 opacity-60 grayscale">
-            <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center">
+        <motion.div variants={itemVariants} className="col-span-full bg-[#0a0a0a] border border-white/5 rounded-[32px] p-8 flex items-center gap-8 relative overflow-hidden group">
+            <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center shrink-0 border border-white/5 group-hover:border-white/10 transition-colors">
                 <Radio size={32} className="text-white/20" />
             </div>
             <div>
-                <h3 className="text-xl font-black text-white/40 uppercase tracking-widest">Class Offline</h3>
-                <p className="text-xs font-bold text-white/20 mt-1">No active session detected.</p>
+                <h3 className="text-xl font-black text-white/30 uppercase tracking-widest">Portal Offline</h3>
+                <p className="text-xs font-bold text-white/20 mt-1">No active warp signatures detected.</p>
             </div>
-        </div>
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out pointer-events-none" />
+        </motion.div>
     );
 
     return (
         <>
             <motion.div 
-                whileHover={{ scale: 1.02, rotate: -1 }}
+                variants={itemVariants}
+                whileHover={{ scale: 1.01 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => setIsMeetingOpen(true)}
-                className="bg-gradient-to-r from-violet-600 to-indigo-600 rounded-[32px] p-1 cursor-pointer shadow-[0_0_40px_rgba(124,58,237,0.5)] relative overflow-hidden group"
+                className="col-span-full relative overflow-hidden rounded-[32px] p-[1px] cursor-pointer group"
             >
-                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/diagmonds-light.png')] opacity-20 animate-pulse"></div>
-                <div className="bg-black/20 backdrop-blur-sm rounded-[28px] p-8 flex items-center justify-between relative z-10 h-full">
-                    <div>
-                        <div className="flex items-center gap-2 mb-2">
-                            <span className="w-3 h-3 bg-red-500 rounded-full animate-ping" />
-                            <span className="text-white font-black text-[10px] uppercase tracking-[0.2em] bg-red-500/20 px-2 py-1 rounded">Live Now</span>
+                <div className="absolute inset-0 bg-gradient-to-r from-violet-600 via-fuchsia-600 to-indigo-600 animate-gradient-xy opacity-80" />
+                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/diagmonds-light.png')] opacity-30 mix-blend-overlay" />
+                
+                <div className="relative bg-black/80 backdrop-blur-xl rounded-[31px] p-8 flex items-center justify-between h-full">
+                    <div className="relative z-10">
+                        <div className="flex items-center gap-3 mb-3">
+                            <span className="relative flex h-3 w-3">
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                              <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                            </span>
+                            <span className="text-white font-black text-[10px] uppercase tracking-[0.3em] bg-red-500/20 border border-red-500/30 px-3 py-1 rounded-full backdrop-blur-md">Live Event</span>
                         </div>
-                        <h3 className="text-3xl font-black text-white italic tracking-wide drop-shadow-lg">JOIN CLASS</h3>
-                        <p className="text-indigo-100 text-xs font-bold mt-2 opacity-80">Tap to enter classroom</p>
+                        <h3 className="text-3xl md:text-4xl font-black text-white italic tracking-tighter drop-shadow-lg">WARP GATE OPEN</h3>
+                        <p className="text-indigo-200 text-xs font-bold mt-2 uppercase tracking-widest opacity-80">Tap to teleport to class</p>
                     </div>
-                    <div className="w-20 h-20 bg-white text-indigo-600 rounded-full flex items-center justify-center border-4 border-indigo-400 shadow-xl group-hover:scale-110 transition-transform duration-500">
-                        <Zap size={36} fill="currentColor" className="animate-bounce" />
+                    
+                    <div className="w-24 h-24 relative flex items-center justify-center">
+                        <div className="absolute inset-0 bg-indigo-500 rounded-full blur-xl opacity-40 animate-pulse" />
+                        <div className="relative w-full h-full bg-gradient-to-br from-indigo-500 to-violet-600 rounded-full flex items-center justify-center border-4 border-white/10 shadow-2xl group-hover:scale-110 transition-transform duration-300">
+                            <Zap size={40} fill="currentColor" className="text-white animate-bounce" />
+                        </div>
                     </div>
                 </div>
             </motion.div>
@@ -112,57 +188,72 @@ const PortalCard = ({ subdivision, studentName }: { subdivision: Subdivision, st
     );
 };
 
+const StatCard = ({ title, value, label, icon: Icon, colorClass, borderClass }: any) => (
+    <motion.div 
+        variants={itemVariants}
+        className={`bg-[#0a0a0a] p-6 rounded-[32px] border ${borderClass} flex flex-col items-center justify-center text-center gap-3 relative overflow-hidden group hover:bg-white/[0.02] transition-colors`}
+    >
+        <div className={`w-12 h-12 ${colorClass} rounded-2xl flex items-center justify-center mb-1 transition-transform group-hover:scale-110 duration-300 shadow-lg`}>
+            <Icon size={24} strokeWidth={2.5}/>
+        </div>
+        <div>
+            <h3 className="text-3xl font-black text-white tracking-tight">{value}</h3>
+            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-white/30 group-hover:text-white/50 transition-colors">{label}</p>
+        </div>
+    </motion.div>
+);
+
 const HomeworkCard = ({ homework }: { homework: Homework }) => (
     <motion.div 
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
+        variants={itemVariants}
         whileHover={{ y: -5 }}
-        className="bg-[#1a1a1a] border-2 border-gray-800 p-6 rounded-3xl group relative overflow-hidden hover:border-emerald-400 transition-colors"
+        className="bg-[#0a0a0a] border border-white/5 p-8 rounded-[40px] group relative overflow-hidden hover:border-emerald-500/30 transition-all shadow-lg hover:shadow-emerald-900/10"
     >
-        <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-            <BookOpen size={100} />
+        <div className="absolute top-0 right-0 p-6 opacity-[0.03] group-hover:opacity-10 transition-opacity duration-500">
+            <BookOpen size={120} />
         </div>
-        <div className="flex justify-between items-start mb-4">
-            <span className="px-3 py-1 rounded-lg bg-emerald-400/10 text-emerald-400 text-[10px] font-black uppercase tracking-widest border border-emerald-400/20">
+        <div className="flex justify-between items-start mb-6 relative z-10">
+            <span className="px-4 py-1.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-black uppercase tracking-widest border border-emerald-500/20 shadow-[0_0_10px_rgba(16,185,129,0.1)]">
                 {homework.subject}
             </span>
-            <Target size={20} className="text-emerald-500/20 group-hover:text-emerald-500 transition-colors" />
+            <Target size={20} className="text-white/10 group-hover:text-emerald-500 transition-colors" />
         </div>
-        <h4 className="text-lg font-bold text-white mb-2 line-clamp-2 group-hover:text-emerald-300 transition-colors">"{homework.task}"</h4>
-        <div className="mt-4 pt-4 border-t border-white/5 flex items-center gap-2">
-            <CalendarDays size={14} className="text-emerald-400" />
-            <span className="text-xs font-mono font-bold text-white/40">Due: {homework.dueDate}</span>
+        <h4 className="text-xl font-bold text-white mb-3 line-clamp-2 leading-tight group-hover:text-emerald-200 transition-colors relative z-10">"{homework.task}"</h4>
+        <div className="mt-6 pt-6 border-t border-white/5 flex items-center gap-3 relative z-10">
+            <CalendarDays size={16} className="text-emerald-500" />
+            <span className="text-xs font-mono font-bold text-white/40 group-hover:text-white/60 transition-colors">Due: {homework.dueDate}</span>
         </div>
     </motion.div>
 );
 
 const ExamCard = ({ exam }: { exam: Exam }) => (
     <motion.div 
+        variants={itemVariants}
         whileHover={{ scale: 1.02 }}
-        className="bg-gradient-to-br from-rose-600 to-orange-600 p-1 rounded-[32px] shadow-2xl relative group"
+        className="relative p-[1px] rounded-[40px] bg-gradient-to-br from-rose-500/50 to-orange-500/50"
     >
-        <div className="bg-black/90 rounded-[28px] p-8 h-full relative overflow-hidden">
-            <div className="absolute -right-10 -top-10 text-rose-500/10 group-hover:text-rose-500/20 transition-colors">
-                <PenTool size={150} />
+        <div className="bg-[#0a0a0a] rounded-[39px] p-8 h-full relative overflow-hidden">
+            <div className="absolute -right-8 -top-8 text-rose-500/5 group-hover:text-rose-500/10 transition-colors">
+                <PenTool size={180} />
             </div>
             
             <div className="relative z-10">
-                <div className="flex justify-between items-start mb-6">
-                    <span className="text-rose-400 font-black text-[10px] uppercase tracking-[0.3em] bg-rose-500/10 px-3 py-1 rounded border border-rose-500/20">Upcoming Exam</span>
+                <div className="flex justify-between items-start mb-8">
+                    <span className="text-rose-400 font-black text-[10px] uppercase tracking-[0.3em] bg-rose-500/10 px-4 py-1.5 rounded-full border border-rose-500/20">Boss Raid</span>
                     <Flame size={24} className="text-orange-500 animate-pulse" fill="currentColor" />
                 </div>
                 
-                <h3 className="text-2xl font-black text-white italic uppercase tracking-wider mb-2">{exam.subject}</h3>
-                <p className="text-white/60 text-sm font-bold mb-8">{exam.title}</p>
+                <h3 className="text-3xl font-black text-white italic uppercase tracking-wide mb-2">{exam.subject}</h3>
+                <p className="text-white/60 text-sm font-bold mb-10 border-l-2 border-rose-500/30 pl-4">{exam.title}</p>
                 
                 <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-white/5 rounded-xl p-3 border border-white/5 text-center">
-                        <p className="text-[9px] text-orange-400 font-black uppercase">Date</p>
-                        <p className="text-white font-mono text-xs font-bold">{exam.examDate}</p>
+                    <div className="bg-white/5 rounded-2xl p-4 border border-white/5 text-center group hover:bg-white/10 transition-colors">
+                        <p className="text-[9px] text-orange-400 font-black uppercase tracking-wider mb-1">Battle Date</p>
+                        <p className="text-white font-mono text-sm font-bold">{exam.examDate}</p>
                     </div>
-                    <div className="bg-white/5 rounded-xl p-3 border border-white/5 text-center">
-                        <p className="text-[9px] text-orange-400 font-black uppercase">Time</p>
-                        <p className="text-white font-mono text-xs font-bold">{exam.startTime}</p>
+                    <div className="bg-white/5 rounded-2xl p-4 border border-white/5 text-center group hover:bg-white/10 transition-colors">
+                        <p className="text-[9px] text-orange-400 font-black uppercase tracking-wider mb-1">Start Time</p>
+                        <p className="text-white font-mono text-sm font-bold">{exam.startTime}</p>
                     </div>
                 </div>
             </div>
@@ -190,34 +281,34 @@ const SettingsPanel = ({ student, refresh }: { student: Student, refresh: () => 
     };
 
     return (
-        <div className="max-w-md mx-auto py-10">
-            <div className="bg-[#111] p-10 rounded-[40px] border border-white/10 text-center relative overflow-hidden">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-md mx-auto py-10">
+            <div className="bg-[#0a0a0a] p-10 rounded-[40px] border border-white/10 text-center relative overflow-hidden shadow-2xl">
                 <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-cyan-500 to-blue-500" />
-                <div className="w-20 h-20 bg-cyan-500/10 rounded-full flex items-center justify-center mx-auto mb-8 text-cyan-400 border border-cyan-500/30">
-                    <Lock size={32} />
+                <div className="w-24 h-24 bg-cyan-500/10 rounded-full flex items-center justify-center mx-auto mb-8 text-cyan-400 border border-cyan-500/20 shadow-[0_0_30px_rgba(6,182,212,0.1)]">
+                    <Lock size={36} />
                 </div>
-                <h3 className="text-2xl font-black text-white mb-8 uppercase tracking-widest">Security Config</h3>
+                <h3 className="text-2xl font-black text-white mb-8 uppercase tracking-[0.2em]">Security Protocol</h3>
                 
-                <form onSubmit={handleUpdate} className="space-y-4">
+                <form onSubmit={handleUpdate} className="space-y-5">
                     <div className="space-y-1 text-left">
-                        <label className="text-[9px] font-black uppercase text-white/30 ml-2">Current Password</label>
-                        <input type="password" required value={form.current} onChange={e => setForm({...form, current:e.target.value})} className="w-full bg-black border border-white/10 rounded-2xl px-6 py-4 text-xs text-white outline-none focus:border-cyan-500 transition-all font-mono" />
+                        <label className="text-[9px] font-black uppercase text-white/30 ml-3 tracking-widest">Current Password</label>
+                        <input type="password" required value={form.current} onChange={e => setForm({...form, current:e.target.value})} className="w-full bg-black border border-white/10 rounded-2xl px-6 py-4 text-xs text-white outline-none focus:border-cyan-500 focus:shadow-[0_0_20px_rgba(6,182,212,0.1)] transition-all font-mono" />
                     </div>
                     <div className="space-y-1 text-left">
-                        <label className="text-[9px] font-black uppercase text-white/30 ml-2">New Password</label>
-                        <input type="password" required value={form.new} onChange={e => setForm({...form, new:e.target.value})} className="w-full bg-black border border-white/10 rounded-2xl px-6 py-4 text-xs text-white outline-none focus:border-cyan-500 transition-all font-mono" />
+                        <label className="text-[9px] font-black uppercase text-white/30 ml-3 tracking-widest">New Password</label>
+                        <input type="password" required value={form.new} onChange={e => setForm({...form, new:e.target.value})} className="w-full bg-black border border-white/10 rounded-2xl px-6 py-4 text-xs text-white outline-none focus:border-cyan-500 focus:shadow-[0_0_20px_rgba(6,182,212,0.1)] transition-all font-mono" />
                     </div>
                     <div className="space-y-1 text-left">
-                        <label className="text-[9px] font-black uppercase text-white/30 ml-2">Verify Password</label>
-                        <input type="password" required value={form.confirm} onChange={e => setForm({...form, confirm:e.target.value})} className="w-full bg-black border border-white/10 rounded-2xl px-6 py-4 text-xs text-white outline-none focus:border-cyan-500 transition-all font-mono" />
+                        <label className="text-[9px] font-black uppercase text-white/30 ml-3 tracking-widest">Verify Password</label>
+                        <input type="password" required value={form.confirm} onChange={e => setForm({...form, confirm:e.target.value})} className="w-full bg-black border border-white/10 rounded-2xl px-6 py-4 text-xs text-white outline-none focus:border-cyan-500 focus:shadow-[0_0_20px_rgba(6,182,212,0.1)] transition-all font-mono" />
                     </div>
                     
-                    <button disabled={loading} className="w-full py-5 bg-gradient-to-r from-cyan-600 to-blue-600 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:shadow-lg hover:shadow-cyan-500/20 transition-all mt-6 disabled:opacity-50">
-                        {loading ? 'Updating...' : 'Update Password'}
+                    <button disabled={loading} className="w-full py-5 bg-white text-black rounded-2xl font-black text-xs uppercase tracking-[0.3em] hover:bg-cyan-400 hover:text-white transition-all mt-8 disabled:opacity-50 shadow-xl">
+                        {loading ? 'Updating...' : 'Update Credentials'}
                     </button>
                 </form>
             </div>
-        </div>
+        </motion.div>
     );
 };
 
@@ -290,9 +381,13 @@ export default function StudentDashboard() {
     const handleLogout = () => { sessionStorage.removeItem('sc_user'); navigate('/'); };
 
     if (loading) return (
-        <div className="min-h-screen bg-[#050505] flex flex-col items-center justify-center gap-4">
-            <div className="w-16 h-16 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>
-            <p className="text-cyan-500 font-black uppercase text-xs tracking-[0.5em]">Loading Interface...</p>
+        <div className="min-h-screen bg-[#050505] flex flex-col items-center justify-center gap-6">
+            <div className="relative w-24 h-24">
+                <div className="absolute inset-0 border-4 border-white/10 rounded-full"></div>
+                <div className="absolute inset-0 border-4 border-cyan-500 rounded-full border-t-transparent animate-spin"></div>
+                <div className="absolute inset-4 bg-cyan-500/20 rounded-full blur-md animate-pulse"></div>
+            </div>
+            <p className="text-white/40 font-black uppercase text-xs tracking-[0.5em] animate-pulse">Initializing System...</p>
         </div>
     );
     
@@ -300,166 +395,209 @@ export default function StudentDashboard() {
 
     const navItems = [
         { id: 'command', label: 'Base', icon: Gamepad2 },
-        { id: 'homework', label: 'Homework', icon: BookOpen }, // Renamed from Missions/Quest
-        { id: 'exams', label: 'Exam', icon: PenTool }, // Renamed from Challenges/Raid
-        // Removed Time (Schedule) and Alerts (Intel)
-        { id: 'doubts', label: 'Doubt', icon: HelpCircle }, // Renamed from Comms/Doubts
+        { id: 'homework', label: 'Homework', icon: BookOpen },
+        { id: 'exams', label: 'Exam', icon: PenTool },
+        { id: 'doubts', label: 'Doubt', icon: HelpCircle },
         { id: 'shop', label: 'Shop', icon: ShoppingBag, action: () => navigate('/shop') },
         { id: 'fees', label: 'Fees', icon: CreditCard, action: () => navigate('/pay-fees') },
         { id: 'settings', label: 'Config', icon: Settings },
     ];
 
     return (
-        <div className="min-h-screen bg-[#0a0a0a] text-white font-sans selection:bg-cyan-500/30 overflow-x-hidden pb-36 md:pb-0 relative">
-            {/* Playful Background */}
-            <div className="fixed inset-0 z-0 pointer-events-none bg-[#050505]">
-                <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-900/40 via-[#050505] to-[#050505]" />
-                <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-cyan-600/10 rounded-full blur-[100px]" />
-                <div className="absolute top-20 left-20 w-[300px] h-[300px] bg-purple-600/10 rounded-full blur-[80px]" />
+        <div className="min-h-screen bg-[#020204] text-white font-sans selection:bg-cyan-500/30 overflow-x-hidden pb-40 md:pb-0 relative">
+            
+            {/* Ambient Background */}
+            <div className="fixed inset-0 z-0 pointer-events-none">
+                <div className="absolute top-[-20%] left-[-10%] w-[800px] h-[800px] bg-indigo-900/20 rounded-full blur-[120px] mix-blend-screen opacity-40" />
+                <div className="absolute bottom-[-20%] right-[-10%] w-[600px] h-[600px] bg-cyan-900/20 rounded-full blur-[100px] mix-blend-screen opacity-40" />
+                <div className="absolute top-[20%] right-[20%] w-[400px] h-[400px] bg-purple-900/10 rounded-full blur-[80px] mix-blend-screen opacity-30" />
             </div>
 
-            {/* Header / Hero Profile */}
-            <header className="sticky top-0 z-40 bg-[#0a0a0a]/80 backdrop-blur-xl border-b border-white/5 px-6 py-4 flex items-center justify-between">
+            {/* Glass Header */}
+            <header className="sticky top-0 z-40 bg-[#020204]/80 backdrop-blur-xl border-b border-white/5 px-6 py-4 flex items-center justify-between shadow-lg">
                 <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-600 p-[2px] shadow-lg shadow-cyan-500/20">
-                        <div className="w-full h-full bg-black rounded-[10px] overflow-hidden">
-                            {student.imageUrl ? <img src={student.imageUrl} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center font-black text-cyan-400">{student.name.charAt(0)}</div>}
+                    <div className="relative">
+                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-600 p-[2px] shadow-[0_0_20px_rgba(6,182,212,0.3)]">
+                            <div className="w-full h-full bg-black rounded-[14px] overflow-hidden">
+                                {student.imageUrl ? <img src={student.imageUrl} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center font-black text-cyan-400">{student.name.charAt(0)}</div>}
+                            </div>
+                        </div>
+                        <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-black rounded-full flex items-center justify-center">
+                            <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse border border-emerald-400"></div>
                         </div>
                     </div>
                     <div>
-                        <h2 className="text-sm font-black italic tracking-wide text-white uppercase">{student.name.split(' ')[0]}</h2>
+                        <h2 className="text-sm font-black italic tracking-wide text-white uppercase leading-none mb-1">{student.name.split(' ')[0]}</h2>
                         <div className="flex items-center gap-2">
-                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                            <p className="text-[9px] font-bold text-white/40 uppercase tracking-widest">Online</p>
+                            <span className="text-[9px] font-bold text-white/40 uppercase tracking-[0.2em]">Cadet Online</span>
                         </div>
                     </div>
                 </div>
-                <button onClick={handleLogout} className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center text-rose-500 hover:bg-rose-500 hover:text-white transition-all">
+                <button onClick={handleLogout} className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center text-rose-500 hover:bg-rose-500/10 hover:text-rose-400 transition-all border border-white/5">
                     <LogOut size={18} />
                 </button>
             </header>
 
-            {/* Main Content */}
-            <main className="relative z-10 max-w-5xl mx-auto p-6 md:p-12">
+            {/* Main Content Area */}
+            <main className="relative z-10 max-w-6xl mx-auto p-6 md:p-12">
                 <AnimatePresence mode="wait">
                     
                     {activeTab === 'command' && (
-                        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="space-y-10">
-                            {/* Hero Section */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-                                <XPBar attendance={attendance} onClick={() => setShowAttendanceHistory(true)} />
-                                {subdivision && <PortalCard subdivision={subdivision} studentName={student.name} />}
+                        <motion.div variants={containerVariants} initial="hidden" animate="visible" exit="exit" className="space-y-12">
+                            
+                            {/* Hero Section Grid */}
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                {/* XP Bar spans full width on mobile, 2 cols on large */}
+                                <div className="lg:col-span-2">
+                                    <XPBar attendance={attendance} onClick={() => setShowAttendanceHistory(true)} />
+                                </div>
+                                {/* Portal Card (Live Class) */}
+                                <div className="lg:col-span-1 h-full">
+                                    {subdivision && <PortalCard subdivision={subdivision} studentName={student.name} />}
+                                </div>
                             </div>
 
                             {/* Stats Grid */}
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                <div className="bg-[#151515] p-5 rounded-3xl border border-white/5 flex flex-col items-center justify-center gap-2 group hover:border-cyan-500/50 transition-colors">
-                                    <div className="w-10 h-10 bg-cyan-500/10 rounded-full flex items-center justify-center text-cyan-400 mb-1"><BookOpen size={20}/></div>
-                                    <h3 className="text-2xl font-black text-white">{missions.length}</h3>
-                                    <p className="text-[8px] font-black uppercase tracking-widest text-white/30">Pending HW</p>
-                                </div>
-                                <div className="bg-[#151515] p-5 rounded-3xl border border-white/5 flex flex-col items-center justify-center gap-2 group hover:border-rose-500/50 transition-colors">
-                                    <div className="w-10 h-10 bg-rose-500/10 rounded-full flex items-center justify-center text-rose-400 mb-1"><PenTool size={20}/></div>
-                                    <h3 className="text-2xl font-black text-white">{challenges.length}</h3>
-                                    <p className="text-[8px] font-black uppercase tracking-widest text-white/30">Upcoming Exams</p>
-                                </div>
-                                <div className="bg-[#151515] p-5 rounded-3xl border border-white/5 flex flex-col items-center justify-center gap-2 group hover:border-yellow-500/50 transition-colors">
-                                    <div className="w-10 h-10 bg-yellow-500/10 rounded-full flex items-center justify-center text-yellow-400 mb-1"><Bell size={20}/></div>
-                                    <h3 className="text-2xl font-black text-white">{intel.length}</h3>
-                                    <p className="text-[8px] font-black uppercase tracking-widest text-white/30">Notices</p>
-                                </div>
-                                <div className="bg-[#151515] p-5 rounded-3xl border border-white/5 flex flex-col items-center justify-center gap-2 group hover:border-emerald-500/50 transition-colors">
-                                    <div className="w-10 h-10 bg-emerald-500/10 rounded-full flex items-center justify-center text-emerald-400 mb-1"><Trophy size={20}/></div>
-                                    <h3 className="text-2xl font-black text-white">98%</h3>
-                                    <p className="text-[8px] font-black uppercase tracking-widest text-white/30">Reputation</p>
-                                </div>
+                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                                <StatCard title="Active Missions" value={missions.length} label="Pending HW" icon={BookOpen} colorClass="bg-cyan-500/20 text-cyan-400" borderClass="border-cyan-500/20" />
+                                <StatCard title="Boss Raids" value={challenges.length} label="Exams" icon={PenTool} colorClass="bg-rose-500/20 text-rose-400" borderClass="border-rose-500/20" />
+                                <StatCard title="Intel" value={intel.length} label="New Alerts" icon={Bell} colorClass="bg-yellow-500/20 text-yellow-400" borderClass="border-yellow-500/20" />
+                                <StatCard title="Reputation" value="98%" label="Elite Status" icon={Trophy} colorClass="bg-emerald-500/20 text-emerald-400" borderClass="border-emerald-500/20" />
                             </div>
 
-                            {/* Notices / Alerts on Dashboard */}
-                            <div className="space-y-6">
-                                <div className="flex items-center gap-2 mb-2 px-2">
-                                    <AlertTriangle className="text-yellow-500" size={20} />
-                                    <h3 className="text-xl font-black italic tracking-wide text-white uppercase">Latest Alerts</h3>
+                            {/* Two Column Layout: Alerts & Actions */}
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                                {/* Alerts Column */}
+                                <div className="lg:col-span-2 space-y-6">
+                                    <div className="flex items-center gap-3 px-2">
+                                        <div className="p-2 bg-yellow-500/10 rounded-lg text-yellow-500 animate-pulse"><AlertTriangle size={20} /></div>
+                                        <h3 className="text-xl font-black italic tracking-wide text-white uppercase">Mission Updates</h3>
+                                    </div>
+                                    
+                                    <div className="space-y-4">
+                                        {intel.slice(0, 3).map((n, i) => (
+                                            <motion.div 
+                                                key={n.id} 
+                                                variants={itemVariants}
+                                                className="bg-[#0a0a0a] border-l-4 border-yellow-500 p-6 rounded-r-[24px] relative overflow-hidden group hover:bg-white/5 transition-colors"
+                                            >
+                                                <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity"><Bell size={40}/></div>
+                                                <div className="flex justify-between items-start mb-2 relative z-10">
+                                                    <h4 className="text-lg font-bold text-white group-hover:text-yellow-400 transition-colors">{n.title}</h4>
+                                                    {n.important && <span className="bg-rose-500/20 text-rose-400 text-[9px] font-black uppercase px-2 py-1 rounded border border-rose-500/30">Urgent</span>}
+                                                </div>
+                                                <p className="text-white/50 text-sm leading-relaxed mb-4 relative z-10">{n.content}</p>
+                                                <p className="text-[10px] font-black uppercase tracking-widest text-white/20 relative z-10">{n.date}</p>
+                                            </motion.div>
+                                        ))}
+                                        {intel.length === 0 && (
+                                            <div className="py-12 bg-white/[0.02] rounded-[24px] border border-dashed border-white/10 text-center">
+                                                <p className="text-white/20 font-black uppercase text-xs tracking-[0.2em]">All Systems Nominal</p>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
-                                {intel.slice(0, 3).map(n => (
-                                    <div key={n.id} className="bg-[#111] border-l-4 border-yellow-500 p-6 rounded-r-3xl relative overflow-hidden group">
-                                        <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity"><Bell size={32}/></div>
-                                        <div className="flex justify-between items-start mb-2">
-                                            <h4 className="text-lg font-bold text-white group-hover:text-yellow-400 transition-colors">{n.title}</h4>
-                                            {n.important && <span className="bg-rose-500 text-white text-[8px] font-black uppercase px-2 py-1 rounded">Urgent</span>}
-                                        </div>
-                                        <p className="text-white/50 text-sm leading-relaxed mb-4">{n.content}</p>
-                                        <p className="text-[9px] font-black uppercase tracking-widest text-white/20">{n.date}</p>
-                                    </div>
-                                ))}
-                                {intel.length === 0 && (
-                                    <div className="py-10 bg-white/5 rounded-3xl border border-dashed border-white/10 text-center">
-                                        <p className="text-white/20 font-black uppercase text-xs tracking-widest">No Active Alerts</p>
-                                    </div>
-                                )}
-                            </div>
 
-                            {/* Recent Homework */}
-                            <div>
-                                <div className="flex justify-between items-end mb-6 px-2">
-                                    <h3 className="text-xl font-black italic tracking-wide text-white uppercase flex items-center gap-2">
-                                        <BookOpen size={20} className="text-purple-500"/> Priority Homework
-                                    </h3>
-                                    <button onClick={() => setActiveTab('homework')} className="text-[10px] font-bold uppercase tracking-widest text-purple-400 hover:text-white transition-colors">View All</button>
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    {missions.slice(0, 2).map(m => <HomeworkCard key={m.id} homework={m} />)}
-                                    {missions.length === 0 && (
-                                        <div className="col-span-full py-16 bg-white/5 rounded-[32px] border border-dashed border-white/10 text-center">
-                                            <CheckCircle2 size={48} className="mx-auto text-emerald-500 mb-4 opacity-50"/>
-                                            <p className="text-white/20 font-black uppercase text-xs tracking-widest">All Objectives Cleared</p>
+                                {/* Quick Actions Column */}
+                                <div className="space-y-6">
+                                    <div className="flex items-center gap-3 px-2">
+                                        <div className="p-2 bg-purple-500/10 rounded-lg text-purple-500"><Sparkles size={20} /></div>
+                                        <h3 className="text-xl font-black italic tracking-wide text-white uppercase">Quick Access</h3>
+                                    </div>
+                                    <div className="grid gap-4">
+                                        <motion.button 
+                                            variants={itemVariants}
+                                            whileHover={{ scale: 1.02 }}
+                                            whileTap={{ scale: 0.98 }}
+                                            onClick={() => navigate('/shop')}
+                                            className="w-full bg-gradient-to-r from-purple-900/40 to-indigo-900/40 border border-purple-500/20 p-6 rounded-[24px] text-left relative overflow-hidden group"
+                                        >
+                                            <div className="absolute inset-0 bg-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                            <div className="flex items-center justify-between relative z-10">
+                                                <div>
+                                                    <h4 className="text-lg font-bold text-white mb-1">Item Shop</h4>
+                                                    <p className="text-[10px] uppercase tracking-wider text-purple-300">Browse Equipment</p>
+                                                </div>
+                                                <ShoppingBag className="text-purple-400" size={24} />
+                                            </div>
+                                        </motion.button>
+
+                                        <motion.button 
+                                            variants={itemVariants}
+                                            whileHover={{ scale: 1.02 }}
+                                            whileTap={{ scale: 0.98 }}
+                                            onClick={() => navigate('/pay-fees')}
+                                            className="w-full bg-gradient-to-r from-emerald-900/40 to-teal-900/40 border border-emerald-500/20 p-6 rounded-[24px] text-left relative overflow-hidden group"
+                                        >
+                                            <div className="absolute inset-0 bg-emerald-500/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                            <div className="flex items-center justify-between relative z-10">
+                                                <div>
+                                                    <h4 className="text-lg font-bold text-white mb-1">Treasury</h4>
+                                                    <p className="text-[10px] uppercase tracking-wider text-emerald-300">Settle Dues</p>
+                                                </div>
+                                                <CreditCard className="text-emerald-400" size={24} />
+                                            </div>
+                                        </motion.button>
+                                        
+                                        <div className="p-6 bg-white/[0.02] rounded-[24px] border border-white/5">
+                                            <h4 className="text-sm font-bold text-white mb-4">Latest Homework</h4>
+                                            {missions.slice(0, 1).map(m => (
+                                                <div key={m.id} onClick={() => setActiveTab('homework')} className="cursor-pointer group">
+                                                    <div className="flex justify-between mb-2">
+                                                        <span className="text-[10px] font-black uppercase text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded">{m.subject}</span>
+                                                        <ChevronRight size={14} className="text-white/20 group-hover:text-white transition-colors" />
+                                                    </div>
+                                                    <p className="text-xs text-white/60 line-clamp-2 italic">"{m.task}"</p>
+                                                </div>
+                                            ))}
+                                            {missions.length === 0 && <p className="text-[10px] text-white/20 uppercase tracking-wider font-bold">None Pending</p>}
                                         </div>
-                                    )}
+                                    </div>
                                 </div>
                             </div>
                         </motion.div>
                     )}
 
                     {activeTab === 'homework' && (
-                        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <motion.div variants={containerVariants} initial="hidden" animate="visible" exit="exit" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {missions.map(m => <HomeworkCard key={m.id} homework={m} />)}
-                            {missions.length === 0 && <div className="col-span-full text-center py-40 text-white/20 font-black uppercase tracking-widest">Homework Log Empty</div>}
+                            {missions.length === 0 && <div className="col-span-full text-center py-40 text-white/20 font-black uppercase tracking-[0.5em] border border-dashed border-white/10 rounded-[40px]">Log Empty</div>}
                         </motion.div>
                     )}
 
                     {activeTab === 'exams' && (
-                        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <motion.div variants={containerVariants} initial="hidden" animate="visible" exit="exit" className="grid grid-cols-1 md:grid-cols-2 gap-8">
                             {challenges.map(c => <ExamCard key={c.id} exam={c} />)}
-                            {challenges.length === 0 && <div className="col-span-full text-center py-40 text-white/20 font-black uppercase tracking-widest">No Exams Detected</div>}
+                            {challenges.length === 0 && <div className="col-span-full text-center py-40 text-white/20 font-black uppercase tracking-[0.5em] border border-dashed border-white/10 rounded-[40px]">No Active Raids</div>}
                         </motion.div>
                     )}
 
                     {activeTab === 'doubts' && (
-                        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="max-w-3xl mx-auto h-[calc(100vh-200px)] flex flex-col pb-32">
+                        <motion.div variants={containerVariants} initial="hidden" animate="visible" exit="exit" className="max-w-4xl mx-auto h-[calc(100vh-200px)] flex flex-col pb-32">
                             <div className="flex-1 overflow-y-auto space-y-6 mb-6 pr-2 scrollbar-hide">
                                 {doubts.map(d => (
-                                    <div key={d.id} className="flex flex-col gap-2">
-                                        <div className="self-end bg-gradient-to-br from-indigo-600 to-blue-600 text-white p-5 rounded-2xl rounded-tr-sm max-w-[80%] shadow-lg">
+                                    <motion.div key={d.id} layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col gap-2">
+                                        <div className="self-end bg-gradient-to-br from-indigo-600 to-blue-600 text-white p-6 rounded-2xl rounded-tr-sm max-w-[85%] shadow-lg">
                                             <p className="text-[9px] font-black uppercase text-indigo-200 mb-2 tracking-widest">{d.subject}</p>
-                                            <p className="text-sm font-medium">{d.queryText}</p>
+                                            <p className="text-sm font-medium leading-relaxed">{d.queryText}</p>
                                         </div>
                                         {d.status === 'Answered' && (
-                                            <div className="self-start bg-[#1a1a1a] border border-white/10 p-5 rounded-2xl rounded-tl-sm max-w-[80%]">
-                                                <div className="flex items-center gap-2 mb-2">
-                                                    <span className="w-2 h-2 bg-emerald-400 rounded-full" />
-                                                    <span className="text-[9px] font-black uppercase text-emerald-400 tracking-widest">Faculty Response</span>
+                                            <div className="self-start bg-[#111] border border-white/10 p-6 rounded-2xl rounded-tl-sm max-w-[85%]">
+                                                <div className="flex items-center gap-2 mb-3">
+                                                    <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
+                                                    <span className="text-[9px] font-black uppercase text-emerald-400 tracking-widest">Incoming Transmission</span>
                                                 </div>
                                                 <p className="text-sm text-slate-300 leading-relaxed">{d.replyText}</p>
                                             </div>
                                         )}
-                                    </div>
+                                    </motion.div>
                                 ))}
                                 {doubts.length === 0 && <div className="text-center py-40 opacity-20 font-black uppercase tracking-[0.3em] text-xs">Secure Channel Open</div>}
                             </div>
-                            <form onSubmit={handleDoubtSubmit} className="bg-[#111] p-2 rounded-[24px] border border-white/10 flex gap-2 shadow-2xl">
+                            <form onSubmit={handleDoubtSubmit} className="bg-[#0a0a0a] p-2 rounded-[28px] border border-white/10 flex gap-2 shadow-2xl relative z-20">
                                 <input required placeholder="Subject..." value={doubtForm.subject} onChange={e => setDoubtForm({...doubtForm, subject: e.target.value})} className="w-1/3 bg-transparent px-6 py-4 text-xs font-bold text-white outline-none border-r border-white/10 placeholder:text-white/20" />
                                 <input required placeholder="Transmission content..." value={doubtForm.queryText} onChange={e => setDoubtForm({...doubtForm, queryText: e.target.value})} className="flex-1 bg-transparent px-6 py-4 text-sm text-white outline-none placeholder:text-white/20" />
-                                <button className="bg-indigo-600 text-white p-4 rounded-[20px] hover:bg-indigo-500 transition-all shadow-lg active:scale-95"><Send size={20} /></button>
+                                <button className="bg-white text-black p-4 rounded-[24px] hover:bg-indigo-400 hover:text-white transition-all shadow-lg active:scale-95"><Send size={20} /></button>
                             </form>
                         </motion.div>
                     )}
@@ -473,25 +611,27 @@ export default function StudentDashboard() {
                 {showAttendanceHistory && <AttendanceModal attendance={attendance} onClose={() => setShowAttendanceHistory(false)} />}
             </AnimatePresence>
 
-            {/* Floating Nav Dock */}
-            <nav className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-[#1a1a1a]/90 backdrop-blur-2xl border border-white/10 rounded-[32px] p-2 flex items-center gap-2 shadow-2xl z-50 max-w-[95vw] overflow-x-auto scrollbar-hide">
-                {navItems.map(item => (
-                    <button
-                        key={item.id}
-                        onClick={() => { 
-                            if(item.action) item.action();
-                            else setActiveTab(item.id); 
-                        }}
-                        className={`relative min-w-[60px] h-16 rounded-2xl flex flex-col items-center justify-center gap-1 transition-all ${activeTab === item.id ? 'bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-lg -translate-y-2' : 'text-white/40 hover:text-white hover:bg-white/5'}`}
-                    >
-                        <item.icon size={20} strokeWidth={activeTab === item.id ? 2.5 : 2} />
-                        <span className="text-[8px] font-black uppercase tracking-widest scale-75">{item.label}</span>
-                        {activeTab === item.id && (
-                            <motion.span layoutId="active-dot" className="absolute -bottom-1 w-1 h-1 bg-white rounded-full" />
-                        )}
-                    </button>
-                ))}
-            </nav>
+            {/* Enhanced Floating Dock */}
+            <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50">
+                <nav className="bg-[#0a0a0a]/80 backdrop-blur-2xl border border-white/10 rounded-[32px] p-2 flex items-center gap-1 shadow-[0_20px_50px_rgba(0,0,0,0.5)] max-w-[95vw] overflow-x-auto scrollbar-hide">
+                    {navItems.map(item => (
+                        <button
+                            key={item.id}
+                            onClick={() => { 
+                                if(item.action) item.action();
+                                else setActiveTab(item.id); 
+                            }}
+                            className={`relative min-w-[64px] h-[64px] rounded-[24px] flex flex-col items-center justify-center gap-1 transition-all duration-300 group ${activeTab === item.id ? 'bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-lg scale-105 -translate-y-2' : 'text-white/40 hover:text-white hover:bg-white/5'}`}
+                        >
+                            <item.icon size={22} strokeWidth={activeTab === item.id ? 2.5 : 2} className="transition-transform group-hover:scale-110" />
+                            <span className={`text-[8px] font-black uppercase tracking-widest scale-75 transition-opacity ${activeTab === item.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>{item.label}</span>
+                            {activeTab === item.id && (
+                                <motion.span layoutId="active-dot" className="absolute -bottom-1 w-1 h-1 bg-white rounded-full shadow-[0_0_10px_white]" />
+                            )}
+                        </button>
+                    ))}
+                </nav>
+            </div>
         </div>
     );
 };
