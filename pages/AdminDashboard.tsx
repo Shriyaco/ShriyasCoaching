@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { db } from '../services/db';
 import { Student, TabView, Grade, Subdivision, Teacher, FeeSubmission, SystemSettings, GatewayConfig, Enquiry, Product, Order, StudentNotification, Notice } from '../types';
-import { Users, Settings, LogOut, Plus, Edit2, Search, Briefcase, CreditCard, Save, Layers, UserPlus, Lock, ShieldAlert, Key, Power, X, Trash2, GraduationCap, TrendingUp, DollarSign, RefreshCw, Menu, Check, Upload, Calendar, MessageCircle, Phone, Clock, ShoppingBag, Send, MapPin, Truck, Megaphone, Bell, Info, AlertTriangle, User, UserCheck, AlertCircle, Globe, Smartphone, QrCode, Package, Image as ImageIcon, Filter, CheckCircle2, Wand2 } from 'lucide-react';
+import { Users, Settings, LogOut, Plus, Edit2, Search, Briefcase, CreditCard, Save, Layers, UserPlus, Lock, ShieldAlert, Key, Power, X, Trash2, GraduationCap, TrendingUp, DollarSign, RefreshCw, Menu, Check, Upload, Calendar, MessageCircle, Phone, Clock, ShoppingBag, Send, MapPin, Truck, Megaphone, Bell, Info, AlertTriangle, User, UserCheck, AlertCircle, Globe, Smartphone, QrCode, Package, Image as ImageIcon, Filter, CheckCircle2, Wand2, Eye } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -214,7 +214,7 @@ const ProductsModule = ({ products, onNotify, refresh }: any) => {
         try {
             if (editingProduct) {
                 await db.updateProduct(editingProduct.id, form);
-                onNotify("Product catalog updated!");
+                onNotify("Product updated successfully!");
             } else {
                 await db.addProduct(form);
                 onNotify("New product added to catalog!");
@@ -229,13 +229,13 @@ const ProductsModule = ({ products, onNotify, refresh }: any) => {
     };
 
     const handleDelete = async (id: string) => {
-        if (confirm("Permanently remove this product from the catalog? This cannot be undone.")) {
+        if (confirm("Permanently delete this product? This cannot be undone.")) {
             try {
                 await db.deleteProduct(id);
-                onNotify("Product removed from inventory.");
+                onNotify("Product deleted successfully.");
                 refresh();
             } catch (err) {
-                alert("Failed to delete product. It might be linked to existing orders.");
+                alert("Failed to delete product.");
             }
         }
     };
@@ -265,7 +265,7 @@ const ProductsModule = ({ products, onNotify, refresh }: any) => {
                             <tr key={p.id} className="hover:bg-slate-50 transition-colors">
                                 <td className="p-4">
                                     <div className="flex items-center gap-3">
-                                        <div className="w-12 h-12 rounded-xl bg-slate-100 overflow-hidden border border-slate-200">
+                                        <div className="w-12 h-12 rounded-xl bg-slate-100 overflow-hidden border border-slate-200 shrink-0">
                                             {p.imageUrl ? <img src={p.imageUrl} className="w-full h-full object-cover" /> : <ImageIcon className="w-full h-full p-2 text-slate-300" />}
                                         </div>
                                         <div>
@@ -281,10 +281,22 @@ const ProductsModule = ({ products, onNotify, refresh }: any) => {
                                         {p.stockStatus}
                                     </span>
                                 </td>
-                                <td className="p-4 text-center">
-                                    <div className="flex justify-center gap-2">
-                                        <button onClick={() => { setEditingProduct(p); setIsModalOpen(true); }} className="p-2 rounded-lg text-indigo-600 bg-indigo-50 hover:bg-indigo-100 transition-all"><Edit2 size={16}/></button>
-                                        <button onClick={() => handleDelete(p.id)} className="p-2 rounded-lg text-rose-400 hover:text-rose-600 hover:bg-rose-50 transition-all"><Trash2 size={16}/></button>
+                                <td className="p-4 text-center min-w-[120px]">
+                                    <div className="flex justify-center gap-3">
+                                        <button 
+                                            onClick={() => { setEditingProduct(p); setIsModalOpen(true); }} 
+                                            className="p-2.5 rounded-xl text-indigo-600 bg-indigo-50 hover:bg-indigo-600 hover:text-white transition-all shadow-sm"
+                                            title="Modify Product"
+                                        >
+                                            <Edit2 size={16} strokeWidth={2.5}/>
+                                        </button>
+                                        <button 
+                                            onClick={() => handleDelete(p.id)} 
+                                            className="p-2.5 rounded-xl text-rose-500 bg-rose-50 hover:bg-rose-500 hover:text-white transition-all shadow-sm"
+                                            title="Delete Product"
+                                        >
+                                            <Trash2 size={16} strokeWidth={2.5}/>
+                                        </button>
                                     </div>
                                 </td>
                             </tr>
@@ -300,7 +312,7 @@ const ProductsModule = ({ products, onNotify, refresh }: any) => {
                         <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} className="bg-white rounded-[40px] p-10 w-full max-w-xl shadow-2xl relative max-h-[90vh] overflow-y-auto scrollbar-hide">
                             <button onClick={() => { setIsModalOpen(false); setEditingProduct(null); }} className="absolute top-8 right-8 text-slate-400 hover:text-slate-800"><X/></button>
                             <h3 className="text-3xl font-black text-slate-800 mb-2 flex items-center gap-3">
-                                <Package className="text-indigo-600" size={32}/> {editingProduct ? 'Modify Product' : 'Add New Collectible'}
+                                <Package className="text-indigo-600" size={32}/> {editingProduct ? 'Modify Product' : 'Add New Item'}
                             </h3>
                             <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-10">Boutique Inventory Protocol</p>
                             
@@ -347,7 +359,7 @@ const ProductsModule = ({ products, onNotify, refresh }: any) => {
 
                                 <button type="submit" className="w-full bg-slate-900 text-white py-5 rounded-2xl font-black text-xl hover:shadow-2xl transition-all mt-4 flex items-center justify-center gap-3">
                                     {editingProduct ? <RefreshCw size={24}/> : <Save size={24}/>}
-                                    {editingProduct ? 'Apply Modifications' : 'Store in Catalog'}
+                                    {editingProduct ? 'Update Product' : 'Store in Catalog'}
                                 </button>
                             </form>
                         </motion.div>
@@ -392,7 +404,6 @@ const OrdersModule = ({ orders, onNotify, refresh }: any) => {
                                                 <span className="text-[10px] font-bold text-indigo-700 uppercase tracking-tight">{o.productName}</span>
                                             </div>
                                             
-                                            {/* --- Customization Details --- */}
                                             {(o.customName || o.changeRequest) && (
                                                 <div className="mt-3 p-4 bg-amber-50 rounded-2xl border border-amber-100 space-y-2">
                                                     <div className="flex items-center gap-2">
@@ -463,8 +474,6 @@ const OrdersModule = ({ orders, onNotify, refresh }: any) => {
         </div>
     );
 };
-
-// ... keep BroadcastModule, StudentsModule, TeachersModule, GradesModule, FeesModule, NoticesModule, EnquiriesModule, SettingsModule ...
 
 const BroadcastModule = ({ grades, subdivisions, students, onNotify }: any) => {
     const [targetType, setTargetType] = useState<'all' | 'grade' | 'division' | 'student'>('all');
@@ -613,12 +622,12 @@ const StudentsModule = ({ students, grades, subdivisions, onNotify, refresh }: a
                             <tr key={s.id} className="hover:bg-slate-50 transition-colors">
                                 <td className="p-4">
                                     <div className="flex items-center gap-3">
-                                        <div className="w-8 h-8 rounded-full bg-slate-100 overflow-hidden flex items-center justify-center text-indigo-600 font-bold">
+                                        <div className="w-10 h-10 rounded-xl bg-slate-100 overflow-hidden flex items-center justify-center text-indigo-600 font-bold border border-slate-200 shrink-0">
                                             {s.imageUrl ? <img src={s.imageUrl} className="w-full h-full object-cover" /> : s.name.charAt(0)}
                                         </div>
                                         <div>
                                             <p className="font-bold text-slate-800">{s.name}</p>
-                                            <p className="text-[10px] font-mono text-slate-400 uppercase">{s.studentCustomId}</p>
+                                            <p className="text-[10px] font-mono text-slate-400 uppercase tracking-tighter">{s.studentCustomId}</p>
                                         </div>
                                     </div>
                                 </td>
@@ -627,10 +636,34 @@ const StudentsModule = ({ students, grades, subdivisions, onNotify, refresh }: a
                                 <td className="p-4"><span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${s.feesStatus === 'Paid' ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'}`}>{s.feesStatus}</span></td>
                                 <td className="p-4 text-center">
                                     <div className="flex justify-center gap-2">
-                                        <button onClick={() => { setEditingStudent(s); setIsModalOpen(true); }} className="p-2 rounded-lg text-indigo-600 bg-indigo-50 hover:bg-indigo-100 transition-all" title="Modify Details"><Edit2 size={16}/></button>
-                                        <button onClick={() => handleResetPassword(s.id)} className="p-2 rounded-lg text-amber-600 bg-amber-50 hover:bg-amber-100 transition-all" title="Reset Password"><Key size={16}/></button>
-                                        <button onClick={async () => { if(confirm("Change status?")) { await db.updateStudentStatus(s.id, s.status === 'Active' ? 'Suspended' : 'Active'); refresh(); } }} className={`p-2 rounded-lg ${s.status === 'Active' ? 'text-emerald-500 bg-emerald-50' : 'text-slate-400 bg-slate-50'}`}><Power size={16}/></button>
-                                        <button onClick={async () => { if(confirm("Permanent Delete?")) { await db.deleteStudent(s.id); refresh(); } }} className="p-2 rounded-lg text-rose-400 hover:text-rose-600 hover:bg-rose-50"><Trash2 size={16}/></button>
+                                        <button 
+                                            onClick={() => { setEditingStudent(s); setIsModalOpen(true); }} 
+                                            className="p-2.5 rounded-xl text-indigo-600 bg-indigo-50 hover:bg-indigo-600 hover:text-white transition-all shadow-sm" 
+                                            title="Modify Student Details"
+                                        >
+                                            <Edit2 size={16} strokeWidth={2.5}/>
+                                        </button>
+                                        <button 
+                                            onClick={() => handleResetPassword(s.id)} 
+                                            className="p-2.5 rounded-xl text-amber-600 bg-amber-50 hover:bg-amber-600 hover:text-white transition-all shadow-sm" 
+                                            title="Reset Password to Mobile No."
+                                        >
+                                            <Key size={16} strokeWidth={2.5}/>
+                                        </button>
+                                        <button 
+                                            onClick={async () => { if(confirm("Change status?")) { await db.updateStudentStatus(s.id, s.status === 'Active' ? 'Suspended' : 'Active'); refresh(); } }} 
+                                            className={`p-2.5 rounded-xl transition-all shadow-sm ${s.status === 'Active' ? 'text-emerald-500 bg-emerald-50 hover:bg-emerald-500 hover:text-white' : 'text-slate-400 bg-slate-100 hover:bg-slate-400 hover:text-white'}`}
+                                            title="Toggle Active/Suspended"
+                                        >
+                                            <Power size={16} strokeWidth={2.5}/>
+                                        </button>
+                                        <button 
+                                            onClick={async () => { if(confirm("Permanent Delete?")) { await db.deleteStudent(s.id); refresh(); } }} 
+                                            className="p-2.5 rounded-xl text-rose-400 bg-rose-50 hover:bg-rose-600 hover:text-white transition-all shadow-sm"
+                                            title="Permanently Remove student"
+                                        >
+                                            <Trash2 size={16} strokeWidth={2.5}/>
+                                        </button>
                                     </div>
                                 </td>
                             </tr>
@@ -642,41 +675,41 @@ const StudentsModule = ({ students, grades, subdivisions, onNotify, refresh }: a
             <AnimatePresence>
                 {isModalOpen && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-                        <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} className="bg-white rounded-3xl p-8 w-full max-w-2xl shadow-2xl relative max-h-[90vh] overflow-y-auto">
-                            <button onClick={() => setIsModalOpen(false)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-800"><X/></button>
-                            <h3 className="text-2xl font-black text-slate-800 mb-6 flex items-center gap-2">
+                        <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} className="bg-white rounded-[40px] p-10 w-full max-w-2xl shadow-2xl relative max-h-[90vh] overflow-y-auto scrollbar-hide">
+                            <button onClick={() => { setIsModalOpen(false); setEditingStudent(null); }} className="absolute top-8 right-8 text-slate-400 hover:text-slate-800"><X/></button>
+                            <h3 className="text-3xl font-black text-slate-800 mb-6 flex items-center gap-2">
                                 {editingStudent ? <Edit2 className="text-indigo-600"/> : <UserPlus className="text-indigo-600"/>} 
-                                {editingStudent ? 'Modify Student Record' : 'Student Enrollment Form'}
+                                {editingStudent ? 'Modify Record' : 'Student Enrollment'}
                             </h3>
                             
                             <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="space-y-1"><label className="text-[10px] font-black uppercase text-slate-400">Full Name</label><input required className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900" value={form.name} onChange={e => setForm({...form, name: e.target.value})} /></div>
-                                <div className="space-y-1"><label className="text-[10px] font-black uppercase text-slate-400">Mobile No (Used as ID/Pass)</label><input required className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900" value={form.mobile} onChange={e => setForm({...form, mobile: e.target.value})} /></div>
-                                <div className="space-y-1"><label className="text-[10px] font-black uppercase text-slate-400">Parent/Guardian Name</label><input required className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900" value={form.parentName} onChange={e => setForm({...form, parentName: e.target.value})} /></div>
-                                <div className="space-y-1"><label className="text-[10px] font-black uppercase text-slate-400">Date of Birth</label><input required type="date" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900" value={form.dob} onChange={e => setForm({...form, dob: e.target.value})} /></div>
+                                <div className="space-y-1"><label className="text-[10px] font-black uppercase text-slate-400 ml-1">Full Name</label><input required className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 font-bold text-slate-900" value={form.name} onChange={e => setForm({...form, name: e.target.value})} /></div>
+                                <div className="space-y-1"><label className="text-[10px] font-black uppercase text-slate-400 ml-1">Mobile No (Used as Password)</label><input required className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 font-bold text-slate-900 font-mono" value={form.mobile} onChange={e => setForm({...form, mobile: e.target.value})} /></div>
+                                <div className="space-y-1"><label className="text-[10px] font-black uppercase text-slate-400 ml-1">Parent Name</label><input required className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 font-bold text-slate-900" value={form.parentName} onChange={e => setForm({...form, parentName: e.target.value})} /></div>
+                                <div className="space-y-1"><label className="text-[10px] font-black uppercase text-slate-400 ml-1">Date of Birth</label><input required type="date" className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 font-bold text-slate-900" value={form.dob} onChange={e => setForm({...form, dob: e.target.value})} /></div>
                                 
-                                <div className="space-y-1"><label className="text-[10px] font-black uppercase text-slate-400">Grade / Class</label>
-                                    <select required className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 outline-none text-slate-900" value={form.gradeId} onChange={e => setForm({...form, gradeId: e.target.value})}>
+                                <div className="space-y-1"><label className="text-[10px] font-black uppercase text-slate-400 ml-1">Grade</label>
+                                    <select required className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 outline-none font-bold text-slate-900" value={form.gradeId} onChange={e => setForm({...form, gradeId: e.target.value})}>
                                         <option value="">Select Grade</option>
                                         {grades.map((g: any) => <option key={g.id} value={g.id}>{g.gradeName}</option>)}
                                     </select>
                                 </div>
-                                <div className="space-y-1"><label className="text-[10px] font-black uppercase text-slate-400">Division</label>
-                                    <select required className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 outline-none text-slate-900" value={form.subdivisionId} onChange={e => setForm({...form, subdivisionId: e.target.value})}>
+                                <div className="space-y-1"><label className="text-[10px] font-black uppercase text-slate-400 ml-1">Division</label>
+                                    <select required className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 outline-none font-bold text-slate-900" value={form.subdivisionId} onChange={e => setForm({...form, subdivisionId: e.target.value})}>
                                         <option value="">Select Division</option>
                                         {subdivisions.filter((sd: any) => sd.gradeId === form.gradeId).map((sd: any) => <option key={sd.id} value={sd.id}>{sd.divisionName}</option>)}
                                     </select>
                                 </div>
 
-                                <div className="space-y-1"><label className="text-[10px] font-black uppercase text-slate-400">Monthly Fees (₹)</label><input required type="number" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900" value={form.monthlyFees} onChange={e => setForm({...form, monthlyFees: e.target.value})} /></div>
-                                <div className="space-y-1"><label className="text-[10px] font-black uppercase text-slate-400">Joining Date</label><input required type="date" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900" value={form.joiningDate} onChange={e => setForm({...form, joiningDate: e.target.value})} /></div>
-                                <div className="space-y-1 md:col-span-2"><label className="text-[10px] font-black uppercase text-slate-400">School Name</label><input required className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900" value={form.schoolName} onChange={e => setForm({...form, schoolName: e.target.value})} /></div>
-                                <div className="space-y-1 md:col-span-2"><label className="text-[10px] font-black uppercase text-slate-400">Address</label><textarea required className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-500 h-20 text-slate-900" value={form.address} onChange={e => setForm({...form, address: e.target.value})} /></div>
-                                <div className="space-y-1 md:col-span-2"><label className="text-[10px] font-black uppercase text-slate-400">Image URL</label><input className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900" value={form.imageUrl} onChange={e => setForm({...form, imageUrl: e.target.value})} placeholder="https://..." /></div>
+                                <div className="space-y-1"><label className="text-[10px] font-black uppercase text-slate-400 ml-1">Monthly Fees (₹)</label><input required type="number" className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 font-bold text-slate-900 font-mono text-lg" value={form.monthlyFees} onChange={e => setForm({...form, monthlyFees: e.target.value})} /></div>
+                                <div className="space-y-1"><label className="text-[10px] font-black uppercase text-slate-400 ml-1">Joining Date</label><input required type="date" className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 font-bold text-slate-900" value={form.joiningDate} onChange={e => setForm({...form, joiningDate: e.target.value})} /></div>
+                                <div className="space-y-1 md:col-span-2"><label className="text-[10px] font-black uppercase text-slate-400 ml-1">School Name</label><input required className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 font-bold text-slate-900" value={form.schoolName} onChange={e => setForm({...form, schoolName: e.target.value})} /></div>
+                                <div className="space-y-1 md:col-span-2"><label className="text-[10px] font-black uppercase text-slate-400 ml-1">Address</label><textarea required className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 h-24 outline-none focus:ring-2 focus:ring-indigo-500 resize-none font-medium text-slate-900" value={form.address} onChange={e => setForm({...form, address: e.target.value})} /></div>
+                                <div className="space-y-1 md:col-span-2"><label className="text-[10px] font-black uppercase text-slate-400 ml-1">Image URL</label><input className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-xs text-slate-900" value={form.imageUrl} onChange={e => setForm({...form, imageUrl: e.target.value})} placeholder="https://..." /></div>
                                 
-                                <div className="col-span-1 md:col-span-2 pt-4">
-                                    <button type="submit" className="w-full bg-indigo-600 text-white py-4 rounded-xl font-black text-lg hover:shadow-xl transition-all">
-                                        {editingStudent ? 'Update Details' : 'Register Student'}
+                                <div className="col-span-1 md:col-span-2 pt-6">
+                                    <button type="submit" className="w-full bg-indigo-600 text-white py-5 rounded-[24px] font-black text-xl hover:shadow-2xl transition-all flex items-center justify-center gap-3">
+                                        <Save size={24}/> {editingStudent ? 'Apply Updates' : 'Confirm Enrollment'}
                                     </button>
                                 </div>
                             </form>
@@ -831,47 +864,141 @@ const GradesModule = ({ grades, subdivisions, onNotify, refresh }: any) => {
 };
 
 const FeesModule = ({ fees, onNotify, refresh }: any) => {
+    const [selectedFee, setSelectedFee] = useState<FeeSubmission | null>(null);
+
     const handleAction = async (id: string, status: 'Approved' | 'Rejected', studentId: string) => {
         try {
             await db.updateFeeSubmissionStatus(id, status, studentId);
             onNotify(`Fee marked as ${status}`);
+            if (selectedFee?.id === id) setSelectedFee({ ...selectedFee, status });
             refresh();
         } catch (err) { alert("Update failed."); }
     };
 
     return (
         <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
-            <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/50"><h3 className="font-black text-slate-800 text-xl flex items-center gap-2"><CreditCard className="text-indigo-600"/> Payment Verification Portal</h3></div>
+            <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                <h3 className="font-black text-slate-800 text-xl flex items-center gap-2">
+                    <CreditCard className="text-indigo-600"/> Payment Verification Hub
+                </h3>
+            </div>
             <div className="overflow-x-auto">
                 <table className="w-full text-left">
                     <thead className="bg-slate-50 text-[10px] uppercase font-black tracking-widest text-slate-400 border-b">
-                        <tr><th className="p-6">Student Name</th><th className="p-6">Amount</th><th className="p-6">UTR / Reference</th><th className="p-6">Date</th><th className="p-6 text-center">Action</th></tr>
+                        <tr>
+                            <th className="p-6">Student Identity</th>
+                            <th className="p-6">Amount</th>
+                            <th className="p-6">UTR / Reference</th>
+                            <th className="p-6">Date</th>
+                            <th className="p-6 text-center">Action Hub</th>
+                        </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 text-sm">
                         {fees.map((f: FeeSubmission) => (
                             <tr key={f.id} className="hover:bg-slate-50/50 transition-colors">
-                                <td className="p-6 font-black text-slate-800">{f.studentName}</td>
-                                <td className="p-6"><span className="bg-emerald-50 text-emerald-600 px-3 py-1 rounded-lg font-black">₹{f.amount}</span></td>
-                                <td className="p-6 font-mono text-xs uppercase font-bold text-indigo-600">{f.transactionRef}</td>
-                                <td className="p-6 text-slate-500 font-medium">{f.date}</td>
                                 <td className="p-6">
-                                    <div className="flex justify-center gap-2">
+                                    <div className="flex flex-col">
+                                        <span className="font-black text-slate-800 text-base">{f.studentName}</span>
+                                        <span className="text-[9px] text-slate-400 uppercase font-bold tracking-widest mt-0.5">Registry ID: {f.studentId.slice(0, 8)}</span>
+                                    </div>
+                                </td>
+                                <td className="p-6">
+                                    <span className="bg-emerald-50 text-emerald-600 px-4 py-1.5 rounded-xl font-black text-base italic shadow-sm">
+                                        ₹{f.amount}
+                                    </span>
+                                </td>
+                                <td className="p-6">
+                                    <span className="font-mono text-xs uppercase font-black text-indigo-600 bg-indigo-50 px-3 py-1 rounded-lg">
+                                        {f.transactionRef}
+                                    </span>
+                                </td>
+                                <td className="p-6 text-slate-500 font-bold">{f.date}</td>
+                                <td className="p-6">
+                                    <div className="flex justify-center gap-3">
+                                        <button 
+                                            onClick={() => setSelectedFee(f)}
+                                            className="p-2.5 rounded-xl text-indigo-600 bg-indigo-50 hover:bg-indigo-600 hover:text-white transition-all shadow-sm"
+                                            title="Expand Details"
+                                        >
+                                            <Eye size={16} strokeWidth={2.5} />
+                                        </button>
                                         {f.status === 'Pending' ? (
                                             <>
-                                                <button onClick={() => handleAction(f.id, 'Approved', f.studentId)} className="bg-emerald-500 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase hover:bg-emerald-600 shadow-md transition-all">Approve</button>
-                                                <button onClick={() => handleAction(f.id, 'Rejected', f.studentId)} className="bg-rose-500 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase hover:bg-rose-600 shadow-md transition-all">Reject</button>
+                                                <button onClick={() => handleAction(f.id, 'Approved', f.studentId)} className="bg-emerald-500 text-white px-5 py-2 rounded-xl text-[10px] font-black uppercase hover:bg-emerald-600 shadow-md transition-all">Verify</button>
+                                                <button onClick={() => handleAction(f.id, 'Rejected', f.studentId)} className="bg-rose-500 text-white px-5 py-2 rounded-xl text-[10px] font-black uppercase hover:bg-rose-600 shadow-md transition-all">Decline</button>
                                             </>
                                         ) : (
-                                            <span className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase ${f.status === 'Approved' ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'}`}>{f.status}</span>
+                                            <span className={`px-5 py-2 rounded-xl text-[10px] font-black uppercase shadow-sm ${f.status === 'Approved' ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'}`}>{f.status}</span>
                                         )}
                                     </div>
                                 </td>
                             </tr>
                         ))}
-                        {fees.length === 0 && <tr><td colSpan={5} className="p-20 text-center text-slate-400 font-bold uppercase tracking-widest text-xs">No pending verifications.</td></tr>}
                     </tbody>
                 </table>
+                {fees.length === 0 && <div className="p-32 text-center text-slate-300 font-black uppercase tracking-[1em] text-xs">No Records Found</div>}
             </div>
+
+            <AnimatePresence>
+                {selectedFee && (
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+                        <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} className="bg-white rounded-[40px] p-10 w-full max-w-xl shadow-2xl relative overflow-hidden">
+                            <button onClick={() => setSelectedFee(null)} className="absolute top-8 right-8 text-slate-400 hover:text-slate-800"><X/></button>
+                            <h3 className="text-3xl font-black text-slate-800 mb-2">Payment Dossier</h3>
+                            <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-10">Financial Verification Record</p>
+                            
+                            <div className="space-y-8">
+                                <div className="p-8 bg-slate-50 rounded-[32px] border border-slate-100">
+                                    <label className="text-[10px] font-black uppercase text-slate-400 block mb-2">Official Payer Name</label>
+                                    <p className="text-2xl font-black text-slate-900 font-[Poppins]">{selectedFee.studentName}</p>
+                                    <div className="mt-4 flex gap-4">
+                                        <span className="px-3 py-1 bg-white border border-slate-200 rounded-lg text-[9px] font-mono text-slate-500 font-bold uppercase">ID: {selectedFee.studentId}</span>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-6">
+                                    <div className="p-6 bg-emerald-50 rounded-[24px] border border-emerald-100">
+                                        <label className="text-[9px] font-black uppercase text-emerald-400 block mb-1">Total Amount</label>
+                                        <p className="text-3xl font-black text-emerald-600 font-mono">₹{selectedFee.amount}</p>
+                                    </div>
+                                    <div className="p-6 bg-indigo-50 rounded-[24px] border border-indigo-100">
+                                        <label className="text-[9px] font-black uppercase text-indigo-400 block mb-1">Instrument</label>
+                                        <p className="text-xl font-black text-indigo-600 uppercase">{selectedFee.paymentMethod}</p>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-6">
+                                    <div>
+                                        <label className="text-[10px] font-black uppercase text-slate-400 block mb-1">Transaction UTR Reference</label>
+                                        <p className="text-lg font-mono font-black text-slate-700 tracking-wider bg-slate-100 px-5 py-3 rounded-2xl border border-slate-200">{selectedFee.transactionRef}</p>
+                                    </div>
+                                    <div className="flex justify-between items-center pt-6 border-t border-slate-100">
+                                        <div>
+                                            <label className="text-[10px] font-black uppercase text-slate-400 block mb-1">Receipt Date</label>
+                                            <p className="text-base font-bold text-slate-600">{selectedFee.date}</p>
+                                        </div>
+                                        <div className="text-right">
+                                            <label className="text-[10px] font-black uppercase text-slate-400 block mb-1">Verification Status</label>
+                                            <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase ${selectedFee.status === 'Approved' ? 'bg-emerald-500 text-white' : selectedFee.status === 'Rejected' ? 'bg-rose-500 text-white' : 'bg-slate-200 text-slate-600'}`}>
+                                                {selectedFee.status}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {selectedFee.status === 'Pending' && (
+                                <div className="grid grid-cols-2 gap-4 mt-12">
+                                    <button onClick={() => handleAction(selectedFee.id, 'Approved', selectedFee.studentId)} className="bg-emerald-500 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-xl shadow-emerald-500/10">Approve Funds</button>
+                                    <button onClick={() => handleAction(selectedFee.id, 'Rejected', selectedFee.studentId)} className="bg-rose-500 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-rose-600 transition-all shadow-xl shadow-rose-500/10">Reject Protocol</button>
+                                </div>
+                            )}
+                            
+                            <button onClick={() => setSelectedFee(null)} className="w-full mt-6 py-4 border-2 border-slate-100 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-400 hover:bg-slate-50 transition-all">Close Dossier</button>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };
@@ -935,25 +1062,92 @@ const NoticesModule = ({ notices, onNotify, refresh }: any) => {
 };
 
 const EnquiriesModule = ({ enquiries, onNotify, refresh }: any) => {
+    const [selectedEnquiry, setSelectedEnquiry] = useState<Enquiry | null>(null);
+
     return (
         <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
             <table className="w-full text-left">
-                <thead className="bg-slate-50 text-[10px] uppercase font-black tracking-widest text-slate-400 border-b">
-                    <tr><th className="p-6">Lead Details</th><th className="p-6">Contact</th><th className="p-6">Grade</th><th className="p-6">Status</th><th className="p-6">Reason/Shift</th></tr>
+                <thead className="bg-slate-50 text-[10px] uppercase font-black tracking-widest text-slate-400 border-b border-slate-100">
+                    <tr><th className="p-6">Lead Details</th><th className="p-6">Contact</th><th className="p-6">Grade</th><th className="p-6">Status</th><th className="p-6 text-center">Action</th></tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-sm">
                     {enquiries.map((e: Enquiry) => (
                         <tr key={e.id} className="hover:bg-slate-50 transition-colors">
                             <td className="p-6"><div><p className="font-bold text-slate-800">{e.studentName}</p><p className="text-[10px] text-slate-400 font-medium">Parent: {e.parentName}</p></div></td>
                             <td className="p-6 text-slate-600 font-mono text-xs">{e.mobile}</td>
-                            <td className="p-6 font-bold text-slate-500">{e.grade}</td>
+                            <td className="p-6 font-bold text-slate-500">{e.grade} Grade</td>
                             <td className="p-6"><span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase ${e.status === 'New' ? 'bg-blue-50 text-blue-600' : 'bg-slate-100 text-slate-500'}`}>{e.status}</span></td>
-                            <td className="p-6 text-xs text-slate-400 italic max-w-xs truncate">{e.reason}</td>
+                            <td className="p-6 text-center">
+                                <button 
+                                    onClick={() => setSelectedEnquiry(e)} 
+                                    className="text-indigo-600 bg-indigo-50 px-4 py-2 rounded-xl text-[10px] font-black uppercase hover:bg-indigo-100 transition-all flex items-center gap-2 mx-auto"
+                                >
+                                    <Eye size={14}/> View Full Details
+                                </button>
+                            </td>
                         </tr>
                     ))}
                 </tbody>
             </table>
             {enquiries.length === 0 && <div className="p-20 text-center text-slate-300 font-black uppercase text-xs">No Leads Registered</div>}
+
+            <AnimatePresence>
+                {selectedEnquiry && (
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+                        <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} className="bg-white rounded-[40px] p-10 w-full max-w-2xl shadow-2xl relative max-h-[90vh] overflow-y-auto scrollbar-hide">
+                            <button onClick={() => setSelectedEnquiry(null)} className="absolute top-8 right-8 text-slate-400 hover:text-slate-800"><X/></button>
+                            <h3 className="text-3xl font-black text-slate-800 mb-2">Lead Information</h3>
+                            <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-10">Detailed Enrollment Enquiry</p>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <div>
+                                    <label className="text-[10px] font-black uppercase text-slate-400 block mb-1">Student Name</label>
+                                    <p className="text-lg font-bold text-slate-900">{selectedEnquiry.studentName}</p>
+                                </div>
+                                <div>
+                                    <label className="text-[10px] font-black uppercase text-slate-400 block mb-1">Parent Name</label>
+                                    <p className="text-lg font-bold text-slate-900">{selectedEnquiry.parentName} ({selectedEnquiry.relation})</p>
+                                </div>
+                                <div>
+                                    <label className="text-[10px] font-black uppercase text-slate-400 block mb-1">Mobile Contact</label>
+                                    <p className="text-lg font-bold text-indigo-600 font-mono">{selectedEnquiry.mobile}</p>
+                                </div>
+                                <div>
+                                    <label className="text-[10px] font-black uppercase text-slate-400 block mb-1">Grade Applied</label>
+                                    <p className="text-lg font-bold text-slate-900">{selectedEnquiry.grade} Grade</p>
+                                </div>
+                                <div>
+                                    <label className="text-[10px] font-black uppercase text-slate-400 block mb-1">Current School</label>
+                                    <p className="text-lg font-bold text-slate-900">{selectedEnquiry.schoolName}</p>
+                                </div>
+                                <div>
+                                    <label className="text-[10px] font-black uppercase text-slate-400 block mb-1">Preferred Connect Time</label>
+                                    <p className="text-lg font-bold text-slate-900">{selectedEnquiry.connectTime}</p>
+                                </div>
+                                <div className="md:col-span-2 p-8 bg-slate-50 rounded-[32px] border border-slate-100">
+                                    <label className="text-[10px] font-black uppercase text-slate-400 block mb-4">Reason for shift / Expectations</label>
+                                    <p className="text-slate-700 leading-relaxed italic text-lg">"{selectedEnquiry.reason}"</p>
+                                    <div className="mt-8 pt-6 border-t border-slate-200 flex justify-between items-center">
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                            Registry Status: {selectedEnquiry.status}
+                                        </p>
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                            Received: {new Date(selectedEnquiry.createdAt).toLocaleDateString()}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <button 
+                                onClick={() => setSelectedEnquiry(null)}
+                                className="w-full mt-10 bg-slate-900 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:brightness-110 transition-all"
+                            >
+                                Close Details
+                            </button>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };
