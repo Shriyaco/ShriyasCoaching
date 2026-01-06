@@ -21,7 +21,8 @@ const ContactUs: React.FC = () => {
     shiftingReason: '',
     expectations: '',
     mobile: '', 
-    connectTime: '' 
+    connectTime: '',
+    board: '' 
   });
 
   const [content, setContent] = useState<any>({
@@ -47,9 +48,9 @@ const ContactUs: React.FC = () => {
       e.preventDefault();
       if (enquiryForm.hasCoaching === null) { alert("Please select coaching status."); return; }
       try { 
-        const reasonContent = enquiryForm.hasCoaching 
+        const reasonContent = `Board: ${enquiryForm.board}. ` + (enquiryForm.hasCoaching 
           ? `Coaching: ${enquiryForm.coachingName}. Reason for shift: ${enquiryForm.shiftingReason}`
-          : `Expectations: ${enquiryForm.expectations}`;
+          : `Expectations: ${enquiryForm.expectations}`);
 
         await db.addEnquiry({ 
           ...enquiryForm, 
@@ -193,9 +194,21 @@ const ContactUs: React.FC = () => {
                                     </div>
                                 </div>
 
-                                <div className="space-y-1">
-                                    <label className="text-[10px] font-black uppercase text-white/30 ml-1">Current School Name</label>
-                                    <input required placeholder="Current School" className="w-full bg-white/5 border border-white/5 rounded-2xl px-5 py-4 outline-none focus:border-premium-accent text-sm text-white" value={enquiryForm.schoolName} onChange={e => setEnquiryForm({...enquiryForm, schoolName: e.target.value})} />
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-black uppercase text-white/30 ml-1">Board</label>
+                                        <select required className="w-full bg-white/5 border border-white/5 rounded-2xl px-5 py-4 outline-none focus:border-premium-accent text-sm text-white appearance-none" value={enquiryForm.board} onChange={e => setEnquiryForm({...enquiryForm, board: e.target.value})}>
+                                            <option value="" className="bg-black">Select Board</option>
+                                            <option value="ICSE" className="bg-black">ICSE</option>
+                                            <option value="CBSE" className="bg-black">CBSE</option>
+                                            <option value="Gujarat" className="bg-black">Gujarat</option>
+                                            <option value="Maharastra" className="bg-black">Maharastra</option>
+                                        </select>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-black uppercase text-white/30 ml-1">Current School Name</label>
+                                        <input required placeholder="Current School" className="w-full bg-white/5 border border-white/5 rounded-2xl px-5 py-4 outline-none focus:border-premium-accent text-sm text-white" value={enquiryForm.schoolName} onChange={e => setEnquiryForm({...enquiryForm, schoolName: e.target.value})} />
+                                    </div>
                                 </div>
 
                                 <div className="space-y-3 p-4 bg-white/[0.02] border border-white/[0.05] rounded-3xl">

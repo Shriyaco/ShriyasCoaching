@@ -15,7 +15,7 @@ const PublicHome: React.FC = () => {
   const [enquiryForm, setEnquiryForm] = useState({ 
     studentName: '', parentName: '', relation: '', grade: '', schoolName: '', 
     hasCoaching: null as boolean | null, coachingName: '', shiftingReason: '',
-    expectations: '', mobile: '', connectTime: '' 
+    expectations: '', mobile: '', connectTime: '', board: '' 
   });
 
   // Dynamic Content State with Defaults
@@ -50,9 +50,9 @@ const PublicHome: React.FC = () => {
       e.preventDefault();
       if (enquiryForm.hasCoaching === null) { alert("Please select coaching status."); return; }
       try { 
-        const reasonContent = enquiryForm.hasCoaching 
+        const reasonContent = `Board: ${enquiryForm.board}. ` + (enquiryForm.hasCoaching 
           ? `Coaching: ${enquiryForm.coachingName}. Reason for shift: ${enquiryForm.shiftingReason}`
-          : `Expectations: ${enquiryForm.expectations}`;
+          : `Expectations: ${enquiryForm.expectations}`);
         await db.addEnquiry({ 
           ...enquiryForm, 
           hasCoaching: enquiryForm.hasCoaching as boolean, 
@@ -356,7 +356,23 @@ const PublicHome: React.FC = () => {
                                       </select>
                                     </div>
                                 </div>
-                                <div className="space-y-1"><label className="text-[9px] font-black uppercase text-white/20 ml-1 tracking-wider">Current School</label><input required placeholder="Name of school" className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-2.5 outline-none focus:border-premium-accent text-xs text-white" value={enquiryForm.schoolName} onChange={e => setEnquiryForm({...enquiryForm, schoolName: e.target.value})} /></div>
+                                
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="space-y-1">
+                                        <label className="text-[9px] font-black uppercase text-white/20 ml-1 tracking-wider">Board</label>
+                                        <select required className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-2.5 outline-none focus:border-premium-accent text-xs text-white appearance-none" value={enquiryForm.board} onChange={e => setEnquiryForm({...enquiryForm, board: e.target.value})}>
+                                            <option value="" className="bg-black">Select Board</option>
+                                            <option value="ICSE" className="bg-black">ICSE</option>
+                                            <option value="CBSE" className="bg-black">CBSE</option>
+                                            <option value="Gujarat" className="bg-black">Gujarat</option>
+                                            <option value="Maharastra" className="bg-black">Maharastra</option>
+                                        </select>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[9px] font-black uppercase text-white/20 ml-1 tracking-wider">Current School</label>
+                                        <input required placeholder="Name of school" className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-2.5 outline-none focus:border-premium-accent text-xs text-white" value={enquiryForm.schoolName} onChange={e => setEnquiryForm({...enquiryForm, schoolName: e.target.value})} />
+                                    </div>
+                                </div>
                                 
                                 <div className="space-y-3 p-3 bg-white/[0.02] border border-white/[0.05] rounded-2xl">
                                   <label className="text-[9px] font-black uppercase text-white/30 ml-1 tracking-widest">Attending any other coaching?</label>
