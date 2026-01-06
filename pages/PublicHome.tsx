@@ -53,36 +53,53 @@ const PublicHome: React.FC = () => {
         {/* Background Animation */}
         <div className="absolute inset-0 z-0">
           <ThreeHero />
-          <div className="absolute inset-0 bg-black/30" />
+          <div className="absolute inset-0 bg-black/40" />
         </div>
         
-        <div className="relative z-10 w-full max-w-7xl mx-auto px-6 flex flex-col items-center justify-center mb-20">
-            {/* White placeholder block removed as per request */}
-            
-            {/* Styled Enroll Now Button */}
+        <div className="relative z-10 w-full max-w-7xl mx-auto px-6 flex flex-col items-center justify-center text-center">
+            {/* Big Designed Heading */}
+            <motion.div
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
+              className="mb-8"
+            >
+              <h1 className="text-6xl md:text-[8rem] lg:text-[10rem] font-light serif-font leading-[1] tracking-tighter luxury-text-gradient">
+                Future <br /> Crafted here.
+              </h1>
+            </motion.div>
+
+            {/* Styled Small Enroll Now Button */}
             <motion.button 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5, duration: 1 }}
+              transition={{ delay: 0.8, duration: 1 }}
               onClick={() => setIsEnquiryModalOpen(true)}
-              className="group flex flex-col items-center gap-6 text-white hover:text-premium-accent transition-all"
+              className="group flex items-center gap-3 px-8 py-3.5 border border-white/20 rounded-full hover:bg-white hover:text-black transition-all duration-500 backdrop-blur-md"
             >
-              <div className="flex items-center gap-4">
-                <span className="text-[14px] md:text-[20px] font-black uppercase tracking-[1em] ml-[1em]">ENROLL NOW</span>
-                <ArrowRight size={28} className="group-hover:translate-x-2 transition-transform" strokeWidth={1.5} />
-              </div>
+              <span className="text-[10px] md:text-[12px] font-black uppercase tracking-[0.4em] ml-[0.4em]">ENROLL NOW</span>
+              <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" strokeWidth={2} />
             </motion.button>
         </div>
 
-        {/* Bottom Alert Ticker */}
-        <div className="absolute bottom-0 w-full bg-black/60 backdrop-blur-md border-t border-white/5 py-5 z-20">
-            <div className="max-w-[1800px] mx-auto px-6 md:px-12 flex items-center justify-between">
-                <div className="flex items-center gap-6">
-                    <span className="text-white/40 text-[10px] font-black uppercase tracking-[0.4em]">ALERT</span>
-                    <p className="text-white/90 text-[11px] md:text-[14px] font-black uppercase tracking-[0.2em]">
-                        ADMISSION OPENS FOR 2026-27. LIMITED SEATS AVAILABLE.
+        {/* Ongoing Scrolling Ticker */}
+        <div className="absolute bottom-0 w-full bg-black/70 backdrop-blur-xl border-t border-white/5 py-4 z-20 overflow-hidden">
+            <div className="flex whitespace-nowrap">
+              <motion.div 
+                animate={{ x: ["0%", "-50%"] }}
+                transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
+                className="flex items-center gap-16 px-8 min-w-full shrink-0"
+              >
+                {/* Replicated content for seamless loop */}
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="flex items-center gap-8 shrink-0">
+                    <span className="text-premium-accent text-[9px] font-black uppercase tracking-[0.4em] px-3 py-1 bg-premium-accent/10 rounded-lg border border-premium-accent/20">ALERT</span>
+                    <p className="text-white/90 text-[11px] md:text-[13px] font-black uppercase tracking-[0.2em]">
+                        ADMISSION OPENS FOR 2026-27. LIMITED SEATS AVAILABLE. SECURE YOUR LEGACY AT SHRIYA'S GURUKUL.
                     </p>
-                </div>
+                  </div>
+                ))}
+              </motion.div>
             </div>
         </div>
       </section>
