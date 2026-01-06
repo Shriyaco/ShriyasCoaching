@@ -112,12 +112,12 @@ export default function PayFees() {
 
     // --- DYNAMIC QR GENERATION (FIXED FOR MODIFIABLE AMOUNT & BANKING NAME) ---
     const getDynamicQR = () => {
-        // Precise details extracted from provided QR reference
-        const upiID = currentGateway?.credentials.upiId || "9724111369@ptsbi";
+        // Updated UPI VPA provided by user
+        const upiID = "tejanishriya64-3@oksbi";
         const name = "SHRIYA BRAHMBHATT";
         const am = amount || "0";
         
-        // Mode 02 and specific parameters often help apps lock the amount and resolve names correctly
+        // Mode 02 and specific parameters help apps lock the amount and resolve banking names correctly
         const upiLink = `upi://pay?pa=${upiID}&pn=${encodeURIComponent(name)}&am=${am}&cu=INR&mode=02&purpose=00`;
         
         // Using high quality QR generation
@@ -273,9 +273,9 @@ export default function PayFees() {
                                             <div className="bg-slate-50 p-5 rounded-2xl flex items-center justify-between border border-slate-100">
                                                 <div className="overflow-hidden mr-2">
                                                     <p className="text-[10px] text-slate-400 font-bold uppercase mb-1">Receiver VPA</p>
-                                                    <p className="text-sm font-mono text-slate-800 font-bold truncate">{currentGateway.credentials.upiId || "9724111369@ptsbi"}</p>
+                                                    <p className="text-sm font-mono text-slate-800 font-bold truncate">tejanishriya64-3@oksbi</p>
                                                 </div>
-                                                <button onClick={() => handleCopy(currentGateway.credentials.upiId || '9724111369@ptsbi')} className="text-indigo-600 hover:bg-indigo-50 p-2.5 rounded-xl transition-all border border-indigo-100">
+                                                <button onClick={() => handleCopy('tejanishriya64-3@oksbi')} className="text-indigo-600 hover:bg-indigo-50 p-2.5 rounded-xl transition-all border border-indigo-100">
                                                     {copied ? <Check size={20} className="text-emerald-500" /> : <Copy size={20} />}
                                                 </button>
                                             </div>

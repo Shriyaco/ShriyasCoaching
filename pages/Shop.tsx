@@ -171,8 +171,8 @@ const Shop: React.FC = () => {
 
     // --- DYNAMIC QR GENERATION FOR SHOP (FIXED) ---
     const getDynamicQR = () => {
-        // Precise details extracted from provided QR reference to ensure banking name loads correctly
-        const upiID = "9724111369@ptsbi";
+        // Updated UPI VPA provided by user
+        const upiID = "tejanishriya64-3@oksbi";
         const name = "SHRIYA BRAHMBHATT";
         const am = activeOrder?.finalPrice || "0";
         
@@ -518,9 +518,9 @@ const Shop: React.FC = () => {
                                         <div className="bg-white/5 border border-white/10 p-5 rounded-[24px] flex items-center justify-between mb-10">
                                             <div>
                                                 <p className="text-[8px] font-black uppercase text-white/20 tracking-[0.4em] mb-1">Corporate VPA</p>
-                                                <p className="font-mono text-sm text-white/80 font-bold">9724111369@ptsbi</p>
+                                                <p className="font-mono text-sm text-white/80 font-bold">tejanishriya64-3@oksbi</p>
                                             </div>
-                                            <button onClick={() => handleCopy('9724111369@ptsbi')} className="p-3 text-white/20 hover:text-white"><Copy size={20} /></button>
+                                            <button onClick={() => handleCopy('tejanishriya64-3@oksbi')} className="p-3 text-white/20 hover:text-white"><Copy size={20} /></button>
                                         </div>
 
                                         <form onSubmit={handlePaymentRefSubmit} className="mt-auto">
