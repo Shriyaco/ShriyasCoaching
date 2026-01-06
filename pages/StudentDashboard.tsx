@@ -1,8 +1,9 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../services/db';
-import { Student, Exam, Homework, Notice, TimetableEntry, User } from '../types';
-import { Sword, Calendar, Timer, BookOpen, Clock, User as UserIcon, LogOut, Bell, Menu, X, Trophy, AlertCircle, Layout } from 'lucide-react';
+import { Student, Exam, Homework, Notice, TimetableEntry, User, StudentQuery } from '../types';
+import { Sword, Calendar, Timer, BookOpen, Clock, User as UserIcon, LogOut, Bell, Menu, X, Trophy, AlertCircle, Layout, MessageSquare, Send } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // ExamSection Component
@@ -52,6 +53,72 @@ const ExamSection = ({ student }: { student: Student }) => {
     );
 };
 
+// Doubts Component
+const DoubtsSection = ({ student }: { student: Student }) => {
+    const [queries, setQueries] = useState<StudentQuery[]>([]);
+    const [form, setForm] = useState({ subject: '', queryText: '' });
+    
+    useEffect(() => {
+        if(student) {
+            db.getQueries(student.id).then(setQueries);
+        }
+    }, [student]);
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        await db.addQuery({ studentId: student.id, studentName: student.name, subject: form.subject, queryText: form.queryText });
+        setForm({ subject: '', queryText: '' });
+        db.getQueries(student.id).then(setQueries);
+    };
+
+    return (
+        <div className="max-w-4xl mx-auto space-y-12">
+            <div className="bg-[#0A0A0A] p-10 rounded-[32px] border border-white/5">
+                <h3 className="text-2xl font-light serif-font text-white mb-8">Ask a Doubt</h3>
+                <form onSubmit={handleSubmit} className="space-y-6">
+                    <input 
+                        required
+                        placeholder="Subject (e.g. Physics, Math)"
+                        value={form.subject}
+                        onChange={e => setForm({...form, subject: e.target.value})}
+                        className="w-full bg-black border border-white/10 rounded-2xl px-6 py-4 text-xs font-bold text-white outline-none focus:border-indigo-500 transition-all"
+                    />
+                    <textarea 
+                        required
+                        placeholder="Describe your question here..."
+                        value={form.queryText}
+                        onChange={e => setForm({...form, queryText: e.target.value})}
+                        className="w-full bg-black border border-white/10 rounded-2xl px-6 py-4 text-sm text-white/80 outline-none focus:border-indigo-500 h-32 resize-none transition-all"
+                    />
+                    <button className="bg-indigo-600 text-white px-8 py-3 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-indigo-500 transition-all flex items-center gap-2">
+                        <Send size={14} /> Submit Query
+                    </button>
+                </form>
+            </div>
+
+            <div className="space-y-6">
+                <h3 className="text-xl font-black uppercase tracking-widest text-white/40">History</h3>
+                {queries.map(q => (
+                    <div key={q.id} className="bg-[#0A0A0A] p-8 rounded-[32px] border border-white/5 space-y-6">
+                        <div className="flex justify-between items-start">
+                            <span className="text-indigo-400 font-black text-[9px] uppercase tracking-[0.2em] bg-indigo-500/10 px-3 py-1 rounded-lg border border-indigo-500/20">{q.subject}</span>
+                            <span className={`text-[9px] font-black uppercase tracking-widest ${q.status === 'Answered' ? 'text-emerald-500' : 'text-amber-500'}`}>{q.status}</span>
+                        </div>
+                        <p className="text-lg font-medium text-white/90">"{q.queryText}"</p>
+                        {q.status === 'Answered' && (
+                            <div className="pt-6 border-t border-white/5">
+                                <p className="text-[9px] font-black uppercase text-white/20 mb-2">Faculty Response</p>
+                                <p className="text-white/60 text-sm leading-relaxed">{q.replyText}</p>
+                            </div>
+                        )}
+                    </div>
+                ))}
+                {queries.length === 0 && <div className="py-20 text-center text-white/10 font-black uppercase text-[10px] tracking-[0.2em]">No Doubts Raised</div>}
+            </div>
+        </div>
+    );
+};
+
 const StudentDashboard = () => {
     const navigate = useNavigate();
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -81,8 +148,7 @@ const StudentDashboard = () => {
 
         const loadData = async () => {
              // We need to fetch the full student profile to get grade/subdivision
-             const allStudents = await db.getStudents();
-             const me = allStudents.find(s => s.id === parsed.id);
+             const me = await db.getStudentById(parsed.id);
              if (me) {
                  setStudent(me);
                  const [n, h, t] = await Promise.all([
@@ -113,6 +179,7 @@ const StudentDashboard = () => {
         { id: 'homework', label: 'Missions', icon: BookOpen },
         { id: 'timetable', label: 'Schedule', icon: Clock },
         { id: 'notices', label: 'Intel', icon: Bell },
+        { id: 'doubts', label: 'Doubt', icon: MessageSquare },
     ];
 
     return (
@@ -257,6 +324,8 @@ const StudentDashboard = () => {
                                     {notices.length === 0 && <div className="py-40 text-center text-white/20 font-black uppercase text-xs tracking-widest">No New Intel</div>}
                                 </div>
                             )}
+
+                            {activeTab === 'doubts' && <DoubtsSection student={student} />}
 
                         </motion.div>
                     </AnimatePresence>

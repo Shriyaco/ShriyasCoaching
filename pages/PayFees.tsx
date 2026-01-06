@@ -35,8 +35,8 @@ export default function PayFees() {
             const parsed = JSON.parse(storedUser);
             if (parsed.role === 'student') {
                 setUser(parsed);
-                db.getStudents().then(all => {
-                    const me = all.find(s => s.id === parsed.id);
+                // Fetch ONLY the logged in student
+                db.getStudentById(parsed.id).then(me => {
                     if (me) {
                         setIdentifiedStudent(me);
                         setAmount(me.monthlyFees || '5000');

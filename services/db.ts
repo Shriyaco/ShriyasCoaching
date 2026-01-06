@@ -95,17 +95,21 @@ class DatabaseService {
       return { id: 'admin1', username: 'Shriya Admin', role: 'admin', status: 'Active' };
     }
     
-    const { data: teachers } = await supabase.from('teachers').select('*').or(`teacher_custom_id.eq.${username},name.eq.${username}`);
-    if (teachers && teachers.length > 0) {
-        const t = teachers.find(teacher => teacher.password === password || teacher.mobile === password);
+    // Execute teacher and student lookups in parallel for speed
+    const [teacherRes, studentRes] = await Promise.all([
+        supabase.from('teachers').select('id, name, teacher_custom_id, password, mobile, status').or(`teacher_custom_id.eq.${username},name.eq.${username}`),
+        supabase.from('students').select('id, name, student_custom_id, password, mobile, status, subdivision_id, image_url').or(`student_custom_id.eq.${username},name.eq.${username}`)
+    ]);
+
+    if (teacherRes.data && teacherRes.data.length > 0) {
+        const t = teacherRes.data.find(teacher => teacher.password === password || teacher.mobile === password);
         if (t && t.status === 'Active') {
             return { id: t.id, username: t.name, role: 'teacher', status: 'Active' };
         }
     }
 
-    const { data: students } = await supabase.from('students').select('*').or(`student_custom_id.eq.${username},name.eq.${username}`);
-    if (students && students.length > 0) {
-        const s = students.find(student => student.password === password || student.mobile === password);
+    if (studentRes.data && studentRes.data.length > 0) {
+        const s = studentRes.data.find(student => student.password === password || student.mobile === password);
         if (s && s.status === 'Active') {
             return { id: s.id, username: s.name, role: 'student', divisionId: s.subdivision_id, status: 'Active', imageUrl: s.image_url };
         }
@@ -201,6 +205,12 @@ class DatabaseService {
       if (subdivisionId) query = query.eq('subdivision_id', subdivisionId);
       const { data } = await query;
       return (data || []).map(mapStudent);
+  }
+
+  async getStudentById(id: string): Promise<Student | null> {
+      const { data, error } = await supabase.from('students').select('*').eq('id', id).single();
+      if (error || !data) return null;
+      return mapStudent(data);
   }
 
   async findStudentByMobile(mobile: string): Promise<Student | null> {
