@@ -20,19 +20,24 @@ const StateBoardScene = () => {
     }
   });
   return (
+    // @ts-ignore
     <group ref={group}>
       <Float speed={2.5} rotationIntensity={1.5} floatIntensity={1.5}>
         <Icosahedron args={[1.5, 1]} position={[0, 0, 0]}>
+          {/* @ts-ignore */}
           <meshStandardMaterial color="#10b981" metalness={0.9} roughness={0.1} emissive="#059669" emissiveIntensity={0.6} wireframe />
         </Icosahedron>
         <Box args={[0.4, 0.4, 0.4]} position={[2, 1, -1]}>
+           {/* @ts-ignore */}
            <meshStandardMaterial color="#fbbf24" emissive="#d97706" emissiveIntensity={0.5} />
         </Box>
         <Sphere args={[0.3, 32, 32]} position={[-2, -1, 1]}>
+           {/* @ts-ignore */}
            <MeshDistortMaterial color="#3b82f6" speed={3} distort={0.5} />
         </Sphere>
       </Float>
       <Environment preset="forest" />
+      {/* @ts-ignore */}
       <ContactShadows position={[0, -3.5, 0]} opacity={0.3} scale={15} blur={3} far={5} />
     </group>
   );
@@ -78,8 +83,11 @@ const StateBoard: React.FC = () => {
             <Canvas onError={() => setWebglSupported(false)}>
               <Suspense fallback={null}>
                   <PerspectiveCamera makeDefault position={[0, 0, 9]} />
+                  {/* @ts-ignore */}
                   <ambientLight intensity={1} />
+                  {/* @ts-ignore */}
                   <pointLight position={[10, 10, 10]} intensity={1.5} color="#10b981" />
+                  {/* @ts-ignore */}
                   <spotLight position={[-10, 10, 10]} angle={0.2} penumbra={1} intensity={2} color="#34d399" />
                   <StateBoardScene />
                   <Stars radius={120} depth={50} count={4000} factor={4} saturation={0} fade speed={1} />

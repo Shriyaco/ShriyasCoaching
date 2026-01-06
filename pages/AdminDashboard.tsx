@@ -31,7 +31,8 @@ export default function AdminDashboard() {
 
   const refreshData = useCallback(async () => {
     try {
-        const [s, g, sd, t, f, set, enq, p, o, n, hw, ex] = await Promise.all([
+        // We use allSettled to prevent one failed request from blocking the entire dashboard
+        const results = await Promise.allSettled([
             db.getStudents(),
             db.getGrades(),
             db.getSubdivisions(),
@@ -45,20 +46,26 @@ export default function AdminDashboard() {
             db.getAllHomework(),
             db.getExams()
         ]);
-        setStudents(s);
-        setGrades(g);
-        setSubdivisions(sd);
-        setTeachers(t);
-        setFees(f);
-        setSettings(set);
-        setEnquiries(enq);
-        setProducts(p);
-        setOrders(o);
-        setNotices(n);
-        setHomeworkList(hw);
-        setExamList(ex);
+
+        const [s, g, sd, t, f, set, enq, p, o, n, hw, ex] = results;
+
+        if (s.status === 'fulfilled') setStudents(s.value);
+        if (g.status === 'fulfilled') setGrades(g.value);
+        if (sd.status === 'fulfilled') setSubdivisions(sd.value);
+        if (t.status === 'fulfilled') setTeachers(t.value);
+        if (f.status === 'fulfilled') setFees(f.value);
+        if (set.status === 'fulfilled') setSettings(set.value);
+        if (enq.status === 'fulfilled') setEnquiries(enq.value);
+        if (p.status === 'fulfilled') setProducts(p.value);
+        if (o.status === 'fulfilled') setOrders(o.value);
+        if (n.status === 'fulfilled') setNotices(n.value);
+        if (hw.status === 'fulfilled') setHomeworkList(hw.value);
+        if (ex.status === 'fulfilled') setExamList(ex.value);
+
     } catch(e) {
-        console.error(e);
+        console.error("Dashboard Sync Error:", e);
+    } finally {
+        setLoading(false);
     }
   }, []);
 
@@ -68,7 +75,7 @@ export default function AdminDashboard() {
     const user = JSON.parse(userStr);
     if (user.role !== 'admin') { navigate('/login'); return; }
     
-    refreshData().then(() => setLoading(false));
+    refreshData();
     
     const channels = [
         db.subscribe('students', refreshData),
@@ -117,7 +124,12 @@ export default function AdminDashboard() {
     </motion.div>
   );
 
-  if (loading) return <div className="h-screen w-full flex items-center justify-center bg-slate-50 font-black uppercase text-[10px] tracking-[1em] text-slate-300">Loading SMS Hub...</div>;
+  if (loading) return (
+    <div className="h-screen w-full flex items-center justify-center bg-slate-50 flex-col gap-4">
+        <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+        <p className="font-black uppercase text-[10px] tracking-[0.5em] text-slate-400">Loading Dashboard...</p>
+    </div>
+  );
 
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden font-sans relative">
@@ -295,8 +307,6 @@ const ExamsAdminModule = ({ examList, grades, subdivisions, onNotify, refresh }:
         </div>
     );
 };
-
-// ... (Rest of existing modules: ProductsModule, OrdersModule, BroadcastModule, StudentsModule, TeachersModule, GradesModule, FeesModule, NoticesModule, EnquiriesModule, SettingsModule) ...
 
 const ProductsModule = ({ products, onNotify, refresh }: any) => {
     const [isModalOpen, setIsModalOpen] = useState(false);

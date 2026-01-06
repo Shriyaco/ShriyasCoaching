@@ -1,5 +1,6 @@
+
 // @ts-nocheck
-import React, { useState, useRef, Suspense } from 'react';
+import React, { useState, useRef, Suspense, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../services/db';
 import { ArrowRight, User as UserIcon, Lock, AlertCircle, X } from 'lucide-react';
@@ -109,8 +110,16 @@ const Login: React.FC = () => {
     e.preventDefault();
     setLoading(true);
     setError('');
+    
+    // Safety timeout to prevent indefinite spinning
+    const timeoutId = setTimeout(() => {
+        setLoading(false);
+        setError('Request timed out. Please check your network.');
+    }, 10000);
+
     try {
         const user = await db.login(username, password);
+        clearTimeout(timeoutId);
         if (user) {
           sessionStorage.setItem('sc_user', JSON.stringify(user));
           if (user.role === 'admin') navigate('/admin');
@@ -121,6 +130,7 @@ const Login: React.FC = () => {
           setError('Invalid ID or Password. Please try again.');
         }
     } catch (err) {
+        clearTimeout(timeoutId);
         setError('Network error. Check connection.');
     } finally {
         setLoading(false);

@@ -18,16 +18,20 @@ const VisionScene = () => {
     }
   });
   return (
+    // @ts-ignore
     <group ref={group} position={[0, 0, -2]}>
       <Float speed={2} rotationIntensity={0.5} floatIntensity={1}>
         <Torus args={[3, 0.02, 16, 100]} position={[0, 0, 0]} rotation={[Math.PI / 2, 0, 0]}>
+          {/* @ts-ignore */}
           <meshStandardMaterial color="#00E5FF" emissive="#00E5FF" emissiveIntensity={2} toneMapped={false} transparent opacity={0.6} />
         </Torus>
         <Sphere args={[0.5, 64, 64]}>
+          {/* @ts-ignore */}
           <MeshDistortMaterial color="#ffffff" emissive="#444444" emissiveIntensity={0.5} distort={0.3} speed={2} roughness={0.1} metalness={1} />
         </Sphere>
       </Float>
       <Environment preset="city" />
+      {/* @ts-ignore */}
       <ContactShadows position={[0, -4, 0]} opacity={0.2} scale={20} blur={3} far={5} />
     </group>
   );
@@ -72,7 +76,9 @@ const Vision: React.FC = () => {
             <Canvas onError={() => setWebglSupported(false)}>
               <Suspense fallback={null}>
                 <PerspectiveCamera makeDefault position={[0, 0, 8]} />
+                {/* @ts-ignore */}
                 <ambientLight intensity={0.5} />
+                {/* @ts-ignore */}
                 <pointLight position={[10, 10, 10]} intensity={1} color="#00E5FF" />
                 <VisionScene />
                 <Stars radius={100} depth={50} count={3000} factor={4} saturation={0} fade speed={0.5} />
@@ -118,7 +124,7 @@ const Vision: React.FC = () => {
                     className="flex flex-col md:flex-row gap-6 p-8 md:p-10 bg-white/[0.03] border border-white/5 rounded-[32px] md:rounded-[40px] transition-all group shadow-sm"
                   >
                       <div className={`shrink-0 w-16 h-16 md:w-20 md:h-20 bg-white/5 rounded-2xl flex items-center justify-center ${pillar.color}`}>
-                        <pillar.icon size={32} md:size={40} strokeWidth={1.5} />
+                        <pillar.icon className="w-8 h-8 md:w-10 md:h-10" strokeWidth={1.5} />
                       </div>
                       <div>
                         <h4 className="text-xl md:text-2xl font-bold serif-font uppercase mb-2 tracking-wider">{pillar.title}</h4>
@@ -147,7 +153,7 @@ const Vision: React.FC = () => {
                    ].map((v, i) => (
                        <div key={i} className="flex flex-col items-center justify-center text-center px-4">
                            <div className="w-24 h-24 md:w-32 md:h-32 bg-black text-white rounded-full flex items-center justify-center mb-6 shadow-[0_20px_50px_rgba(0,0,0,0.3)] hover:scale-105 transition-transform duration-500">
-                             <v.icon size={40} md:size={56} strokeWidth={1.5} />
+                             <v.icon className="w-10 h-10 md:w-14 md:h-14" strokeWidth={1.5} />
                            </div>
                            <h4 className="text-sm md:text-lg font-black uppercase tracking-[0.3em] font-sans">{v.name}</h4>
                        </div>
