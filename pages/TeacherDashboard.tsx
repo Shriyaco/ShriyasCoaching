@@ -63,16 +63,16 @@ const TeacherDashboard: React.FC = () => {
     const handleLogout = () => { sessionStorage.removeItem('sc_user'); navigate('/'); };
 
     const navItems = [
-        { id: 'attendance', label: 'Registry', icon: UserCheck },
-        { id: 'live', label: 'Live', icon: Radio },
+        { id: 'attendance', label: 'Attendance', icon: UserCheck },
+        { id: 'live', label: 'Live Classes', icon: Radio },
         { id: 'homework', label: 'Homework', icon: BookOpen },
-        { id: 'notes', label: 'Vault', icon: Database },
-        { id: 'exams', label: 'Builder', icon: PenTool },
-        { id: 'grading', label: 'Check', icon: ListChecks },
-        { id: 'leaves', label: 'Permits', icon: Clock },
-        { id: 'student-exams', label: 'External', icon: Award },
-        { id: 'queries', label: 'Doubt', icon: MessageSquare },
-        { id: 'settings', label: 'Core', icon: Settings }
+        { id: 'notes', label: 'Notes', icon: Database },
+        { id: 'exams', label: 'Conduct Exam', icon: PenTool },
+        { id: 'grading', label: 'Check Exam', icon: ListChecks },
+        { id: 'leaves', label: 'Leave Management', icon: Clock },
+        { id: 'student-exams', label: 'Upcoming Exams', icon: Award },
+        { id: 'queries', label: 'Doubts', icon: MessageSquare },
+        { id: 'settings', label: 'Settings', icon: Settings }
     ];
 
     const selectedDivision = availableSubdivisions.find(s => s.id === selectedDivisionId);
@@ -171,7 +171,7 @@ const AttendanceModule = ({ gradeId, divisionId }: any) => {
         <div className="space-y-8">
             <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
                 <div>
-                    <h2 className="text-3xl md:text-5xl font-light serif-font italic luxury-text-gradient tracking-tighter">Registry.</h2>
+                    <h2 className="text-3xl md:text-5xl font-light serif-font italic luxury-text-gradient tracking-tighter">Attendance.</h2>
                     <p className="text-[8px] font-black uppercase tracking-[0.5em] text-white/20 mt-1">Personnel Presence Protocol</p>
                 </div>
                 <div className="flex gap-2 bg-white/5 p-2 rounded-2xl border border-white/5">
@@ -218,7 +218,7 @@ const LiveManagementModule = ({ division }: { division?: Subdivision }) => {
                 <Radio size={division.isLive ? 64 : 40} className={division.isLive ? 'text-white' : 'text-white/10'} />
             </div>
             <div className="space-y-4">
-                <h3 className="text-4xl md:text-6xl font-light serif-font italic luxury-text-gradient tracking-tighter">Warp Gateway.</h3>
+                <h3 className="text-4xl md:text-6xl font-light serif-font italic luxury-text-gradient tracking-tighter">Live Classes.</h3>
                 <p className="text-[10px] font-black uppercase text-white/20 tracking-[0.4em]">Google Meet Relay System</p>
                 <div className="bg-white/5 p-6 rounded-[32px] border border-white/10 space-y-4 shadow-2xl">
                     <div className="space-y-1 text-left">
@@ -226,7 +226,7 @@ const LiveManagementModule = ({ division }: { division?: Subdivision }) => {
                         <input value={link} onChange={e => setLink(e.target.value)} placeholder="https://meet.google.com/..." className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-xs text-white outline-none focus:border-indigo-500" />
                     </div>
                     <div className="flex flex-col gap-3 pt-2">
-                        <button onClick={saveLink} className="w-full bg-white text-black py-4 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-indigo-400 transition-all">Authorize Broadcast</button>
+                        <button onClick={saveLink} className="w-full bg-white text-black py-4 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-indigo-500 hover:text-white transition-all">Authorize Broadcast</button>
                         {division.isLive && (
                             <button onClick={() => db.setLiveStatus(division.id, false)} className="text-rose-500/50 hover:text-rose-500 text-[8px] font-black uppercase tracking-widest flex items-center justify-center gap-2"><X size={12}/> Close Gateway</button>
                         )}
@@ -257,13 +257,13 @@ const HomeworkManagementModule = ({ gradeId, divisionId, teacherId }: any) => {
         await db.addHomework({ gradeId, subdivisionId: divisionId, ...form, assignedBy: teacherId });
         setForm({ ...form, subject:'', task:'', dueDate:'', targetStudentId:'' });
         load();
-        alert("Directive Deployed.");
+        alert("Homework Deployed.");
     };
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div className="bg-white/5 p-8 rounded-[40px] border border-white/10 shadow-2xl h-fit">
-                <h3 className="text-2xl font-light serif-font italic mb-8">Directives.</h3>
+                <h3 className="text-2xl font-light serif-font italic mb-8">Homework.</h3>
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1">
@@ -287,7 +287,7 @@ const HomeworkManagementModule = ({ gradeId, divisionId, teacherId }: any) => {
                     <input required className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-xs text-white" value={form.subject} onChange={e=>setForm({...form, subject:e.target.value})} placeholder="Subject" />
                     <textarea required className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-xs text-white h-24 resize-none" value={form.task} onChange={e=>setForm({...form, task:e.target.value})} placeholder="Mission Objectives..." />
                     <input required type="date" className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-xs text-white" value={form.dueDate} onChange={e=>setForm({...form, dueDate:e.target.value})} />
-                    <button className="w-full bg-indigo-600 text-white py-4 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-xl">Deploy Directive</button>
+                    <button className="w-full bg-indigo-600 text-white py-4 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-xl">Deploy Homework</button>
                 </form>
             </div>
             <div className="space-y-4">
@@ -298,7 +298,7 @@ const HomeworkManagementModule = ({ gradeId, divisionId, teacherId }: any) => {
                             <p className="text-base font-serif italic text-white/80 leading-snug truncate">"{hw.task}"</p>
                             <p className="text-[8px] font-black uppercase text-white/20 mt-4">Due: {hw.dueDate}</p>
                         </div>
-                        <button onClick={async ()=>{if(confirm('Purge Directive?')){await db.deleteHomework(hw.id); load();}}} className="p-2 text-white/10 hover:text-rose-500 transition-all opacity-0 group-hover:opacity-100"><Trash2 size={16}/></button>
+                        <button onClick={async ()=>{if(confirm('Purge Homework?')){await db.deleteHomework(hw.id); load();}}} className="p-2 text-white/10 hover:text-rose-500 transition-all opacity-0 group-hover:opacity-100"><Trash2 size={16}/></button>
                     </div>
                 ))}
             </div>
@@ -325,8 +325,8 @@ const NotesModule = ({ gradeId, divisionId, teacherId }: any) => {
     return (
         <div className="space-y-8">
             <div className="flex justify-between items-center border-b border-white/5 pb-4">
-                <h3 className="text-3xl font-light serif-font italic luxury-text-gradient">Vault.</h3>
-                <button onClick={()=>setIsAdding(true)} className="bg-white text-black px-6 py-2 rounded-xl font-black text-[9px] uppercase tracking-widest shadow-lg">+ Upload Archive</button>
+                <h3 className="text-3xl font-light serif-font italic luxury-text-gradient">Notes.</h3>
+                <button onClick={()=>setIsAdding(true)} className="bg-white text-black px-6 py-2 rounded-xl font-black text-[9px] uppercase tracking-widest shadow-lg">+ Upload Note</button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {notes.map(n => (
@@ -334,7 +334,7 @@ const NotesModule = ({ gradeId, divisionId, teacherId }: any) => {
                         <span className="text-emerald-400 text-[8px] font-black uppercase mb-4 tracking-widest">{n.subject}</span>
                         <h4 className="text-xl font-bold mb-3 text-white/90 truncate italic">{n.title}</h4>
                         <p className="text-[10px] text-white/30 line-clamp-2 leading-relaxed mb-6 font-medium">{n.content}</p>
-                        <button onClick={async ()=>{if(confirm('Purge Data?')){await db.deleteNote(n.id); load();}}} className="absolute top-6 right-6 text-white/5 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all"><Trash2 size={14}/></button>
+                        <button onClick={async ()=>{if(confirm('Purge Note?')){await db.deleteNote(n.id); load();}}} className="absolute top-6 right-6 text-white/5 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all"><Trash2 size={14}/></button>
                     </div>
                 ))}
             </div>
@@ -343,7 +343,7 @@ const NotesModule = ({ gradeId, divisionId, teacherId }: any) => {
                     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4">
                         <div className="bg-[#0A0A0E] border border-white/10 rounded-[48px] w-full max-w-md p-10 relative shadow-2xl">
                             <button onClick={()=>setIsAdding(false)} className="absolute top-8 right-8 text-white/20 hover:text-white"><X size={24}/></button>
-                            <h3 className="text-3xl font-light serif-font mb-8 text-center italic luxury-text-gradient">Vault Input.</h3>
+                            <h3 className="text-3xl font-light serif-font mb-8 text-center italic luxury-text-gradient">Notes Input.</h3>
                             <form onSubmit={async (e)=>{e.preventDefault(); await db.addNote({gradeId, divisionId, teacherId, ...form}); setIsAdding(false); load();}} className="space-y-4">
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-1">
@@ -364,9 +364,9 @@ const NotesModule = ({ gradeId, divisionId, teacherId }: any) => {
                                     )}
                                 </div>
                                 <input required placeholder="Subject Domain" className="w-full bg-white/5 border border-white/5 rounded-xl px-5 py-3 text-xs text-white" onChange={e=>setForm({...form, subject:e.target.value})} />
-                                <input required placeholder="Archive Title" className="w-full bg-white/5 border border-white/5 rounded-xl px-5 py-3 text-xs text-white" onChange={e=>setForm({...form, title:e.target.value})} />
+                                <input required placeholder="Note Title" className="w-full bg-white/5 border border-white/5 rounded-xl px-5 py-3 text-xs text-white" onChange={e=>setForm({...form, title:e.target.value})} />
                                 <textarea required placeholder="Intel Summary..." className="w-full bg-white/5 border border-white/5 rounded-xl px-5 py-3 text-xs text-white h-32" onChange={e=>setForm({...form, content:e.target.value})} />
-                                <button className="w-full bg-white text-black py-4 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-xl">Commit To Vault</button>
+                                <button className="w-full bg-white text-black py-4 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-xl">Commit To Notes</button>
                             </form>
                         </div>
                     </div>
@@ -376,7 +376,7 @@ const NotesModule = ({ gradeId, divisionId, teacherId }: any) => {
     );
 };
 
-// --- MODULE: EXAM BUILDER ---
+// --- MODULE: CONDUCT EXAM ---
 const ExamBuilderModule = ({ gradeId, divisionId, teacherId }: any) => {
     const [exams, setExams] = useState<Exam[]>([]);
     const [isCreating, setIsCreating] = useState(false);
@@ -401,22 +401,22 @@ const ExamBuilderModule = ({ gradeId, divisionId, teacherId }: any) => {
 
     const validateAndSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        const currentSum = form.questions.reduce((a: number, b: any) => a + (b.marks || 0), 0);
+        const currentSum = (form.questions as any[]).reduce((a: number, b: any) => a + (parseInt(b.marks) || 0), 0);
         if (currentSum !== parseInt(form.totalMarks)) {
-            return alert(`Inconsistent Data: Sum of questions (${currentSum}) does not match Total Marks (${form.totalMarks}).`);
+            return alert(`Inconsistent Marks: Question total (${currentSum}) must match Exam total (${form.totalMarks}).`);
         }
         await db.addExam({ gradeId, subdivisionId: divisionId, ...form, createdBy: teacherId });
         setIsCreating(false);
         setForm({ title: '', subject: '', duration: 30, examDate: '', startTime: '', totalMarks: 0, questions: [], reopenable: false });
         load();
-        alert("Assessment Protocol Finalized.");
+        alert("Exam Protocol Finalized.");
     };
 
     return (
         <div className="space-y-8">
             <div className="flex justify-between items-center border-b border-white/5 pb-4">
-                <h3 className="text-3xl font-light serif-font italic luxury-text-gradient">Assessments.</h3>
-                <button onClick={()=>setIsCreating(true)} className="bg-white text-black px-6 py-2 rounded-xl font-black text-[9px] uppercase tracking-widest shadow-lg">+ Construct Module</button>
+                <h3 className="text-3xl font-light serif-font italic luxury-text-gradient">Conduct Exam.</h3>
+                <button onClick={()=>setIsCreating(true)} className="bg-white text-black px-6 py-2 rounded-xl font-black text-[9px] uppercase tracking-widest shadow-lg">+ Build Exam</button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {exams.map(e => (
@@ -428,85 +428,105 @@ const ExamBuilderModule = ({ gradeId, divisionId, teacherId }: any) => {
                             <p className="flex items-center gap-2"><Clock size={10}/> {e.startTime} ({e.duration} min)</p>
                             <p className="flex items-center gap-2"><Award size={10}/> {e.totalMarks} Marks Total</p>
                         </div>
-                        <button onClick={async ()=>{if(confirm('Purge Assessment?')){await db.deleteExam(e.id); load();}}} className="absolute top-6 right-6 text-white/5 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all"><Trash2 size={14}/></button>
+                        <button onClick={async ()=>{if(confirm('Purge Exam?')){await db.deleteExam(e.id); load();}}} className="absolute top-6 right-6 text-white/5 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all"><Trash2 size={14}/></button>
                     </div>
                 ))}
             </div>
 
             <AnimatePresence>
                 {isCreating && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-md p-4">
+                    <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/95 backdrop-blur-md p-4">
                         <motion.div initial={{ scale: 0.98, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-[#0A0A0E] border border-white/10 rounded-[48px] w-full max-w-2xl p-8 md:p-12 max-h-[90vh] overflow-y-auto scrollbar-hide relative shadow-2xl">
-                            <button onClick={()=>setIsCreating(false)} className="absolute top-8 right-8 text-white/20 hover:text-white"><X size={28}/></button>
-                            <h3 className="text-3xl font-light serif-font mb-10 text-center italic luxury-text-gradient tracking-tighter">Construct Assessment.</h3>
+                            <button onClick={()=>setIsCreating(false)} className="absolute top-8 right-8 text-white/20 hover:text-white z-20"><X size={28}/></button>
+                            <h3 className="text-3xl font-light serif-font mb-10 text-center italic luxury-text-gradient tracking-tighter">Exam Builder.</h3>
                             
-                            <form onSubmit={validateAndSubmit} className="space-y-8">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <input required placeholder="Exam Name" className="w-full bg-white/5 border border-white/5 rounded-xl px-5 py-3 text-xs text-white" value={form.title} onChange={e=>setForm({...form, title:e.target.value})} />
-                                    <input required placeholder="Subject" className="w-full bg-white/5 border border-white/5 rounded-xl px-5 py-3 text-xs text-white" value={form.subject} onChange={e=>setForm({...form, subject:e.target.value})} />
-                                    <input required type="date" className="w-full bg-white/5 border border-white/5 rounded-xl px-5 py-3 text-xs text-white" value={form.examDate} onChange={e=>setForm({...form, examDate:e.target.value})} />
-                                    <div className="flex gap-2">
-                                        <input required type="time" className="flex-1 bg-white/5 border border-white/5 rounded-xl px-5 py-3 text-xs text-white" value={form.startTime} onChange={e=>setForm({...form, startTime:e.target.value})} />
-                                        <input required type="number" placeholder="Timer (Min)" className="w-24 bg-white/5 border border-white/5 rounded-xl px-4 py-3 text-xs text-white" value={form.duration} onChange={e=>setForm({...form, duration:e.target.value})} />
+                            <form onSubmit={validateAndSubmit} className="space-y-6">
+                                <div className="space-y-1">
+                                    <label className="text-[8px] font-black uppercase text-white/30 ml-2">General Info</label>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <input required placeholder="Exam Name" className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm text-white outline-none focus:border-indigo-500 transition-all" value={form.title} onChange={e=>setForm({...form, title:e.target.value})} />
+                                        <input required placeholder="Subject" className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm text-white outline-none focus:border-indigo-500 transition-all" value={form.subject} onChange={e=>setForm({...form, subject:e.target.value})} />
                                     </div>
                                 </div>
-                                <div className="grid grid-cols-2 gap-4 items-end">
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="space-y-1">
-                                        <label className="text-[8px] font-black uppercase text-white/20 ml-2">Total Mark</label>
-                                        <input required type="number" placeholder="Total" className="w-full bg-white/5 border border-white/5 rounded-xl px-5 py-3 text-xs text-white" value={form.totalMarks} onChange={e=>setForm({...form, totalMarks:e.target.value})} />
+                                        <label className="text-[8px] font-black uppercase text-white/30 ml-2">Battle Coordinate (Date)</label>
+                                        <input required type="date" className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm text-white outline-none focus:border-indigo-500 transition-all [color-scheme:dark]" value={form.examDate} onChange={e=>setForm({...form, examDate:e.target.value})} />
                                     </div>
-                                    <label className="flex items-center gap-3 bg-white/5 px-5 py-3 rounded-xl border border-white/5 cursor-pointer hover:bg-white/10 transition-colors">
-                                        <input type="checkbox" checked={form.reopenable} onChange={e=>setForm({...form, reopenable: e.target.checked})} className="w-4 h-4 rounded-md border-white/10 bg-black text-indigo-600" />
-                                        <span className="text-[10px] font-black uppercase tracking-widest text-white/60">Can Reopen</span>
+                                    <div className="space-y-1">
+                                        <label className="text-[8px] font-black uppercase text-white/30 ml-2">Timeline (Start & Duration)</label>
+                                        <div className="flex gap-2">
+                                            <input required type="time" className="flex-1 bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm text-white outline-none focus:border-indigo-500 transition-all [color-scheme:dark]" value={form.startTime} onChange={e=>setForm({...form, startTime:e.target.value})} />
+                                            <div className="relative w-28">
+                                                <input required type="number" placeholder="Min" className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-4 text-sm text-white outline-none focus:border-indigo-500 transition-all" value={form.duration} onChange={e=>setForm({...form, duration:e.target.value})} />
+                                                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[8px] font-bold text-white/20 uppercase">Min</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-6 items-end">
+                                    <div className="space-y-1">
+                                        <label className="text-[8px] font-black uppercase text-white/30 ml-2">Total Mark Capacity</label>
+                                        <input required type="number" placeholder="Points" className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm text-white outline-none focus:border-indigo-500 transition-all font-mono" value={form.totalMarks} onChange={e=>setForm({...form, totalMarks:e.target.value})} />
+                                    </div>
+                                    <label className="flex items-center gap-3 bg-white/5 px-5 py-4 rounded-2xl border border-white/10 cursor-pointer hover:bg-white/10 transition-colors h-[54px]">
+                                        <input type="checkbox" checked={form.reopenable} onChange={e=>setForm({...form, reopenable: e.target.checked})} className="w-4 h-4 rounded-md border-white/20 bg-black text-indigo-600 focus:ring-0" />
+                                        <span className="text-[10px] font-black uppercase tracking-widest text-white/50">Can Reopen</span>
                                     </label>
                                 </div>
 
-                                <div className="space-y-6">
-                                    <div className="flex justify-between items-center border-b border-white/5 pb-4">
-                                        <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-white/20">Questions</h4>
-                                        <div className="flex gap-2">
-                                            <button type="button" onClick={()=>addQuestion('mcq')} className="bg-indigo-500/10 text-indigo-400 px-3 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest border border-indigo-500/20">+ OMR</button>
-                                            <button type="button" onClick={()=>addQuestion('short')} className="bg-emerald-500/10 text-emerald-400 px-3 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest border border-emerald-500/20">+ Short</button>
-                                            <button type="button" onClick={()=>addQuestion('paragraph')} className="bg-purple-500/10 text-purple-400 px-3 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest border border-purple-500/20">+ Para</button>
+                                <div className="space-y-6 pt-6 border-t border-white/5">
+                                    <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+                                        <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-400">Questions Ledger</h4>
+                                        <div className="flex gap-2 bg-black/40 p-1.5 rounded-2xl border border-white/5">
+                                            <button type="button" onClick={()=>addQuestion('mcq')} className="bg-indigo-500/10 text-indigo-400 px-3 py-2 rounded-xl text-[8px] font-black uppercase tracking-widest border border-indigo-500/20 hover:bg-indigo-500 hover:text-white transition-all">+ OMR</button>
+                                            <button type="button" onClick={()=>addQuestion('short')} className="bg-emerald-500/10 text-emerald-400 px-3 py-2 rounded-xl text-[8px] font-black uppercase tracking-widest border border-emerald-500/20 hover:bg-emerald-500 hover:text-white transition-all">+ Short</button>
+                                            <button type="button" onClick={()=>addQuestion('paragraph')} className="bg-purple-500/10 text-purple-400 px-3 py-2 rounded-xl text-[8px] font-black uppercase tracking-widest border border-purple-500/20 hover:bg-purple-500 hover:text-white transition-all">+ Para</button>
                                         </div>
                                     </div>
 
                                     <div className="space-y-4">
                                         {form.questions.map((q: any, idx: number) => (
-                                            <div key={q.id} className="bg-white/[0.02] border border-white/5 p-6 rounded-[32px] space-y-4 relative group">
-                                                <button type="button" onClick={()=>{const qs=[...form.questions]; qs.splice(idx,1); setForm({...form, questions:qs})}} className="absolute top-4 right-4 text-white/10 hover:text-rose-500"><Trash2 size={12}/></button>
+                                            <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} key={q.id} className="bg-white/[0.02] border border-white/5 p-6 rounded-[32px] space-y-4 relative group">
+                                                <button type="button" onClick={()=>{const qs=[...form.questions]; qs.splice(idx,1); setForm({...form, questions:qs})}} className="absolute top-4 right-4 text-white/10 hover:text-rose-500 transition-colors"><Trash2 size={14}/></button>
                                                 <div className="flex justify-between items-center">
-                                                    <span className="text-white/20 font-black italic text-xl">#0{idx+1}</span>
                                                     <div className="flex items-center gap-3">
-                                                        <span className="text-[7px] font-black uppercase text-white/40 tracking-widest bg-white/5 px-2 py-1 rounded">{q.type}</span>
-                                                        <input type="number" placeholder="Pts" className="w-12 bg-black border border-white/10 rounded-lg px-2 py-1 text-[10px] text-center text-white" value={q.marks} onChange={e=>{const qs=[...form.questions]; qs[idx].marks=parseInt(e.target.value)||0; setForm({...form, questions:qs})}} />
+                                                        <span className="text-white/20 font-black italic text-xl">#0{idx+1}</span>
+                                                        <span className="text-[7px] font-black uppercase text-indigo-400 tracking-widest bg-indigo-400/5 px-2 py-1 rounded-lg border border-indigo-400/10">{q.type}</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <label className="text-[8px] font-black uppercase text-white/20">Marks:</label>
+                                                        <input type="number" className="w-16 bg-black border border-white/10 rounded-xl px-3 py-1.5 text-xs text-center text-white outline-none focus:border-indigo-500 font-mono" value={q.marks} onChange={e=>{const qs=[...form.questions]; qs[idx].marks=e.target.value; setForm({...form, questions:qs})}} />
                                                     </div>
                                                 </div>
-                                                <input required placeholder="Enter Question Content..." className="w-full bg-transparent border-b border-white/10 py-2 outline-none focus:border-indigo-500 text-sm font-medium text-white" value={q.text} onChange={e=>{const qs=[...form.questions]; qs[idx].text=e.target.value; setForm({...form, questions:qs})}} />
+                                                <input required placeholder="Enter Question content..." className="w-full bg-transparent border-b border-white/10 py-3 outline-none focus:border-indigo-500 text-sm font-medium text-white placeholder:text-white/10" value={q.text} onChange={e=>{const qs=[...form.questions]; qs[idx].text=e.target.value; setForm({...form, questions:qs})}} />
                                                 
                                                 {q.type === 'mcq' && q.options && (
-                                                    <div className="grid grid-cols-2 gap-3 pt-2">
+                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
                                                         {q.options.map((opt: string, oIdx: number) => (
-                                                            <div key={oIdx} className="flex items-center gap-2 bg-black/40 border border-white/5 rounded-xl px-3 py-2">
-                                                                <span className="text-[8px] font-black text-indigo-400">{String.fromCharCode(65+oIdx)}</span>
-                                                                <input required placeholder={`Option ${oIdx+1}`} className="bg-transparent outline-none text-xs w-full text-white" value={opt} onChange={e=>{const qs=[...form.questions]; qs[idx].options![oIdx]=e.target.value; setForm({...form, questions:qs})}} />
+                                                            <div key={oIdx} className="flex items-center gap-3 bg-black/40 border border-white/5 rounded-2xl px-4 py-3 group/opt">
+                                                                <span className="text-[10px] font-black text-indigo-400 group-focus-within/opt:scale-110 transition-transform">{String.fromCharCode(65+oIdx)}</span>
+                                                                <input required placeholder={`Choice ${oIdx+1}`} className="bg-transparent outline-none text-xs w-full text-white placeholder:text-white/5" value={opt} onChange={e=>{const qs=[...form.questions]; qs[idx].options![oIdx]=e.target.value; setForm({...form, questions:qs})}} />
                                                             </div>
                                                         ))}
                                                     </div>
                                                 )}
-                                            </div>
+                                            </motion.div>
                                         ))}
+                                        {form.questions.length === 0 && <div className="py-20 text-center text-white/5 font-black uppercase tracking-[0.5em] text-[10px] border-2 border-dashed border-white/5 rounded-[40px]">No Question Nodes Deployed</div>}
                                     </div>
                                 </div>
 
-                                <div className="pt-6 border-t border-white/5 flex items-center justify-between">
-                                    <div className="text-left">
-                                        <p className="text-[7px] font-black text-white/20 uppercase tracking-widest">Mark Balance</p>
-                                        <p className={`text-xl font-bold ${(form.questions as any[]).reduce((a:number,b:any)=>a+(b.marks || 0),0) === parseInt(form.totalMarks) ? 'text-emerald-400' : 'text-rose-400'}`}>
-                                            {(form.questions as any[]).reduce((a:number,b:any)=>a+(b.marks || 0),0)} / {form.totalMarks || 0}
+                                <div className="pt-8 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-6 bg-black/40 -mx-8 -mb-12 p-8 md:-mx-12 md:p-12">
+                                    <div className="text-center sm:text-left">
+                                        <p className="text-[7px] font-black text-white/30 uppercase tracking-[0.4em] mb-1">Mark Configuration Balance</p>
+                                        <p className={`text-2xl font-black italic tracking-tighter transition-colors ${(form.questions as any[]).reduce((a:number,b:any)=>a+(parseInt(b.marks)||0),0) === parseInt(form.totalMarks) ? 'text-emerald-400' : 'text-rose-500'}`}>
+                                            {(form.questions as any[]).reduce((a:number,b:any)=>a+(parseInt(b.marks)||0),0)} / {form.totalMarks || 0}
                                         </p>
                                     </div>
-                                    <button type="submit" className="bg-white text-black px-12 py-4 rounded-2xl font-black text-xs uppercase tracking-[0.4em] shadow-xl hover:bg-emerald-500 hover:text-white transition-all">Authorize Deployment</button>
+                                    <button type="submit" className="w-full sm:w-auto bg-white text-black px-16 py-5 rounded-[24px] font-black text-xs uppercase tracking-[0.4em] shadow-[0_20px_50px_rgba(255,255,255,0.1)] hover:bg-indigo-500 hover:text-white transition-all active:scale-95">Authorize Deployment</button>
                                 </div>
                             </form>
                         </motion.div>
@@ -517,7 +537,7 @@ const ExamBuilderModule = ({ gradeId, divisionId, teacherId }: any) => {
     );
 };
 
-// --- MODULE: CHECK EXAM PAPERS ---
+// --- MODULE: CHECK EXAM ---
 const CheckExamsModule = () => {
     const [submissions, setSubmissions] = useState<ExamSubmission[]>([]);
     const [selectedSub, setSelectedSub] = useState<ExamSubmission | null>(null);
@@ -536,7 +556,6 @@ const CheckExamsModule = () => {
 
     const handleGrade = async () => {
         if (!selectedSub) return;
-        // Fix: Cast Object.values to number[] for reduction
         const total = (Object.values(marks) as number[]).reduce((a: number, b: number) => a + b, 0);
         await db.updateExamSubmissionGrading(selectedSub.id, marks, total);
         setSelectedSub(null);
@@ -548,7 +567,7 @@ const CheckExamsModule = () => {
     return (
         <div className="space-y-8">
             <div className="pb-4 border-b border-white/5">
-                <h3 className="text-3xl md:text-5xl font-light serif-font italic luxury-text-gradient tracking-tighter">Review Desk.</h3>
+                <h3 className="text-3xl md:text-5xl font-light serif-font italic luxury-text-gradient tracking-tighter">Check Exam.</h3>
                 <p className="text-[8px] font-black uppercase tracking-[0.5em] text-white/20 mt-1">Answer Sheet Authentication</p>
             </div>
             
@@ -573,8 +592,8 @@ const CheckExamsModule = () => {
             <AnimatePresence>
                 {selectedSub && activeExam && (
                     <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/98 p-4 backdrop-blur-xl">
-                        <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-[#0A0A0E] border border-white/10 rounded-[48px] w-full max-w-3xl p-10 relative flex flex-col max-h-[90vh] overflow-hidden shadow-2xl">
-                            <button onClick={()=>setSelectedSub(null)} className="absolute top-10 right-10 text-white/20 hover:text-white"><X size={28}/></button>
+                        <motion.div initial={{ scale:0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-[#0A0A0E] border border-white/10 rounded-[48px] w-full max-w-3xl p-10 relative flex flex-col max-h-[90vh] overflow-hidden shadow-2xl">
+                            <button onClick={()=>setSelectedSub(null)} className="absolute top-10 right-10 text-white/20 hover:text-white z-50"><X size={28}/></button>
                             <div className="mb-10 border-b border-white/5 pb-6">
                                 <h3 className="text-3xl font-light serif-font italic luxury-text-gradient mb-2">{selectedSub.studentName}</h3>
                                 <p className="text-[10px] font-black uppercase text-white/20 tracking-[0.4em]">Exam: {activeExam.title}</p>
@@ -612,7 +631,7 @@ const CheckExamsModule = () => {
     );
 };
 
-// --- MODULE: LEAVE REQUESTS ---
+// --- MODULE: LEAVE MANAGEMENT ---
 const LeaveRequestsModule = ({ gradeId, divisionId }: any) => {
     const [leaves, setLeaves] = useState<LeaveApplication[]>([]);
     const load = useCallback(() => { if(gradeId && divisionId) db.getLeaveApplications(undefined, gradeId, divisionId).then(setLeaves); }, [gradeId, divisionId]);
@@ -625,7 +644,7 @@ const LeaveRequestsModule = ({ gradeId, divisionId }: any) => {
     return (
         <div className="space-y-8">
             <div className="pb-4 border-b border-white/5">
-                <h3 className="text-3xl md:text-5xl font-light serif-font italic luxury-text-gradient tracking-tighter">Permit Registry.</h3>
+                <h3 className="text-3xl md:text-5xl font-light serif-font italic luxury-text-gradient tracking-tighter">Leave Management.</h3>
                 <p className="text-[8px] font-black uppercase tracking-[0.5em] text-white/20 mt-1">Personnel Absence Log</p>
             </div>
             <div className="space-y-4">
@@ -654,14 +673,14 @@ const LeaveRequestsModule = ({ gradeId, divisionId }: any) => {
     );
 };
 
-// --- MODULE: STUDENT EXAMS VIEW ---
+// --- MODULE: UPCOMING EXAMS ---
 const StudentExamsView = ({ gradeId, divisionId }: any) => {
     const [exams, setExams] = useState<StudentOwnExam[]>([]);
     useEffect(() => { if(gradeId && divisionId) db.getStudentExams(undefined, gradeId, divisionId).then(setExams); }, [gradeId, divisionId]);
     return (
         <div className="space-y-8">
             <div className="pb-4 border-b border-white/5">
-                <h3 className="text-3xl md:text-5xl font-light serif-font italic luxury-text-gradient tracking-tighter">Engagement.</h3>
+                <h3 className="text-3xl md:text-5xl font-light serif-font italic luxury-text-gradient tracking-tighter">Upcoming Exams.</h3>
                 <p className="text-[8px] font-black uppercase tracking-[0.5em] text-white/20 mt-1">External Student Schedules</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -685,7 +704,7 @@ const StudentExamsView = ({ gradeId, divisionId }: any) => {
     );
 };
 
-// --- MODULE: DOUBT SOLVE ---
+// --- MODULE: DOUBTS ---
 const DoubtSolveModule = () => {
     const [queries, setQueries] = useState<StudentQuery[]>([]);
     const [replyText, setReplyText] = useState<Record<string, string>>({});
@@ -694,7 +713,7 @@ const DoubtSolveModule = () => {
     return (
         <div className="max-w-4xl mx-auto space-y-12">
             <div className="pb-4 border-b border-white/5">
-                <h3 className="text-3xl md:text-5xl font-light serif-font italic luxury-text-gradient tracking-tighter">Intel Hub.</h3>
+                <h3 className="text-3xl md:text-5xl font-light serif-font italic luxury-text-gradient tracking-tighter">Doubts.</h3>
                 <p className="text-[8px] font-black uppercase tracking-[0.5em] text-white/20 mt-1">Secured Transmission Channel</p>
             </div>
             <div className="space-y-6">
@@ -728,7 +747,7 @@ const DoubtSolveModule = () => {
     );
 };
 
-// --- MODULE: CORE SETTINGS ---
+// --- MODULE: SETTINGS ---
 const CoreSettings = ({ user }: { user: User }) => {
     const [form, setForm] = useState({ current: '', new: '', confirm: '' });
     const [loading, setLoading] = useState(false);
@@ -749,7 +768,7 @@ const CoreSettings = ({ user }: { user: User }) => {
                 <div className="w-20 h-20 bg-white/5 rounded-[30px] flex items-center justify-center mx-auto mb-10 text-indigo-400 border border-white/10 shadow-inner group">
                     <Lock size={32} className="group-hover:scale-110 transition-transform duration-500" />
                 </div>
-                <h3 className="text-3xl font-light serif-font mb-10 luxury-text-gradient italic">Security Core.</h3>
+                <h3 className="text-3xl font-light serif-font mb-10 luxury-text-gradient italic">Settings.</h3>
                 <form onSubmit={update} className="space-y-4">
                     <input required type="password" placeholder="CURRENT KEY" value={form.current} onChange={e=>setForm({...form, current:e.target.value})} className="w-full bg-black border border-white/10 rounded-2xl px-6 py-4 text-[10px] text-white font-mono tracking-[0.4em] text-center outline-none focus:border-indigo-500 uppercase" />
                     <input required type="password" placeholder="NEW KEY" value={form.new} onChange={e=>setForm({...form, new:e.target.value})} className="w-full bg-black border border-white/10 rounded-2xl px-6 py-4 text-[10px] text-white font-mono tracking-[0.4em] text-center outline-none focus:border-indigo-500 uppercase" />
