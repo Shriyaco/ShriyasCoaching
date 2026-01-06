@@ -108,6 +108,8 @@ export interface Homework {
   id: string;
   gradeId: string;
   subdivisionId: string;
+  targetType: 'Grade' | 'Division' | 'Individual';
+  targetStudentId?: string;
   subject: string;
   task: string;
   dueDate: string;
@@ -119,7 +121,7 @@ export interface HomeworkSubmission {
     homeworkId: string;
     studentId: string;
     submissionText: string;
-    imageUrl?: string; // Added optional image
+    imageUrl?: string; 
     submittedAt: string;
     status: 'Submitted' | 'Reviewed';
 }
@@ -129,6 +131,7 @@ export interface Question {
     text: string;
     type: 'short' | 'mcq' | 'paragraph';
     marks: number;
+    options?: string[]; // 4 options for OMR/MCQ
 }
 
 export interface Exam {
@@ -142,6 +145,7 @@ export interface Exam {
     duration: number;
     totalMarks: number;
     questions: Question[];
+    reopenable: boolean;
     createdBy: string;
 }
 
@@ -149,9 +153,12 @@ export interface ExamSubmission {
     id: string;
     examId: string;
     studentId: string;
+    studentName?: string;
     answers: Record<string, string>;
+    marksAwarded?: Record<string, number>;
+    totalObtained?: number;
     submittedAt: string;
-    isLocked: boolean;
+    status: 'Submitted' | 'Graded';
 }
 
 export interface ExamResult {
@@ -222,6 +229,8 @@ export interface StudyNote {
   id: string;
   gradeId: string;
   divisionId: string;
+  targetType: 'Grade' | 'Individual';
+  targetStudentId?: string;
   subject: string;
   title: string;
   content: string;
@@ -233,7 +242,7 @@ export interface StudyNote {
 export interface StudentNotification {
     id: string;
     targetType: 'all' | 'grade' | 'division' | 'student';
-    targetId?: string; // grade_id, division_id, or student_id
+    targetId?: string; 
     type: 'fee' | 'announcement' | 'notice';
     title: string;
     message: string;
@@ -241,8 +250,6 @@ export interface StudentNotification {
 }
 
 export type TabView = 'dashboard' | 'students' | 'notices' | 'timetable' | 'grades' | 'teachers' | 'fees' | 'settings' | 'enquiries' | 'shop' | 'products' | 'broadcast' | 'homework' | 'exams';
-
-// --- NEW MODULE TYPES ---
 
 export interface StudentOwnExam {
     id: string;

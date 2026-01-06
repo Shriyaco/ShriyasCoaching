@@ -9,6 +9,7 @@ const mapStudent = (s: any): Student => ({
     name: s.name,
     mobile: s.mobile,
     parentName: s.parent_name,
+    // Fix: Removed 'grade_id' which is not part of the Student interface
     gradeId: s.grade_id,
     subdivisionId: s.subdivision_id,
     joiningDate: s.joining_date,
@@ -70,6 +71,8 @@ const mapNote = (n: any): StudyNote => ({
     id: n.id,
     gradeId: n.grade_id,
     divisionId: n.division_id,
+    targetType: n.target_type || 'Grade',
+    targetStudentId: n.target_student_id,
     subject: n.subject,
     title: n.title,
     content: n.content,
@@ -118,8 +121,6 @@ class DatabaseService {
       return { id: 'admin1', username: 'Shriya Admin', role: 'admin', status: 'Active' };
     }
     
-    // OPTIMIZATION: Select ONLY columns needed for auth verification to speed up response time.
-    // Avoid fetching 'image_url' or other large text fields here.
     const [teacherRes, studentRes] = await Promise.all([
         supabase.from('teachers').select('id, name, teacher_custom_id, password, mobile, status').or(`teacher_custom_id.eq.${username},name.eq.${username}`),
         supabase.from('students').select('id, name, student_custom_id, password, mobile, status, subdivision_id').or(`student_custom_id.eq.${username},name.eq.${username}`)
@@ -135,30 +136,25 @@ class DatabaseService {
     if (studentRes.data && studentRes.data.length > 0) {
         const s = studentRes.data.find(student => student.password === password || student.mobile === password);
         if (s && s.status === 'Active') {
-            // Note: imageUrl is not fetched here for speed, it will be fetched when dashboard loads profile
             return { id: s.id, username: s.name, role: 'student', divisionId: s.subdivision_id, status: 'Active' };
         }
     }
     return null;
   }
 
-  // --- SUPERADMIN / CMS LOGIC ---
   async getPageContent(pageKey: string): Promise<any> {
-      // NOTE: This assumes a table 'site_content' exists with columns: id, page_key (unique), content_json
       const { data, error } = await supabase.from('site_content').select('content_json').eq('page_key', pageKey).single();
       if (error || !data) return null;
       return data.content_json;
   }
 
   async updatePageContent(pageKey: string, content: any) {
-      // Upsert: Create if not exists, update if exists
       const { error } = await supabase.from('site_content').upsert(
           { page_key: pageKey, content_json: content },
           { onConflict: 'page_key' }
       );
       if (error) throw error;
   }
-  // -----------------------------
 
   async changePassword(id: string, role: 'student' | 'teacher', oldPassword: string, newPassword: string): Promise<void> {
     const table = role === 'student' ? 'students' : 'teachers';
@@ -318,7 +314,7 @@ class DatabaseService {
           name: data.name,
           mobile: data.mobile,
           grade_id: data.gradeId || null,
-          subdivision_id: data.subdivisionId || null,
+          subdivision_id: data.subdivision_id || null,
           specialization: data.specialization || 'General',
           joining_date: new Date().toISOString().split('T')[0],
           password: password,
@@ -484,6 +480,8 @@ class DatabaseService {
           id: h.id, 
           gradeId: h.grade_id, 
           subdivisionId: h.subdivision_id, 
+          targetType: h.target_type || 'Division',
+          targetStudentId: h.target_student_id,
           subject: h.subject, 
           task: h.task, 
           dueDate: h.due_date, 
@@ -497,6 +495,8 @@ class DatabaseService {
           id: h.id, 
           gradeId: h.grade_id, 
           subdivisionId: h.subdivision_id, 
+          targetType: h.target_type || 'Division',
+          targetStudentId: h.target_student_id,
           subject: h.subject, 
           task: h.task, 
           dueDate: h.due_date, 
@@ -506,21 +506,20 @@ class DatabaseService {
 
   async addHomework(data: Omit<Homework, 'id'>) {
       await supabase.from('homework').insert({
-          grade_id: data.gradeId, subdivision_id: data.subdivisionId, subject: data.subject, task: data.task, due_date: data.dueDate, assigned_by: data.assignedBy
+          grade_id: data.gradeId, 
+          subdivision_id: data.subdivisionId, 
+          target_type: data.targetType,
+          target_student_id: data.targetStudentId,
+          subject: data.subject, 
+          task: data.task, 
+          due_date: data.dueDate, 
+          assigned_by: data.assignedBy
       });
   }
 
   async deleteHomework(id: string) {
       const { error } = await supabase.from('homework').delete().eq('id', id);
       if (error) throw error;
-  }
-
-  async getHomeworkSubmission(homeworkId: string, studentId: string): Promise<HomeworkSubmission | undefined> {
-      const { data } = await supabase.from('homework_submissions').select('*').eq('homework_id', homeworkId).eq('student_id', studentId).single();
-      if (!data) return undefined;
-      return {
-          id: data.id, homeworkId: data.homework_id, studentId: data.student_id, submissionText: data.submission_text, imageUrl: data.image_url, submittedAt: data.submitted_at, status: data.status as any
-      };
   }
 
   async submitHomework(homeworkId: string, studentId: string, text: string, imageUrl?: string) {
@@ -561,15 +560,16 @@ class DatabaseService {
           duration: e.duration, 
           totalMarks: e.total_marks, 
           questions: e.questions, 
+          reopenable: e.reopenable || false,
           createdBy: e.created_by 
       }));
   }
-  
+
+  // Fix: Added getExamsForStudent method
   async getExamsForStudent(gradeId: string, subdivisionId: string): Promise<Exam[]> {
-      const { data } = await supabase.from('exams')
-          .select('*')
-          .eq('grade_id', gradeId)
-          .eq('subdivision_id', subdivisionId);
+      const { data } = await supabase.from('exams').select('*')
+        .eq('grade_id', gradeId)
+        .eq('subdivision_id', subdivisionId);
       return (data || []).map(e => ({
           id: e.id, 
           title: e.title, 
@@ -581,10 +581,11 @@ class DatabaseService {
           duration: e.duration, 
           totalMarks: e.total_marks, 
           questions: e.questions, 
-          createdBy: e.created_by
+          reopenable: e.reopenable || false,
+          createdBy: e.created_by 
       }));
   }
-
+  
   async addExam(data: Omit<Exam, 'id'>) {
       await supabase.from('exams').insert({
           title: data.title, 
@@ -596,6 +597,7 @@ class DatabaseService {
           duration: data.duration, 
           total_marks: data.totalMarks, 
           questions: data.questions, 
+          reopenable: data.reopenable,
           created_by: data.createdBy
       });
   }
@@ -604,26 +606,27 @@ class DatabaseService {
       await supabase.from('exams').delete().eq('id', id);
   }
 
-  async getExamSubmissions(examId: string): Promise<ExamSubmission[]> {
-    const { data } = await supabase.from('exam_submissions').select('*').eq('exam_id', examId);
-    return (data || []).map(s => ({
-        id: s.id,
-        examId: s.exam_id,
-        studentId: s.student_id,
-        answers: s.answers,
-        submittedAt: s.created_at,
-        isLocked: s.is_locked
-    }));
+  async getAllExamSubmissions(): Promise<ExamSubmission[]> {
+      const { data } = await supabase.from('exam_submissions').select('*, students(name)');
+      return (data || []).map(s => ({
+          id: s.id,
+          examId: s.exam_id,
+          studentId: s.student_id,
+          studentName: s.students?.name,
+          answers: s.answers,
+          marksAwarded: s.marks_awarded,
+          totalObtained: s.total_obtained,
+          submittedAt: s.created_at,
+          status: s.status as any
+      }));
   }
 
-  async getExamSubmissionStatus(examId: string, studentId: string): Promise<ExamSubmission | null> {
-      const { data } = await supabase.from('exam_submissions').select('*').eq('exam_id', examId).eq('student_id', studentId).single();
-      if (!data) return null;
-      return { id: data.id, examId: data.exam_id, studentId: data.student_id, answers: data.answers, submittedAt: data.created_at, isLocked: data.is_locked };
-  }
-
-  async submitExamAnswers(examId: string, studentId: string, answers: Record<string, string>) {
-      await supabase.from('exam_submissions').insert({ exam_id: examId, student_id: studentId, answers: answers, is_locked: true });
+  async updateExamSubmissionGrading(id: string, marksRecord: Record<string, number>, total: number) {
+      await supabase.from('exam_submissions').update({
+          marks_awarded: marksRecord,
+          total_obtained: total,
+          status: 'Graded'
+      }).eq('id', id);
   }
 
   async addQuery(data: any) {
@@ -760,6 +763,8 @@ class DatabaseService {
     await supabase.from('study_notes').insert({
       grade_id: data.gradeId,
       division_id: data.divisionId,
+      target_type: data.targetType,
+      target_student_id: data.targetStudentId,
       subject: data.subject,
       title: data.title,
       content: data.content,
@@ -771,26 +776,6 @@ class DatabaseService {
   async deleteNote(id: string) {
     await supabase.from('study_notes').delete().eq('id', id);
   }
-
-  async pushNotification(notif: Omit<StudentNotification, 'id' | 'createdAt'>) {
-      await supabase.from('app_notifications').insert({
-          target_type: notif.targetType,
-          target_id: notif.targetId,
-          type: notif.type,
-          title: notif.title,
-          message: notif.message
-      });
-  }
-
-  async getStudentNotifications(student: Student): Promise<StudentNotification[]> {
-      const { data } = await supabase.from('app_notifications')
-          .select('*')
-          .or(`target_type.eq.all,and(target_type.eq.grade,target_id.eq.${student.gradeId}),and(target_type.eq.division,target_id.eq.${student.subdivisionId}),and(target_type.eq.student,target_id.eq.${student.id})`)
-          .order('created_at', { ascending: false });
-      return (data || []).map(mapNotification);
-  }
-
-  // --- NEW METHODS FOR LEAVE & STUDENT EXAMS ---
 
   async addLeaveApplication(data: Omit<LeaveApplication, 'id' | 'status'>) {
       await supabase.from('leave_applications').insert({
@@ -837,6 +822,18 @@ class DatabaseService {
       if (divisionId) query = query.eq('subdivision_id', divisionId);
       const { data } = await query.order('exam_date', { ascending: true });
       return (data || []).map(mapStudentExam);
+  }
+
+  // Fix: Added pushNotification method for BroadCastModule
+  async pushNotification(data: Omit<StudentNotification, 'id' | 'createdAt'>) {
+      const { error } = await supabase.from('app_notifications').insert({
+          target_type: data.targetType,
+          target_id: data.targetId,
+          type: data.type,
+          title: data.title,
+          message: data.message
+      });
+      if (error) throw error;
   }
 }
 
