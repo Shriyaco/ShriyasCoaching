@@ -110,14 +110,18 @@ export default function PayFees() {
 
     const currentGateway = selectedGatewayKey ? settings.gateways[selectedGatewayKey] : null;
 
-    // --- DYNAMIC QR GENERATION ---
+    // --- DYNAMIC QR GENERATION (FIXED FOR MODIFIABLE AMOUNT & BANKING NAME) ---
     const getDynamicQR = () => {
-        if (!currentGateway?.credentials.upiId) return "https://advedasolutions.in/qr.jpg"; // Fallback
-        const upiID = currentGateway.credentials.upiId;
-        const name = "Shriyas Gurukul";
+        // Precise details extracted from provided QR reference
+        const upiID = currentGateway?.credentials.upiId || "9724111369@ptsbi";
+        const name = "SHRIYA BRAHMBHATT";
         const am = amount || "0";
-        const upiLink = `upi://pay?pa=${upiID}&pn=${encodeURIComponent(name)}&am=${am}&cu=INR`;
-        return `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(upiLink)}`;
+        
+        // Mode 02 and specific parameters often help apps lock the amount and resolve names correctly
+        const upiLink = `upi://pay?pa=${upiID}&pn=${encodeURIComponent(name)}&am=${am}&cu=INR&mode=02&purpose=00`;
+        
+        // Using high quality QR generation
+        return `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(upiLink)}&ecc=H&margin=1`;
     };
 
     return (
@@ -203,7 +207,7 @@ export default function PayFees() {
                                     className="w-full bg-transparent text-5xl font-black text-white outline-none focus:text-[#00E5FF] transition-colors"
                                     placeholder="0"
                                 />
-                                <p className="text-xs text-gray-500 mt-2 italic">You can modify this amount for part-payments.</p>
+                                <p className="text-xs text-gray-500 mt-2 italic">You can modify this amount for part-payments. QR will update automatically.</p>
                             </div>
                         </div>
                     )}
@@ -268,10 +272,10 @@ export default function PayFees() {
                                             
                                             <div className="bg-slate-50 p-5 rounded-2xl flex items-center justify-between border border-slate-100">
                                                 <div className="overflow-hidden mr-2">
-                                                    <p className="text-[10px] text-slate-400 font-bold uppercase mb-1">Receiver UPI ID</p>
-                                                    <p className="text-sm font-mono text-slate-800 font-bold truncate">{currentGateway.credentials.upiId}</p>
+                                                    <p className="text-[10px] text-slate-400 font-bold uppercase mb-1">Receiver VPA</p>
+                                                    <p className="text-sm font-mono text-slate-800 font-bold truncate">{currentGateway.credentials.upiId || "9724111369@ptsbi"}</p>
                                                 </div>
-                                                <button onClick={() => handleCopy(currentGateway.credentials.upiId || '')} className="text-indigo-600 hover:bg-indigo-50 p-2.5 rounded-xl transition-all border border-indigo-100">
+                                                <button onClick={() => handleCopy(currentGateway.credentials.upiId || '9724111369@ptsbi')} className="text-indigo-600 hover:bg-indigo-50 p-2.5 rounded-xl transition-all border border-indigo-100">
                                                     {copied ? <Check size={20} className="text-emerald-500" /> : <Copy size={20} />}
                                                 </button>
                                             </div>
