@@ -1,3 +1,4 @@
+
 import React, { useRef, Suspense, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Canvas, useFrame } from '@react-three/fiber';
@@ -5,6 +6,8 @@ import { Float, Environment, ContactShadows, Stars, PerspectiveCamera, MeshWobbl
 import * as THREE from 'three';
 import { Heart, Brain, Zap, GraduationCap, Users, Sparkles, Quote } from 'lucide-react';
 import Footer from '../components/Footer';
+import { db } from '../services/db';
+import SEO from '../components/SEO';
 
 const WisdomScene = () => {
   const group = useRef<THREE.Group>(null!);
@@ -33,6 +36,16 @@ const WisdomScene = () => {
 
 const WhyUs: React.FC = () => {
   const [webglSupported, setWebglSupported] = useState<boolean | null>(null);
+  const [content, setContent] = useState<any>({
+      heroTitle: 'Deep Integrity.',
+      heroSubtitle: 'Combining ancient wisdom with the tech of tomorrow.',
+      rootsTitle: 'Our Roots',
+      rootsDesc: 'Building character and discipline alongside academic excellence. Every child receives 1-on-1 guidance during critical years.',
+      quoteText: "To transform each student by providing a culture of excellence and human values.",
+      seoTitle: 'Why Choose Us',
+      seoDesc: 'Discover our Gurukul heritage combined with modern technology.',
+      seoKeywords: 'gurukul, values, mentorship, technology, education'
+  });
 
   useEffect(() => {
     try {
@@ -43,6 +56,12 @@ const WhyUs: React.FC = () => {
     } catch (e) {
       setWebglSupported(false);
     }
+
+    const loadContent = async () => {
+        const data = await db.getPageContent('why-us');
+        if (data) setContent((prev:any) => ({ ...prev, ...data }));
+    };
+    loadContent();
   }, []);
 
   const pillars = [
@@ -54,6 +73,7 @@ const WhyUs: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-premium-black text-white selection:bg-premium-accent selection:text-black overflow-x-hidden">
+      <SEO title={content.seoTitle} description={content.seoDesc} keywords={content.seoKeywords} />
       <section className="relative min-h-[85vh] flex flex-col items-center justify-center pt-24 overflow-hidden">
         <div className="absolute inset-0 z-0">
           {webglSupported ? (
@@ -82,11 +102,11 @@ const WhyUs: React.FC = () => {
                     <Sparkles size={14} className="text-indigo-400" />
                     <span className="text-white/40 text-[9px] font-black tracking-[0.4em] uppercase">The Difference</span>
                 </div>
-                <h1 className="text-6xl md:text-[9rem] font-light serif-font uppercase mb-8 leading-[0.85] tracking-tight luxury-text-gradient">
-                    Deep <br /> Integrity.
+                <h1 className="text-6xl md:text-[9rem] font-light serif-font uppercase mb-8 leading-[0.85] tracking-tight luxury-text-gradient whitespace-pre-line">
+                    {content.heroTitle}
                 </h1>
                 <p className="text-sm md:text-lg text-white/50 max-w-3xl mx-auto leading-relaxed tracking-[0.2em] uppercase font-bold">
-                   Combining ancient wisdom with the tech of tomorrow.
+                   {content.heroSubtitle}
                 </p>
             </motion.div>
         </div>
@@ -97,10 +117,10 @@ const WhyUs: React.FC = () => {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
                 <motion.div initial={{ opacity: 0, x: -30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}>
                     <h2 className="text-4xl md:text-7xl font-light serif-font uppercase tracking-tight mb-8 leading-none">
-                        Our <br/><span className="text-premium-accent">Roots</span>
+                        {content.rootsTitle}
                     </h2>
                     <p className="text-lg md:text-xl text-white/40 mb-10 font-light leading-loose max-w-lg">
-                        Building character and discipline alongside academic excellence. Every child receives 1-on-1 guidance during critical years.
+                        {content.rootsDesc}
                     </p>
                     <div className="flex gap-6 p-8 rounded-[40px] bg-white/[0.02] border border-white/5 hover:border-premium-accent/20 transition-all max-w-md">
                         <div className="w-14 h-14 bg-premium-accent/10 rounded-2xl flex items-center justify-center text-premium-accent shrink-0"><Users size={28}/></div>
@@ -111,7 +131,7 @@ const WhyUs: React.FC = () => {
                     <motion.div initial={{ scale: 0.95, opacity: 0 }} whileInView={{ scale: 1, opacity: 1 }} className="bg-gradient-to-br from-indigo-950/20 to-black rounded-[60px] p-12 md:p-16 text-white border border-white/5 shadow-2xl relative z-10 overflow-hidden">
                         <Quote size={80} className="text-white/5 absolute -top-4 -left-4" />
                         <p className="text-2xl md:text-4xl font-light serif-font leading-tight italic relative z-10 text-white/80">
-                            "To transform each student by providing a culture of excellence and human values."
+                            "{content.quoteText}"
                         </p>
                     </motion.div>
                 </div>

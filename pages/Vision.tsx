@@ -1,3 +1,4 @@
+
 import React, { useRef, Suspense, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Canvas, useFrame } from '@react-three/fiber';
@@ -5,6 +6,8 @@ import { Float, Environment, ContactShadows, Stars, PerspectiveCamera, Torus, Sp
 import * as THREE from 'three';
 import { Target, Shield, Heart, Sparkles, BookOpen, Quote, HelpCircle } from 'lucide-react';
 import Footer from '../components/Footer';
+import { db } from '../services/db';
+import SEO from '../components/SEO';
 
 const VisionScene = () => {
   const group = useRef<THREE.Group>(null!);
@@ -32,6 +35,13 @@ const VisionScene = () => {
 
 const Vision: React.FC = () => {
   const [webglSupported, setWebglSupported] = useState<boolean | null>(null);
+  const [content, setContent] = useState<any>({
+      heroTitle: 'Enlighten Future.',
+      quoteText: "To be the learning center that bridges ancient wisdom with global excellence.",
+      seoTitle: 'Our Vision',
+      seoDesc: 'Empowering minds and fostering holistic growth.',
+      seoKeywords: 'vision, mission, holistic growth, empowerment'
+  });
 
   useEffect(() => {
     try {
@@ -40,6 +50,12 @@ const Vision: React.FC = () => {
     } catch (e) {
       setWebglSupported(false);
     }
+
+    const loadContent = async () => {
+        const data = await db.getPageContent('vision');
+        if (data) setContent((prev:any) => ({ ...prev, ...data }));
+    };
+    loadContent();
   }, []);
 
   const missionPillars = [
@@ -49,6 +65,7 @@ const Vision: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-premium-black text-white overflow-x-hidden">
+      <SEO title={content.seoTitle} description={content.seoDesc} keywords={content.seoKeywords} />
       <section className="relative min-h-[85vh] flex flex-col items-center justify-center pt-24 overflow-hidden">
         <div className="absolute inset-0 z-0">
           {webglSupported ? (
@@ -78,13 +95,13 @@ const Vision: React.FC = () => {
                   <span className="text-white/60 text-[9px] font-black tracking-[0.5em] uppercase">The Visionary Core</span>
                 </div>
                 
-                <h1 className="text-5xl md:text-[9rem] font-light serif-font uppercase mb-8 md:mb-12 leading-[1.1] tracking-tight luxury-text-gradient">
-                  Enlighten <br /> Future.
+                <h1 className="text-5xl md:text-[9rem] font-light serif-font uppercase mb-8 md:mb-12 leading-[1.1] tracking-tight luxury-text-gradient whitespace-pre-line">
+                  {content.heroTitle}
                 </h1>
                 
                 <div className="relative max-w-2xl mx-auto px-4">
                     <p className="text-lg md:text-2xl text-white/70 leading-relaxed font-light italic serif-font">
-                      "To be the learning center that bridges ancient wisdom with global excellence."
+                      "{content.quoteText}"
                     </p>
                 </div>
             </motion.div>

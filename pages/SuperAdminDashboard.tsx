@@ -4,6 +4,77 @@ import { db } from '../services/db';
 import { Lock, Save, Globe, Code, Image as ImageIcon, Layout, Terminal, LogOut, Search, TrendingUp, FileText } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
+const DEFAULTS: any = {
+    home: {
+        heroTitle1: 'Future',
+        heroTitle2: 'Crafted here.',
+        heroTagline: 'The Zenith of Learning',
+        tickerText: 'ADMISSION OPENS FOR 2026-27. LIMITED SEATS AVAILABLE.',
+        philHeading: 'Precision \n Mastery.',
+        philDesc: "The most sophisticated coaching environment for primary years. Our collective experience and tailored methodology elevate education to a whole new level. We don't just teach; we sculpt intellects.",
+        philImage: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1000",
+        seoTitle: "Shriya's Coaching | Excellence Redefined",
+        seoDesc: "A high-performance educational platform for Grades 1st to 8th.",
+        seoKeywords: "education, coaching, cbse, icse, state board, ahmedabad"
+    },
+    cbse: {
+        heroTitle: 'CBSE Board',
+        heroSubtitle: 'NCERT-aligned coaching for future academic leadership.',
+        mainDesc: "Our CBSE program is meticulously structured around the NCERT framework, ensuring students don't just memorize but master the core concepts. We provide a bridge between regular schooling and competitive national standards.",
+        quoteText: "Excellence is not an act, but a habit of continuous conceptual evolution.",
+        seoTitle: 'CBSE Coaching',
+        seoDesc: 'Top CBSE Coaching in Ahmedabad for grades 1-8.',
+        seoKeywords: 'cbse, coaching, ahmedabad, ncert'
+    },
+    icse: {
+        heroTitle: 'ICSE Curriculum',
+        heroSubtitle: 'Comprehensive learning emphasizing English proficiency and subject depth.',
+        approachHeading: 'Our Approach',
+        approachDesc: "We don't believe in surface-level teaching. ICSE requires deep analytical involvement, and our pedagogy is designed to meet those rigorous standards while keeping students engaged.",
+        seoTitle: 'ICSE Coaching',
+        seoDesc: 'Specialized ICSE coaching focusing on English mastery and conceptual depth.',
+        seoKeywords: 'icse, coaching, english literature, science, ahmedabad'
+    },
+    state: {
+        heroTitle: 'State Boards',
+        heroSubtitle: 'Dedicated coaching for Gujarat and Maharashtra students, aligned with NEP 2020.',
+        seoTitle: 'State Board Coaching',
+        seoDesc: 'GSEB and MSBSHSE coaching with focus on bridge courses and scholarship exams.',
+        seoKeywords: 'gseb, msbshse, state board, gujarat board, maharashtra board'
+    },
+    'why-us': {
+        heroTitle: 'Deep Integrity.',
+        heroSubtitle: 'Combining ancient wisdom with the tech of tomorrow.',
+        rootsTitle: 'Our Roots',
+        rootsDesc: 'Building character and discipline alongside academic excellence. Every child receives 1-on-1 guidance during critical years.',
+        quoteText: "To transform each student by providing a culture of excellence and human values.",
+        seoTitle: 'Why Choose Us',
+        seoDesc: 'Discover our Gurukul heritage combined with modern technology.',
+        seoKeywords: 'gurukul, values, mentorship, technology, education'
+    },
+    vision: {
+        heroTitle: 'Enlighten Future.',
+        quoteText: "To be the learning center that bridges ancient wisdom with global excellence.",
+        seoTitle: 'Our Vision',
+        seoDesc: 'Empowering minds and fostering holistic growth.',
+        seoKeywords: 'vision, mission, holistic growth, empowerment'
+    },
+    contact: {
+        heroTitle: 'Connect.',
+        heroSubtitle: 'Building foundations for future excellence through personal mentorship.',
+        email: 'info@shriyasgurukul.in',
+        phone: '+91 97241 11369',
+        address: 'Bungalow no 19, Abhishek Bungalows, Hathijan Circle, Ahmedabad - 382445',
+        seoTitle: 'Contact Us',
+        seoDesc: 'Get in touch for admissions and enquiries.',
+        seoKeywords: 'contact, address, phone, email, admission'
+    },
+    global_config: {
+        gaMeasurementId: '',
+        gscVerificationCode: ''
+    }
+};
+
 export default function SuperAdminDashboard() {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [username, setUsername] = useState('');
@@ -47,9 +118,12 @@ export default function SuperAdminDashboard() {
         setActivePage(page);
         try {
             const data = await db.getPageContent(page);
-            setContent(data || {});
+            // Merge fetched data with defaults to ensure all fields are present
+            const defaults = DEFAULTS[page] || {};
+            setContent({ ...defaults, ...(data || {}) });
         } catch (e) {
             console.error(e);
+            setContent(DEFAULTS[page] || {});
         } finally {
             setIsLoading(false);
         }
@@ -241,6 +315,7 @@ export default function SuperAdminDashboard() {
                                 <div className="space-y-4">
                                     <FormInput label="Hero Heading" field="heroTitle" />
                                     <FormInput label="Hero Subtitle" field="heroSubtitle" />
+                                    <FormInput label="Approach Heading" field="approachHeading" />
                                     <FormInput label="Approach Description" field="approachDesc" type="textarea" />
                                 </div>
                             </div>
@@ -260,14 +335,46 @@ export default function SuperAdminDashboard() {
                         </div>
                     )}
 
-                    {(activePage === 'why-us' || activePage === 'vision' || activePage === 'contact') && (
+                    {activePage === 'why-us' && (
                         <div className="max-w-3xl space-y-8">
                             <SEOGroup />
                             <div className="p-6 border border-white/10 rounded-xl bg-white/5">
                                 <h3 className="text-sm font-bold text-green-500 uppercase mb-6">Page Content</h3>
                                 <div className="space-y-4">
-                                    <FormInput label="Main Heading" field="mainHeading" />
-                                    <FormInput label="Sub Text / Description" field="subText" type="textarea" />
+                                    <FormInput label="Main Heading" field="heroTitle" />
+                                    <FormInput label="Sub Tagline" field="heroSubtitle" />
+                                    <FormInput label="Roots Section Heading" field="rootsTitle" />
+                                    <FormInput label="Roots Description" field="rootsDesc" type="textarea" />
+                                    <FormInput label="Quote Text" field="quoteText" type="textarea" />
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {activePage === 'vision' && (
+                        <div className="max-w-3xl space-y-8">
+                            <SEOGroup />
+                            <div className="p-6 border border-white/10 rounded-xl bg-white/5">
+                                <h3 className="text-sm font-bold text-green-500 uppercase mb-6">Page Content</h3>
+                                <div className="space-y-4">
+                                    <FormInput label="Main Heading" field="heroTitle" />
+                                    <FormInput label="Quote Text" field="quoteText" type="textarea" />
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {activePage === 'contact' && (
+                        <div className="max-w-3xl space-y-8">
+                            <SEOGroup />
+                            <div className="p-6 border border-white/10 rounded-xl bg-white/5">
+                                <h3 className="text-sm font-bold text-green-500 uppercase mb-6">Page Content</h3>
+                                <div className="space-y-4">
+                                    <FormInput label="Main Heading" field="heroTitle" />
+                                    <FormInput label="Sub Heading" field="heroSubtitle" type="textarea" />
+                                    <FormInput label="Email Address" field="email" />
+                                    <FormInput label="Phone Number" field="phone" />
+                                    <FormInput label="Physical Address" field="address" type="textarea" />
                                 </div>
                             </div>
                         </div>

@@ -1,3 +1,4 @@
+
 import React, { useRef, Suspense, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Canvas, useFrame } from '@react-three/fiber';
@@ -6,6 +7,8 @@ import * as THREE from 'three';
 import { Book, PenTool, Globe2, Languages, Microscope, FileCheck, Star, Quote, Zap, GraduationCap } from 'lucide-react';
 import ThreeOrb from '../components/ThreeOrb';
 import Footer from '../components/Footer';
+import { db } from '../services/db';
+import SEO from '../components/SEO';
 
 const ICSEScene = () => {
   const group = useRef<THREE.Group>(null!);
@@ -33,6 +36,15 @@ const ICSEScene = () => {
 
 const ICSEBoard: React.FC = () => {
   const [webglSupported, setWebglSupported] = useState<boolean | null>(null);
+  const [content, setContent] = useState<any>({
+      heroTitle: 'ICSE Curriculum',
+      heroSubtitle: 'Comprehensive learning emphasizing English proficiency and subject depth.',
+      approachHeading: 'Our Approach',
+      approachDesc: "We don't believe in surface-level teaching. ICSE requires deep analytical involvement, and our pedagogy is designed to meet those rigorous standards while keeping students engaged.",
+      seoTitle: 'ICSE Coaching',
+      seoDesc: 'Specialized ICSE coaching focusing on English mastery and conceptual depth.',
+      seoKeywords: 'icse, coaching, english literature, science, ahmedabad'
+  });
 
   useEffect(() => {
     try {
@@ -41,6 +53,12 @@ const ICSEBoard: React.FC = () => {
     } catch (e) {
       setWebglSupported(false);
     }
+
+    const loadContent = async () => {
+        const data = await db.getPageContent('icse');
+        if (data) setContent((prev:any) => ({ ...prev, ...data }));
+    };
+    loadContent();
   }, []);
 
   const testimonials = [
@@ -51,6 +69,7 @@ const ICSEBoard: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-premium-black text-white transition-colors duration-300 overflow-x-hidden">
+      <SEO title={content.seoTitle} description={content.seoDesc} keywords={content.seoKeywords} />
       <section className="relative min-h-[90vh] flex flex-col items-center justify-center pt-24 overflow-hidden">
         <div className="absolute inset-0 z-0">
           {webglSupported ? (
@@ -75,9 +94,9 @@ const ICSEBoard: React.FC = () => {
                     <GraduationCap size={16} className="text-purple-500" />
                     <span className="text-purple-600 dark:text-purple-400 text-xs font-black tracking-widest uppercase">Global Academic Standards</span>
                 </div>
-                <h1 className="text-5xl md:text-[8rem] font-light serif-font uppercase mb-8 leading-[0.9] tracking-tighter luxury-text-gradient">ICSE <br />Curriculum</h1>
+                <h1 className="text-5xl md:text-[8rem] font-light serif-font uppercase mb-8 leading-[0.9] tracking-tighter luxury-text-gradient whitespace-pre-line">{content.heroTitle}</h1>
                 <p className="text-xl text-white/50 max-w-3xl mx-auto leading-relaxed font-light uppercase tracking-widest text-sm">
-                   Comprehensive learning emphasizing English proficiency and subject depth.
+                   {content.heroSubtitle}
                 </p>
             </motion.div>
         </div>
@@ -89,9 +108,9 @@ const ICSEBoard: React.FC = () => {
           <div className="flex flex-col lg:flex-row gap-20 items-center">
             <div className="lg:w-1/2">
                 <motion.div initial={{ opacity: 0, x: -50 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}>
-                    <h2 className="text-4xl md:text-6xl font-light serif-font uppercase mb-8 leading-tight">Our <span className="text-premium-accent">Approach</span></h2>
+                    <h2 className="text-4xl md:text-6xl font-light serif-font uppercase mb-8 leading-tight">{content.approachHeading}</h2>
                     <p className="text-lg text-white/40 mb-10 font-light leading-loose">
-                        We don't believe in surface-level teaching. ICSE requires deep analytical involvement, and our pedagogy is designed to meet those rigorous standards while keeping students engaged.
+                        {content.approachDesc}
                     </p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                         {[

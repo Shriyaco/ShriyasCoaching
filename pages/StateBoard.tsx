@@ -1,3 +1,4 @@
+
 import React, { useRef, Suspense, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Canvas, useFrame } from '@react-three/fiber';
@@ -6,6 +7,8 @@ import * as THREE from 'three';
 import { Languages, Zap, Award, Palette, Code, Smartphone, Layout, Star, ArrowRight, Quote, GraduationCap, Map } from 'lucide-react';
 import ThreeOrb from '../components/ThreeOrb';
 import Footer from '../components/Footer';
+import { db } from '../services/db';
+import SEO from '../components/SEO';
 
 const StateBoardScene = () => {
   const group = useRef<THREE.Group>(null!);
@@ -37,6 +40,13 @@ const StateBoardScene = () => {
 
 const StateBoard: React.FC = () => {
   const [webglSupported, setWebglSupported] = useState<boolean | null>(null);
+  const [content, setContent] = useState<any>({
+      heroTitle: 'State Boards',
+      heroSubtitle: 'Dedicated coaching for Gujarat and Maharashtra students, aligned with NEP 2020.',
+      seoTitle: 'State Board Coaching',
+      seoDesc: 'GSEB and MSBSHSE coaching with focus on bridge courses and scholarship exams.',
+      seoKeywords: 'gseb, msbshse, state board, gujarat board, maharashtra board'
+  });
 
   useEffect(() => {
     try {
@@ -45,6 +55,12 @@ const StateBoard: React.FC = () => {
     } catch (e) {
       setWebglSupported(false);
     }
+
+    const loadContent = async () => {
+        const data = await db.getPageContent('state');
+        if (data) setContent((prev:any) => ({ ...prev, ...data }));
+    };
+    loadContent();
   }, []);
 
   const testimonials = [
@@ -55,6 +71,7 @@ const StateBoard: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-premium-black text-white transition-colors duration-300 overflow-x-hidden">
+      <SEO title={content.seoTitle} description={content.seoDesc} keywords={content.seoKeywords} />
       <section className="relative min-h-[85vh] flex flex-col items-center justify-center pt-24 overflow-hidden">
         <div className="absolute inset-0 z-0">
           {webglSupported ? (
@@ -79,9 +96,9 @@ const StateBoard: React.FC = () => {
                     <Map size={16} className="text-emerald-500" />
                     <span className="text-emerald-600 dark:text-emerald-400 text-xs font-black tracking-widest uppercase">GSEB & MSBSHSE Excellence</span>
                 </div>
-                <h1 className="text-5xl md:text-[8rem] font-light serif-font uppercase mb-8 leading-[1.1] luxury-text-gradient">State <br />Boards</h1>
+                <h1 className="text-5xl md:text-[8rem] font-light serif-font uppercase mb-8 leading-[1.1] luxury-text-gradient whitespace-pre-line">{content.heroTitle}</h1>
                 <p className="text-xl text-white/50 max-w-4xl mx-auto leading-relaxed font-light uppercase tracking-widest text-sm">
-                   Dedicated coaching for Gujarat and Maharashtra students, aligned with NEP 2020.
+                   {content.heroSubtitle}
                 </p>
             </motion.div>
         </div>

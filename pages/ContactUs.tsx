@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MapPin, Phone, Mail, X, Sparkles, ArrowRight, CheckCircle2 } from 'lucide-react';
 import ThreeOrb from '../components/ThreeOrb';
 import Footer from '../components/Footer';
 import { db } from '../services/db';
+import SEO from '../components/SEO';
 
 const ContactUs: React.FC = () => {
   const [isEnquiryModalOpen, setIsEnquiryModalOpen] = useState(false);
@@ -21,6 +23,25 @@ const ContactUs: React.FC = () => {
     mobile: '', 
     connectTime: '' 
   });
+
+  const [content, setContent] = useState<any>({
+      heroTitle: 'Connect.',
+      heroSubtitle: 'Building foundations for future excellence through personal mentorship.',
+      email: 'info@shriyasgurukul.in',
+      phone: '+91 97241 11369',
+      address: 'Bungalow no 19, Abhishek Bungalows, Hathijan Circle, Ahmedabad - 382445',
+      seoTitle: 'Contact Us',
+      seoDesc: 'Get in touch for admissions and enquiries.',
+      seoKeywords: 'contact, address, phone, email, admission'
+  });
+
+  useEffect(() => {
+    const loadContent = async () => {
+        const data = await db.getPageContent('contact');
+        if (data) setContent((prev:any) => ({ ...prev, ...data }));
+    };
+    loadContent();
+  }, []);
 
   const handleEnquirySubmit = async (e: React.FormEvent) => {
       e.preventDefault();
@@ -45,6 +66,7 @@ const ContactUs: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-premium-black text-white selection:bg-premium-accent selection:text-black overflow-x-hidden pt-32 transition-colors duration-300">
+      <SEO title={content.seoTitle} description={content.seoDesc} keywords={content.seoKeywords} />
       <ThreeOrb className="absolute top-0 right-0 w-[400px] h-[400px] opacity-10 -translate-y-1/4" color="#C5A059" />
       
       <div className="max-w-7xl mx-auto px-6 py-12 relative z-10">
@@ -52,32 +74,36 @@ const ContactUs: React.FC = () => {
             <motion.h1 
                 initial={{ opacity: 0, y: 20 }} 
                 animate={{ opacity: 1, y: 0 }} 
-                className="text-5xl md:text-8xl font-light serif-font uppercase mb-6 luxury-text-gradient"
+                className="text-5xl md:text-8xl font-light serif-font uppercase mb-6 luxury-text-gradient whitespace-pre-line"
             >
-                Connect.
+                {content.heroTitle}
             </motion.h1>
             <p className="text-sm md:text-lg text-white/40 max-w-2xl mx-auto uppercase tracking-[0.3em] font-bold">
-                Building foundations for future excellence through personal mentorship.
+                {content.heroSubtitle}
             </p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-start mb-24">
             <div className="space-y-12">
                 <div className="grid gap-8">
-                    {[ 
-                        { icon: Mail, label: "Email", value: "info@shriyasgurukul.in", href: "mailto:info@shriyasgurukul.in" }, 
-                        { icon: Phone, label: "Call", value: "+91 97241 11369", href: "tel:+919724111369" } 
-                    ].map((item, i) => (
-                        <div key={i} className="flex gap-6 items-start group">
-                            <div className="p-4 bg-white/5 rounded-2xl group-hover:bg-premium-accent group-hover:text-black transition-all">
-                                <item.icon size={24}/>
-                            </div>
-                            <div>
-                                <p className="text-[9px] font-black uppercase text-white/30 tracking-widest mb-1">{item.label}</p>
-                                <a href={item.href} className="text-xl font-light serif-font hover:text-premium-accent transition-colors">{item.value}</a>
-                            </div>
+                    <div className="flex gap-6 items-start group">
+                        <div className="p-4 bg-white/5 rounded-2xl group-hover:bg-premium-accent group-hover:text-black transition-all">
+                            <Mail size={24}/>
                         </div>
-                    ))}
+                        <div>
+                            <p className="text-[9px] font-black uppercase text-white/30 tracking-widest mb-1">Email</p>
+                            <a href={`mailto:${content.email}`} className="text-xl font-light serif-font hover:text-premium-accent transition-colors">{content.email}</a>
+                        </div>
+                    </div>
+                    <div className="flex gap-6 items-start group">
+                        <div className="p-4 bg-white/5 rounded-2xl group-hover:bg-premium-accent group-hover:text-black transition-all">
+                            <Phone size={24}/>
+                        </div>
+                        <div>
+                            <p className="text-[9px] font-black uppercase text-white/30 tracking-widest mb-1">Call</p>
+                            <a href={`tel:${content.phone.replace(/\s+/g, '')}`} className="text-xl font-light serif-font hover:text-premium-accent transition-colors">{content.phone}</a>
+                        </div>
+                    </div>
                     <div className="flex gap-6 items-start">
                         <div className="p-4 bg-white/5 rounded-2xl text-premium-accent">
                             <MapPin size={24}/>
@@ -85,7 +111,7 @@ const ContactUs: React.FC = () => {
                         <div>
                             <p className="text-[9px] font-black uppercase text-white/30 tracking-widest mb-1">Visit</p>
                             <p className="text-sm text-white/50 uppercase tracking-[0.2em] font-bold leading-loose">
-                                Bungalow no 19, Abhishek Bungalows,<br/>Hathijan Circle, Ahmedabad - 382445
+                                {content.address}
                             </p>
                         </div>
                     </div>
