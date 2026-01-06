@@ -97,60 +97,70 @@ const DesktopCursor = () => {
   );
 };
 
-// --- Mobile Touch Effect Implementation ---
+// --- Mobile Touch Effect Implementation (Optimized) ---
 const MobileTouchEffect = () => {
-  const [touches, setTouches] = useState<{id: number, x: number, y: number}[]>([]);
+  // Use MotionValues for direct DOM manipulation to bypass React render cycle lag
+  const x = useMotionValue(-100);
+  const y = useMotionValue(-100);
+  // Use opacity to show/hide instead of unmounting to keep performance high
+  const opacity = useMotionValue(0); 
+  const scale = useMotionValue(0.5);
+
+  // Tighter spring for mobile to feel responsive but smooth
+  const springConfig = { damping: 20, stiffness: 300, mass: 0.5 };
+  const smoothX = useSpring(x, springConfig);
+  const smoothY = useSpring(y, springConfig);
+  const smoothScale = useSpring(scale, { damping: 20, stiffness: 200 });
+  const smoothOpacity = useSpring(opacity, { duration: 0.2 });
 
   useEffect(() => {
-    const updateTouches = (e: TouchEvent) => {
-      const newTouches = Array.from(e.touches).map(t => ({
-        id: t.identifier,
-        x: t.clientX,
-        y: t.clientY
-      }));
-      setTouches(newTouches);
+    const updateTouch = (e: TouchEvent) => {
+      if (e.touches.length > 0) {
+        const touch = e.touches[0];
+        x.set(touch.clientX);
+        y.set(touch.clientY);
+        opacity.set(1);
+        scale.set(1);
+      } else {
+        opacity.set(0);
+        scale.set(0.5);
+      }
     };
 
-    // Use passive listeners for better scrolling performance
-    window.addEventListener('touchstart', updateTouches, { passive: true });
-    window.addEventListener('touchmove', updateTouches, { passive: true });
-    window.addEventListener('touchend', updateTouches);
-    window.addEventListener('touchcancel', updateTouches);
+    const handleEnd = () => {
+        opacity.set(0);
+        scale.set(0.5);
+    };
+
+    // Passive listeners for scrolling performance
+    window.addEventListener('touchstart', updateTouch, { passive: true });
+    window.addEventListener('touchmove', updateTouch, { passive: true });
+    window.addEventListener('touchend', handleEnd);
+    window.addEventListener('touchcancel', handleEnd);
 
     return () => {
-        window.removeEventListener('touchstart', updateTouches);
-        window.removeEventListener('touchmove', updateTouches);
-        window.removeEventListener('touchend', updateTouches);
-        window.removeEventListener('touchcancel', updateTouches);
+        window.removeEventListener('touchstart', updateTouch);
+        window.removeEventListener('touchmove', updateTouch);
+        window.removeEventListener('touchend', handleEnd);
+        window.removeEventListener('touchcancel', handleEnd);
     }
-  }, []);
+  }, [x, y, opacity, scale]);
 
   return (
     <div className="pointer-events-none fixed inset-0 z-[9999] overflow-hidden">
-        <AnimatePresence>
-            {touches.map(touch => (
-                <motion.div
-                    key={touch.id}
-                    initial={{ scale: 0.5, opacity: 0 }}
-                    animate={{ scale: 1.5, opacity: 1 }}
-                    exit={{ scale: 0, opacity: 0 }}
-                    transition={{ duration: 0.3, ease: "easeOut" }}
-                    className="absolute w-12 h-12 rounded-full border-2 border-[#C5A059] bg-[#C5A059]/10 shadow-[0_0_20px_rgba(197,160,89,0.4)] backdrop-blur-[1px]"
-                    style={{
-                        left: touch.x,
-                        top: touch.y,
-                        translateX: '-50%',
-                        translateY: '-50%'
-                    }}
-                >
-                    <motion.div 
-                        className="w-full h-full rounded-full bg-[#C5A059] opacity-20 blur-md"
-                        animate={{ scale: [1, 1.2, 1] }}
-                        transition={{ repeat: Infinity, duration: 1 }}
-                    />
-                </motion.div>
-            ))}
-        </AnimatePresence>
+        <motion.div
+            className="fixed top-0 left-0 w-6 h-6 rounded-full border border-[#C5A059] bg-[#C5A059]/10 shadow-[0_0_10px_rgba(197,160,89,0.3)] backdrop-blur-[1px]"
+            style={{
+                x: smoothX,
+                y: smoothY,
+                translateX: '-50%',
+                translateY: '-50%',
+                opacity: smoothOpacity,
+                scale: smoothScale
+            }}
+        >
+            <div className="w-full h-full rounded-full bg-[#C5A059] opacity-30 blur-sm animate-pulse" />
+        </motion.div>
     </div>
   );
 };
