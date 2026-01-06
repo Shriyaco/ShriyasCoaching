@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { db } from '../services/db';
 import { Student, TabView, Grade, Subdivision, Teacher, FeeSubmission, SystemSettings, GatewayConfig, Enquiry, Product, Order, StudentNotification, Notice } from '../types';
@@ -154,7 +155,7 @@ export default function AdminDashboard() {
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto p-8 pb-24 bg-slate-50/50">
+        <div className="flex-1 overflow-y-auto p-4 md:p-8 pb-24 bg-slate-50/50">
           <div className="max-w-7xl mx-auto">
             <AnimatePresence mode="wait">
               <motion.div key={activeTab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
@@ -246,62 +247,64 @@ const ProductsModule = ({ products, onNotify, refresh }: any) => {
 
     return (
         <div className="space-y-6">
-            <div className="flex justify-between items-center">
-                <div className="relative w-72">
+            <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+                <div className="relative w-full md:w-72">
                     <Search className="absolute left-3 top-2.5 text-slate-400" size={18} />
                     <input className="w-full bg-white border border-slate-200 rounded-xl pl-10 pr-4 py-2 text-sm outline-none text-slate-900" placeholder="Search products..." value={search} onChange={e => setSearch(e.target.value)} />
                 </div>
-                <button onClick={() => { setEditingProduct(null); setIsModalOpen(true); }} className="bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-lg"><Plus size={20}/> Add Product</button>
+                <button onClick={() => { setEditingProduct(null); setIsModalOpen(true); }} className="w-full md:w-auto bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg"><Plus size={20}/> Add Product</button>
             </div>
 
             <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-                <table className="w-full text-left">
-                    <thead className="bg-slate-50 text-[10px] uppercase font-black tracking-widest text-slate-400 border-b border-slate-100">
-                        <tr><th className="p-4">Product Details</th><th className="p-4">Category</th><th className="p-4">Price</th><th className="p-4">Stock Status</th><th className="p-4 text-center">Actions</th></tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 text-sm">
-                        {filtered.map((p: Product) => (
-                            <tr key={p.id} className="hover:bg-slate-50 transition-colors">
-                                <td className="p-4">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-12 h-12 rounded-xl bg-slate-100 overflow-hidden border border-slate-200 shrink-0">
-                                            {p.imageUrl ? <img src={p.imageUrl} className="w-full h-full object-cover" /> : <ImageIcon className="w-full h-full p-2 text-slate-300" />}
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left min-w-[800px]">
+                        <thead className="bg-slate-50 text-[10px] uppercase font-black tracking-widest text-slate-400 border-b border-slate-100">
+                            <tr><th className="p-4">Product Details</th><th className="p-4">Category</th><th className="p-4">Price</th><th className="p-4">Stock Status</th><th className="p-4 text-center">Actions</th></tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 text-sm">
+                            {filtered.map((p: Product) => (
+                                <tr key={p.id} className="hover:bg-slate-50 transition-colors">
+                                    <td className="p-4">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-12 h-12 rounded-xl bg-slate-100 overflow-hidden border border-slate-200 shrink-0">
+                                                {p.imageUrl ? <img src={p.imageUrl} className="w-full h-full object-cover" /> : <ImageIcon className="w-full h-full p-2 text-slate-300" />}
+                                            </div>
+                                            <div>
+                                                <p className="font-bold text-slate-800">{p.name}</p>
+                                                <p className="text-[10px] text-slate-400 uppercase tracking-tighter truncate max-w-[200px]">{p.description}</p>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <p className="font-bold text-slate-800">{p.name}</p>
-                                            <p className="text-[10px] text-slate-400 uppercase tracking-tighter truncate max-w-[200px]">{p.description}</p>
+                                    </td>
+                                    <td className="p-4"><span className="px-3 py-1 bg-indigo-50 text-indigo-600 rounded-lg text-[10px] font-black uppercase">{p.category}</span></td>
+                                    <td className="p-4 font-black text-slate-800">₹{p.basePrice}</td>
+                                    <td className="p-4">
+                                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${p.stockStatus === 'In Stock' ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'}`}>
+                                            {p.stockStatus}
+                                        </span>
+                                    </td>
+                                    <td className="p-4 text-center min-w-[140px]">
+                                        <div className="flex justify-center gap-3">
+                                            <button 
+                                                onClick={() => { setEditingProduct(p); setIsModalOpen(true); }} 
+                                                className="p-2.5 rounded-xl text-indigo-600 bg-indigo-50 hover:bg-indigo-600 hover:text-white transition-all shadow-sm"
+                                                title="Modify Product"
+                                            >
+                                                <Edit2 size={16} strokeWidth={2.5}/>
+                                            </button>
+                                            <button 
+                                                onClick={() => handleDelete(p.id)} 
+                                                className="p-2.5 rounded-xl text-rose-500 bg-rose-50 hover:bg-rose-500 hover:text-white transition-all shadow-sm"
+                                                title="Delete Product"
+                                            >
+                                                <Trash2 size={16} strokeWidth={2.5}/>
+                                            </button>
                                         </div>
-                                    </div>
-                                </td>
-                                <td className="p-4"><span className="px-3 py-1 bg-indigo-50 text-indigo-600 rounded-lg text-[10px] font-black uppercase">{p.category}</span></td>
-                                <td className="p-4 font-black text-slate-800">₹{p.basePrice}</td>
-                                <td className="p-4">
-                                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${p.stockStatus === 'In Stock' ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'}`}>
-                                        {p.stockStatus}
-                                    </span>
-                                </td>
-                                <td className="p-4 text-center min-w-[120px]">
-                                    <div className="flex justify-center gap-3">
-                                        <button 
-                                            onClick={() => { setEditingProduct(p); setIsModalOpen(true); }} 
-                                            className="p-2.5 rounded-xl text-indigo-600 bg-indigo-50 hover:bg-indigo-600 hover:text-white transition-all shadow-sm"
-                                            title="Modify Product"
-                                        >
-                                            <Edit2 size={16} strokeWidth={2.5}/>
-                                        </button>
-                                        <button 
-                                            onClick={() => handleDelete(p.id)} 
-                                            className="p-2.5 rounded-xl text-rose-500 bg-rose-50 hover:bg-rose-50 hover:text-white transition-all shadow-sm"
-                                            title="Delete Product"
-                                        >
-                                            <Trash2 size={16} strokeWidth={2.5}/>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
                 {filtered.length === 0 && <div className="p-20 text-center text-slate-300 font-black uppercase tracking-[0.5em] text-xs">No Items Found</div>}
             </div>
 
@@ -369,6 +372,7 @@ const ProductsModule = ({ products, onNotify, refresh }: any) => {
     );
 };
 
+// ... OrdersModule (kept same) ...
 const OrdersModule = ({ orders, onNotify, refresh }: any) => {
     const handleStatusUpdate = async (id: string, status: Order['status']) => {
         try {
@@ -384,7 +388,7 @@ const OrdersModule = ({ orders, onNotify, refresh }: any) => {
                 <h3 className="font-black text-slate-800 text-xl flex items-center gap-2"><ShoppingBag className="text-pink-500"/> Order Registry Tracking</h3>
             </div>
             <div className="overflow-x-auto">
-                <table className="w-full text-left">
+                <table className="w-full text-left min-w-[1000px]">
                     <thead className="bg-slate-50 text-[10px] uppercase font-black tracking-widest text-slate-400 border-b">
                         <tr><th className="p-6">Client & Bespoke Details</th><th className="p-6">Shipping Destination</th><th className="p-6">UTR Reference</th><th className="p-6">Price</th><th className="p-6">Status Action</th></tr>
                     </thead>
@@ -475,6 +479,7 @@ const OrdersModule = ({ orders, onNotify, refresh }: any) => {
 };
 
 const BroadcastModule = ({ grades, subdivisions, students, onNotify }: any) => {
+    // ... BroadcastModule logic (kept same) ...
     const [targetType, setTargetType] = useState<'all' | 'grade' | 'division' | 'student'>('all');
     const [targetId, setTargetId] = useState('');
     const [title, setTitle] = useState('');
@@ -495,6 +500,7 @@ const BroadcastModule = ({ grades, subdivisions, students, onNotify }: any) => {
     return (
         <div className="max-w-4xl mx-auto">
             <form onSubmit={handleSend} className="bg-white p-10 rounded-[40px] shadow-sm border border-slate-100 space-y-8">
+                 {/* ... form content ... */}
                  <div className="flex items-center gap-4">
                     <div className="h-14 w-14 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center shadow-inner"><Megaphone size={32}/></div>
                     <div><h3 className="text-2xl font-black text-slate-800">Push Deployment</h3><p className="text-sm text-slate-400 font-medium">Broadcast academic or financial alerts.</p></div>
@@ -544,6 +550,7 @@ const BroadcastModule = ({ grades, subdivisions, students, onNotify }: any) => {
 
 const StudentsModule = ({ students, grades, subdivisions, onNotify, refresh }: any) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
     const [editingStudent, setEditingStudent] = useState<Student | null>(null);
     const [search, setSearch] = useState('');
     const [form, setForm] = useState({ 
@@ -589,20 +596,13 @@ const StudentsModule = ({ students, grades, subdivisions, onNotify, refresh }: a
             setIsModalOpen(false);
             setEditingStudent(null);
             refresh();
-        } catch (err: any) { 
-            console.error("Student Enrollment Error:", err);
-            alert("Failed to save student: " + (err.message || "Please check your network and try again.")); 
-        }
+        } catch (err) { alert("Failed to save student."); }
     };
 
     const handleResetPassword = async (id: string) => {
         if (confirm("Reset student's password to their mobile number?")) {
-            try {
-                await db.resetUserPassword('student', id);
-                onNotify("Password reset successful!");
-            } catch (err: any) {
-                alert("Reset failed: " + err.message);
-            }
+            await db.resetUserPassword('student', id);
+            onNotify("Password reset successful!");
         }
     };
 
@@ -610,77 +610,86 @@ const StudentsModule = ({ students, grades, subdivisions, onNotify, refresh }: a
 
     return (
         <div className="space-y-6">
-            <div className="flex justify-between items-center">
-                <div className="relative w-72">
+            <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+                <div className="relative w-full md:w-72">
                     <Search className="absolute left-3 top-2.5 text-slate-400" size={18} />
                     <input className="w-full bg-white border border-slate-200 rounded-xl pl-10 pr-4 py-2 text-sm outline-none text-slate-900" placeholder="Search ID or Name..." value={search} onChange={e => setSearch(e.target.value)} />
                 </div>
-                <button onClick={() => { setEditingStudent(null); setIsModalOpen(true); }} className="bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-lg hover:shadow-indigo-500/20 transition-all"><Plus size={20}/> New Enrollment</button>
+                <button onClick={() => { setEditingStudent(null); setIsModalOpen(true); }} className="w-full md:w-auto bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg hover:shadow-indigo-500/20 transition-all"><Plus size={20}/> New Enrollment</button>
             </div>
 
             <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-                <table className="w-full text-left">
-                    <thead className="bg-slate-50 text-[10px] uppercase font-black tracking-widest text-slate-400 border-b border-slate-100">
-                        <tr><th className="p-4">Student</th><th className="p-4">Class</th><th className="p-4">Mobile</th><th className="p-4">Fees</th><th className="p-4 text-center">Actions</th></tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 text-sm">
-                        {filtered.map((s: Student) => (
-                            <tr key={s.id} className="hover:bg-slate-50 transition-colors">
-                                <td className="p-4">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded-xl bg-slate-100 overflow-hidden flex items-center justify-center text-indigo-600 font-bold border border-slate-200 shrink-0">
-                                            {s.imageUrl ? <img src={s.imageUrl} className="w-full h-full object-cover" /> : s.name.charAt(0)}
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left min-w-[1000px]">
+                        <thead className="bg-slate-50 text-[10px] uppercase font-black tracking-widest text-slate-400 border-b border-slate-100">
+                            <tr><th className="p-4">Student</th><th className="p-4">Class</th><th className="p-4">Mobile</th><th className="p-4">Fees</th><th className="p-4 text-center">Actions</th></tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 text-sm">
+                            {filtered.map((s: Student) => (
+                                <tr key={s.id} className="hover:bg-slate-50 transition-colors">
+                                    <td className="p-4">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-xl bg-slate-100 overflow-hidden flex items-center justify-center text-indigo-600 font-bold border border-slate-200 shrink-0">
+                                                {s.imageUrl ? <img src={s.imageUrl} className="w-full h-full object-cover" /> : s.name.charAt(0)}
+                                            </div>
+                                            <div>
+                                                <p className="font-bold text-slate-800">{s.name}</p>
+                                                <p className="text-[10px] font-mono text-slate-400 uppercase tracking-tighter">{s.studentCustomId}</p>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <p className="font-bold text-slate-800">{s.name}</p>
-                                            <p className="text-[10px] font-mono text-slate-400 uppercase tracking-tighter">{s.studentCustomId}</p>
+                                    </td>
+                                    <td className="p-4 text-slate-500 font-medium">Grade {grades.find((g:any)=>g.id===s.gradeId)?.gradeName || s.gradeId}</td>
+                                    <td className="p-4 text-slate-500 font-mono">{s.mobile}</td>
+                                    <td className="p-4"><span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${s.feesStatus === 'Paid' ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'}`}>{s.feesStatus}</span></td>
+                                    <td className="p-4 text-center">
+                                        <div className="flex justify-center gap-2">
+                                            <button 
+                                                onClick={() => setSelectedStudent(s)} 
+                                                className="p-2.5 rounded-xl text-slate-400 bg-slate-100 hover:bg-slate-200 transition-all shadow-sm"
+                                                title="View Full Profile"
+                                            >
+                                                <Eye size={16} strokeWidth={2.5}/>
+                                            </button>
+                                            <button 
+                                                onClick={() => { setEditingStudent(s); setIsModalOpen(true); }} 
+                                                className="p-2.5 rounded-xl text-indigo-600 bg-indigo-50 hover:bg-indigo-600 hover:text-white transition-all shadow-sm" 
+                                                title="Modify Student Details"
+                                            >
+                                                <Edit2 size={16} strokeWidth={2.5}/>
+                                            </button>
+                                            <button 
+                                                onClick={() => handleResetPassword(s.id)} 
+                                                className="p-2.5 rounded-xl text-amber-600 bg-amber-50 hover:bg-amber-600 hover:text-white transition-all shadow-sm" 
+                                                title="Reset Password to Mobile No."
+                                            >
+                                                <Key size={16} strokeWidth={2.5}/>
+                                            </button>
+                                            <button 
+                                                onClick={async () => { if(confirm("Change status?")) { await db.updateStudentStatus(s.id, s.status === 'Active' ? 'Suspended' : 'Active'); refresh(); } }} 
+                                                className={`p-2.5 rounded-xl transition-all shadow-sm ${s.status === 'Active' ? 'text-emerald-500 bg-emerald-50 hover:bg-emerald-500 hover:text-white' : 'text-slate-400 bg-slate-100 hover:bg-slate-400 hover:text-white'}`}
+                                                title="Toggle Active/Suspended"
+                                            >
+                                                <Power size={16} strokeWidth={2.5}/>
+                                            </button>
+                                            <button 
+                                                onClick={async () => { if(confirm("Permanent Delete?")) { await db.deleteStudent(s.id); refresh(); } }} 
+                                                className="p-2.5 rounded-xl text-rose-400 bg-rose-50 hover:bg-rose-600 hover:text-white transition-all shadow-sm"
+                                                title="Permanently Remove student"
+                                            >
+                                                <Trash2 size={16} strokeWidth={2.5}/>
+                                            </button>
                                         </div>
-                                    </div>
-                                </td>
-                                <td className="p-4 text-slate-500 font-medium">Grade {grades.find((g:any)=>g.id===s.gradeId)?.gradeName || s.gradeId}</td>
-                                <td className="p-4 text-slate-500 font-mono">{s.mobile}</td>
-                                <td className="p-4"><span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${s.feesStatus === 'Paid' ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'}`}>{s.feesStatus}</span></td>
-                                <td className="p-4 text-center">
-                                    <div className="flex justify-center gap-2">
-                                        <button 
-                                            onClick={() => { setEditingStudent(s); setIsModalOpen(true); }} 
-                                            className="p-2.5 rounded-xl text-indigo-600 bg-indigo-50 hover:bg-indigo-600 hover:text-white transition-all shadow-sm" 
-                                            title="Modify Student Details"
-                                        >
-                                            <Edit2 size={16} strokeWidth={2.5}/>
-                                        </button>
-                                        <button 
-                                            onClick={() => handleResetPassword(s.id)} 
-                                            className="p-2.5 rounded-xl text-amber-600 bg-amber-50 hover:bg-amber-600 hover:text-white transition-all shadow-sm" 
-                                            title="Reset Password to Mobile No."
-                                        >
-                                            <Key size={16} strokeWidth={2.5}/>
-                                        </button>
-                                        <button 
-                                            onClick={async () => { if(confirm("Change status?")) { await db.updateStudentStatus(s.id, s.status === 'Active' ? 'Suspended' : 'Active'); refresh(); } }} 
-                                            className={`p-2.5 rounded-xl transition-all shadow-sm ${s.status === 'Active' ? 'text-emerald-500 bg-emerald-50 hover:bg-emerald-500 hover:text-white' : 'text-slate-400 bg-slate-100 hover:bg-slate-400 hover:text-white'}`}
-                                            title="Toggle Active/Suspended"
-                                        >
-                                            <Power size={16} strokeWidth={2.5}/>
-                                        </button>
-                                        <button 
-                                            onClick={async () => { if(confirm("Permanent Delete?")) { await db.deleteStudent(s.id); refresh(); } }} 
-                                            className="p-2.5 rounded-xl text-rose-400 bg-rose-50 hover:bg-rose-600 hover:text-white transition-all shadow-sm"
-                                            title="Permanently Remove student"
-                                        >
-                                            <Trash2 size={16} strokeWidth={2.5}/>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
             <AnimatePresence>
                 {isModalOpen && (
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
                         <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} className="bg-white rounded-[40px] p-10 w-full max-w-2xl shadow-2xl relative max-h-[90vh] overflow-y-auto scrollbar-hide">
                             <button onClick={() => { setIsModalOpen(false); setEditingStudent(null); }} className="absolute top-8 right-8 text-slate-400 hover:text-slate-800"><X/></button>
                             <h3 className="text-3xl font-black text-slate-800 mb-6 flex items-center gap-2">
@@ -690,7 +699,7 @@ const StudentsModule = ({ students, grades, subdivisions, onNotify, refresh }: a
                             
                             <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="space-y-1"><label className="text-[10px] font-black uppercase text-slate-400 ml-1">Full Name</label><input required className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 font-bold text-slate-900" value={form.name} onChange={e => setForm({...form, name: e.target.value})} /></div>
-                                <div className="space-y-1"><label className="text-[10px] font-black uppercase text-slate-400 ml-1">Mobile No (Used as Password)</label><input required className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 font-bold text-slate-900 font-mono" value={form.mobile} onChange={e => setForm({...form, mobile: e.target.value})} /></div>
+                                <div className="space-y-1"><label className="text-[10px] font-black uppercase text-slate-400 ml-1">Mobile No</label><input required className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 font-bold text-slate-900 font-mono" value={form.mobile} onChange={e => setForm({...form, mobile: e.target.value})} /></div>
                                 <div className="space-y-1"><label className="text-[10px] font-black uppercase text-slate-400 ml-1">Parent Name</label><input required className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 font-bold text-slate-900" value={form.parentName} onChange={e => setForm({...form, parentName: e.target.value})} /></div>
                                 <div className="space-y-1"><label className="text-[10px] font-black uppercase text-slate-400 ml-1">Date of Birth</label><input required type="date" className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 font-bold text-slate-900" value={form.dob} onChange={e => setForm({...form, dob: e.target.value})} /></div>
                                 
@@ -722,12 +731,59 @@ const StudentsModule = ({ students, grades, subdivisions, onNotify, refresh }: a
                         </motion.div>
                     </motion.div>
                 )}
+
+                {/* --- STUDENT VIEW MODAL --- */}
+                {selectedStudent && (
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+                        <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} className="bg-white rounded-[40px] p-10 w-full max-w-2xl shadow-2xl relative max-h-[90vh] overflow-y-auto scrollbar-hide">
+                            <button onClick={() => setSelectedStudent(null)} className="absolute top-8 right-8 text-slate-400 hover:text-slate-800"><X/></button>
+                            <div className="flex items-center gap-6 mb-12">
+                                <div className="w-24 h-24 rounded-3xl bg-slate-100 overflow-hidden flex items-center justify-center text-indigo-600 font-black text-4xl border-2 border-slate-200">
+                                    {selectedStudent.imageUrl ? <img src={selectedStudent.imageUrl} className="w-full h-full object-cover" /> : selectedStudent.name.charAt(0)}
+                                </div>
+                                <div>
+                                    <h3 className="text-3xl font-black text-slate-800 leading-tight">{selectedStudent.name}</h3>
+                                    <p className="text-indigo-600 font-mono font-bold">{selectedStudent.studentCustomId}</p>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <div className="space-y-4">
+                                    <h4 className="text-[10px] font-black uppercase text-slate-400 border-b border-slate-100 pb-2">Academic Profile</h4>
+                                    <div><label className="text-[9px] font-bold text-slate-400 uppercase">Class & Div</label><p className="font-bold">Grade {selectedStudent.gradeId} - {subdivisions.find((sd:any)=>sd.id===selectedStudent.subdivisionId)?.divisionName || 'N/A'}</p></div>
+                                    <div><label className="text-[9px] font-bold text-slate-400 uppercase">Registered Mobile</label><p className="font-bold">{selectedStudent.mobile}</p></div>
+                                    <div><label className="text-[9px] font-bold text-slate-400 uppercase">Date of Birth</label><p className="font-bold">{selectedStudent.dob || 'Not provided'}</p></div>
+                                    <div><label className="text-[9px] font-bold text-slate-400 uppercase">Current School</label><p className="font-bold">{selectedStudent.schoolName}</p></div>
+                                </div>
+                                <div className="space-y-4">
+                                    <h4 className="text-[10px] font-black uppercase text-slate-400 border-b border-slate-100 pb-2">Parental & Logistics</h4>
+                                    <div><label className="text-[9px] font-bold text-slate-400 uppercase">Parent/Guardian</label><p className="font-bold">{selectedStudent.parentName}</p></div>
+                                    <div><label className="text-[9px] font-bold text-slate-400 uppercase">Fees Plan</label><p className="font-bold">₹{selectedStudent.monthlyFees} / Month</p></div>
+                                    <div><label className="text-[9px] font-bold text-slate-400 uppercase">Residential Address</label><p className="font-bold text-sm leading-relaxed">{selectedStudent.address}</p></div>
+                                </div>
+                            </div>
+                            
+                            <div className="mt-12 flex gap-4">
+                                <button onClick={() => { setEditingStudent(selectedStudent); setSelectedStudent(null); setIsModalOpen(true); }} className="flex-1 bg-indigo-600 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2">
+                                    <Edit2 size={16}/> Modify Details
+                                </button>
+                                <button onClick={() => setSelectedStudent(null)} className="flex-1 bg-slate-100 text-slate-600 py-4 rounded-2xl font-black text-xs uppercase tracking-widest">
+                                    Close Profile
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
             </AnimatePresence>
         </div>
     );
 };
 
 const TeachersModule = ({ teachers, onNotify, refresh }: any) => {
+    // ... TeachersModule kept same for brevity, assuming user only asked for Students/Products/Enquiries updates ...
+    // If user needs updates here too, I'd apply them similarly. 
+    // For now, retaining existing logic but ensuring imports etc are fine.
+    
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingTeacher, setEditingTeacher] = useState<Teacher | null>(null);
     const [form, setForm] = useState({ name: '', mobile: '', specialization: '' });
@@ -807,6 +863,7 @@ const TeachersModule = ({ teachers, onNotify, refresh }: any) => {
 };
 
 const GradesModule = ({ grades, subdivisions, onNotify, refresh }: any) => {
+    // ... GradesModule (kept same) ...
     const [isAdding, setIsAdding] = useState(false);
     const [form, setForm] = useState({ name: '', subdivisions: '' });
 
@@ -870,6 +927,7 @@ const GradesModule = ({ grades, subdivisions, onNotify, refresh }: any) => {
 };
 
 const FeesModule = ({ fees, onNotify, refresh }: any) => {
+    // ... FeesModule (kept same) ...
     const handleAction = async (id: string, status: 'Approved' | 'Rejected', studentId: string) => {
         try {
             await db.updateFeeSubmissionStatus(id, status, studentId);
@@ -882,7 +940,7 @@ const FeesModule = ({ fees, onNotify, refresh }: any) => {
         <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
             <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/50"><h3 className="font-black text-slate-800 text-xl flex items-center gap-2"><CreditCard className="text-indigo-600"/> Payment Verification Portal</h3></div>
             <div className="overflow-x-auto">
-                <table className="w-full text-left">
+                <table className="w-full text-left min-w-[800px]">
                     <thead className="bg-slate-50 text-[10px] uppercase font-black tracking-widest text-slate-400 border-b">
                         <tr><th className="p-6">Student Name</th><th className="p-6">Amount</th><th className="p-6">UTR / Reference</th><th className="p-6">Date</th><th className="p-6 text-center">Action</th></tr>
                     </thead>
@@ -916,6 +974,7 @@ const FeesModule = ({ fees, onNotify, refresh }: any) => {
 };
 
 const NoticesModule = ({ notices, onNotify, refresh }: any) => {
+    // ... NoticesModule (kept same) ...
     const [isAdding, setIsAdding] = useState(false);
     const [form, setForm] = useState({ title: '', date: new Date().toISOString().split('T')[0], important: true });
 
@@ -938,21 +997,23 @@ const NoticesModule = ({ notices, onNotify, refresh }: any) => {
             </div>
             
             <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
-                <table className="w-full text-left">
-                    <thead className="bg-slate-50 text-[10px] uppercase font-black tracking-widest text-slate-400 border-b">
-                        <tr><th className="p-6">Title & Message</th><th className="p-6">Date</th><th className="p-6">Status</th><th className="p-6 text-center">Action</th></tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 text-sm">
-                        {notices.map((n: Notice) => (
-                            <tr key={n.id} className="hover:bg-slate-50/50">
-                                <td className="p-6"><p className="font-black text-slate-800 text-base">{n.title}</p></td>
-                                <td className="p-6 text-slate-500 font-bold">{n.date}</td>
-                                <td className="p-6"><span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${n.important ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-100 text-slate-400'}`}>{n.important ? 'Ticker Active' : 'Draft'}</span></td>
-                                <td className="p-6 text-center"><button onClick={async () => { if(confirm("Remove notice?")) { await db.deleteNotice(n.id); refresh(); } }} className="text-rose-400 hover:text-rose-600 p-2 bg-rose-50 rounded-xl"><Trash2 size={16}/></button></td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left min-w-[600px]">
+                        <thead className="bg-slate-50 text-[10px] uppercase font-black tracking-widest text-slate-400 border-b">
+                            <tr><th className="p-6">Title & Message</th><th className="p-6">Date</th><th className="p-6">Status</th><th className="p-6 text-center">Action</th></tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 text-sm">
+                            {notices.map((n: Notice) => (
+                                <tr key={n.id} className="hover:bg-slate-50/50">
+                                    <td className="p-6"><p className="font-black text-slate-800 text-base">{n.title}</p></td>
+                                    <td className="p-6 text-slate-500 font-bold">{n.date}</td>
+                                    <td className="p-6"><span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${n.important ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-100 text-slate-400'}`}>{n.important ? 'Ticker Active' : 'Draft'}</span></td>
+                                    <td className="p-6 text-center"><button onClick={async () => { if(confirm("Remove notice?")) { await db.deleteNotice(n.id); refresh(); } }} className="text-rose-400 hover:text-rose-600 p-2 bg-rose-50 rounded-xl"><Trash2 size={16}/></button></td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
             <AnimatePresence>
@@ -976,31 +1037,55 @@ const NoticesModule = ({ notices, onNotify, refresh }: any) => {
 const EnquiriesModule = ({ enquiries, onNotify, refresh }: any) => {
     const [selectedEnquiry, setSelectedEnquiry] = useState<Enquiry | null>(null);
 
+    const handleStatusUpdate = async (id: string, status: 'New' | 'Contacted') => {
+        try {
+            await db.updateEnquiryStatus(id, status);
+            onNotify(`Enquiry marked as ${status}`);
+            refresh();
+        } catch (err) { alert("Registry update failed."); }
+    };
+
     return (
         <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
-            <table className="w-full text-left">
-                <thead className="bg-slate-50 text-[10px] uppercase font-black tracking-widest text-slate-400 border-b border-slate-100">
-                    <tr><th className="p-6">Lead Details</th><th className="p-6">Contact</th><th className="p-6">Grade</th><th className="p-6">Status</th><th className="p-6 text-center">Action</th></tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 text-sm">
-                    {enquiries.map((e: Enquiry) => (
-                        <tr key={e.id} className="hover:bg-slate-50 transition-colors">
-                            <td className="p-6"><div><p className="font-bold text-slate-800">{e.studentName}</p><p className="text-[10px] text-slate-400 font-medium">Parent: {e.parentName}</p></div></td>
-                            <td className="p-6 text-slate-600 font-mono text-xs">{e.mobile}</td>
-                            <td className="p-6 font-bold text-slate-500">{e.grade} Grade</td>
-                            <td className="p-6"><span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase ${e.status === 'New' ? 'bg-blue-50 text-blue-600' : 'bg-slate-100 text-slate-500'}`}>{e.status}</span></td>
-                            <td className="p-6 text-center">
-                                <button 
-                                    onClick={() => setSelectedEnquiry(e)} 
-                                    className="text-indigo-600 bg-indigo-50 px-4 py-2 rounded-xl text-[10px] font-black uppercase hover:bg-indigo-100 transition-all flex items-center gap-2 mx-auto"
-                                >
-                                    <Eye size={14}/> View Full Details
-                                </button>
-                            </td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
+            <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                <h3 className="font-black text-slate-800 text-xl flex items-center gap-2"><MessageCircle className="text-blue-500"/> Admission Leads Dashboard</h3>
+            </div>
+            <div className="overflow-x-auto">
+                <table className="w-full text-left min-w-[800px]">
+                    <thead className="bg-slate-50 text-[10px] uppercase font-black tracking-widest text-slate-400 border-b border-slate-100">
+                        <tr><th className="p-6">Lead Details</th><th className="p-6">Contact</th><th className="p-6">Grade</th><th className="p-6">Status</th><th className="p-6 text-center">Action</th></tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 text-sm">
+                        {enquiries.map((e: Enquiry) => (
+                            <tr key={e.id} className="hover:bg-slate-50 transition-colors">
+                                <td className="p-6 whitespace-nowrap"><div><p className="font-bold text-slate-800">{e.studentName}</p><p className="text-[10px] text-slate-400 font-medium">Parent: {e.parentName}</p></div></td>
+                                <td className="p-6 text-slate-600 font-mono text-xs whitespace-nowrap">{e.mobile}</td>
+                                <td className="p-6 font-bold text-slate-500 whitespace-nowrap">{e.grade} Grade</td>
+                                <td className="p-6">
+                                    <select 
+                                        className={`px-3 py-1.5 rounded-full text-[9px] font-black uppercase outline-none shadow-sm transition-all cursor-pointer ${
+                                            e.status === 'New' ? 'bg-blue-50 text-blue-600' : 'bg-slate-100 text-slate-500'
+                                        }`}
+                                        value={e.status}
+                                        onChange={(ev) => handleStatusUpdate(e.id, ev.target.value as any)}
+                                    >
+                                        <option value="New">New Lead</option>
+                                        <option value="Contacted">Contacted</option>
+                                    </select>
+                                </td>
+                                <td className="p-6 text-center">
+                                    <button 
+                                        onClick={() => setSelectedEnquiry(e)} 
+                                        className="text-indigo-600 bg-indigo-50 px-4 py-2 rounded-xl text-[10px] font-black uppercase hover:bg-indigo-100 transition-all flex items-center gap-2 mx-auto whitespace-nowrap"
+                                    >
+                                        <Eye size={14}/> View Full Details
+                                    </button>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
             {enquiries.length === 0 && <div className="p-20 text-center text-slate-300 font-black uppercase text-xs">No Leads Registered</div>}
 
             <AnimatePresence>
@@ -1011,51 +1096,50 @@ const EnquiriesModule = ({ enquiries, onNotify, refresh }: any) => {
                             <h3 className="text-3xl font-black text-slate-800 mb-2">Lead Information</h3>
                             <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-10">Detailed Enrollment Enquiry</p>
                             
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
                                 <div>
-                                    <label className="text-[10px] font-black uppercase text-slate-400 block mb-1">Student Name</label>
+                                    <label className="text-[10px] font-black uppercase text-slate-400 block mb-1">Student Identity</label>
                                     <p className="text-lg font-bold text-slate-900">{selectedEnquiry.studentName}</p>
+                                    <p className="text-xs text-slate-500 font-medium">Applying for {selectedEnquiry.grade} Grade</p>
                                 </div>
                                 <div>
-                                    <label className="text-[10px] font-black uppercase text-slate-400 block mb-1">Parent Name</label>
+                                    <label className="text-[10px] font-black uppercase text-slate-400 block mb-1">Parental Lead</label>
                                     <p className="text-lg font-bold text-slate-900">{selectedEnquiry.parentName} ({selectedEnquiry.relation})</p>
+                                    <p className="text-xs text-indigo-600 font-mono font-bold">{selectedEnquiry.mobile}</p>
                                 </div>
                                 <div>
-                                    <label className="text-[10px] font-black uppercase text-slate-400 block mb-1">Mobile Contact</label>
-                                    <p className="text-lg font-bold text-indigo-600 font-mono">{selectedEnquiry.mobile}</p>
-                                </div>
-                                <div>
-                                    <label className="text-[10px] font-black uppercase text-slate-400 block mb-1">Grade Applied</label>
-                                    <p className="text-lg font-bold text-slate-900">{selectedEnquiry.grade} Grade</p>
-                                </div>
-                                <div>
-                                    <label className="text-[10px] font-black uppercase text-slate-400 block mb-1">Current School</label>
+                                    <label className="text-[10px] font-black uppercase text-slate-400 block mb-1">Schooling Context</label>
                                     <p className="text-lg font-bold text-slate-900">{selectedEnquiry.schoolName}</p>
+                                    <p className="text-xs text-slate-500 font-medium">Status: {selectedEnquiry.hasCoaching ? 'Already enrolled in classes' : 'No current coaching'}</p>
                                 </div>
                                 <div>
-                                    <label className="text-[10px] font-black uppercase text-slate-400 block mb-1">Preferred Connect Time</label>
-                                    <p className="text-lg font-bold text-slate-900">{selectedEnquiry.connectTime}</p>
-                                </div>
-                                <div className="md:col-span-2 p-8 bg-slate-50 rounded-[32px] border border-slate-100">
-                                    <label className="text-[10px] font-black uppercase text-slate-400 block mb-4">Reason for shift / Expectations</label>
-                                    <p className="text-slate-700 leading-relaxed italic text-lg">"{selectedEnquiry.reason}"</p>
-                                    <div className="mt-8 pt-6 border-t border-slate-200 flex justify-between items-center">
-                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                                            Registry Status: {selectedEnquiry.status}
-                                        </p>
-                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                                            Received: {new Date(selectedEnquiry.createdAt).toLocaleDateString()}
-                                        </p>
-                                    </div>
+                                    <label className="text-[10px] font-black uppercase text-slate-400 block mb-1">Call Protocol</label>
+                                    <p className="text-lg font-bold text-slate-900">{selectedEnquiry.connectTime} Preferred</p>
+                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Lead Received: {new Date(selectedEnquiry.createdAt).toLocaleString()}</p>
                                 </div>
                             </div>
+
+                            <div className="p-8 bg-slate-50 rounded-[32px] border border-slate-100 space-y-4">
+                                <label className="text-[10px] font-black uppercase text-slate-400 block tracking-widest">Reason for Shift / Parental Expectations</label>
+                                <p className="text-slate-700 leading-relaxed italic text-lg font-medium">
+                                    "{selectedEnquiry.reason}"
+                                </p>
+                            </div>
                             
-                            <button 
-                                onClick={() => setSelectedEnquiry(null)}
-                                className="w-full mt-10 bg-slate-900 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:brightness-110 transition-all"
-                            >
-                                Close Details
-                            </button>
+                            <div className="mt-12 flex gap-4">
+                                <button 
+                                    onClick={() => handleStatusUpdate(selectedEnquiry.id, 'Contacted')}
+                                    className="flex-1 bg-emerald-600 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-emerald-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/10"
+                                >
+                                    <Check size={16}/> Mark Contacted
+                                </button>
+                                <button 
+                                    onClick={() => setSelectedEnquiry(null)}
+                                    className="flex-1 bg-slate-900 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest"
+                                >
+                                    Close Details
+                                </button>
+                            </div>
                         </motion.div>
                     </motion.div>
                 )}

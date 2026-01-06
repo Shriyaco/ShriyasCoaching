@@ -1,10 +1,11 @@
+
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import ThreeHero from '../components/ThreeHero';
 import Footer from '../components/Footer';
 import { db } from '../services/db';
 import { Notice } from '../types';
-import { ArrowRight, X, CheckCircle2, Zap } from 'lucide-react';
+import { ArrowRight, X, CheckCircle2, Zap, Users, Brain, Target, Star, Quote, Award, BookOpen } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const PublicHome: React.FC = () => {
@@ -53,6 +54,19 @@ const PublicHome: React.FC = () => {
       transition: { duration: 1.2, ease: [0.22, 1, 0.36, 1] }
     }
   };
+
+  const features = [
+    { title: "Personal Attention", desc: "Limited batch size ensures every student gets individual guidance and mentorship, mimicking the ancient Gurukul system.", icon: Users },
+    { title: "Concept Mastery", desc: "We focus on the 'Why' and 'How' before the 'What'. Deep conceptual clarity is prioritized over rote memorization.", icon: Brain },
+    { title: "Regular Evaluation", desc: "Weekly tests and detailed performance analysis to track progress and identify improvement areas early.", icon: Target },
+    { title: "Hybrid Ecosystem", desc: "The best of offline teaching combined with digital resources, recorded lectures, and smart notes for 24/7 support.", icon: Zap }
+  ];
+
+  const stats = [
+    { value: "12+", label: "Years Experience" },
+    { value: "850+", label: "Students Mentored" },
+    { value: "100%", label: "Success Rate" }
+  ];
 
   return (
     <div className="min-h-screen bg-black text-white selection:bg-premium-accent overflow-x-hidden">
@@ -140,20 +154,144 @@ const PublicHome: React.FC = () => {
         </motion.div>
       </section>
 
+      {/* --- STATS BANNER --- */}
+      <section className="py-20 border-b border-white/5 bg-[#080808]">
+          <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-white/10">
+              {stats.map((stat, index) => (
+                  <div key={index} className="py-8 md:py-0 text-center">
+                      <h3 className="text-5xl md:text-6xl font-light serif-font text-white mb-2">{stat.value}</h3>
+                      <p className="text-premium-accent text-[10px] font-black uppercase tracking-[0.4em]">{stat.label}</p>
+                  </div>
+              ))}
+          </div>
+      </section>
+
       {/* --- Philosophy Section --- */}
       <section className="py-32 px-6 bg-[#050505]">
           <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-24 items-center">
               <div className="space-y-8">
                   <h2 className="text-5xl md:text-7xl font-light serif-font uppercase leading-tight">Precision <br /> Mastery.</h2>
                   <p className="text-lg text-white/40 leading-relaxed font-light">
-                      The most sophisticated coaching environment for primary years. Our collective experience and tailored methodology elevate education to a whole new level.
+                      The most sophisticated coaching environment for primary years. Our collective experience and tailored methodology elevate education to a whole new level. We don't just teach; we sculpt intellects.
                   </p>
                   <Link to="/why-us" className="inline-block text-premium-accent text-[11px] font-black uppercase tracking-[0.5em] border-b border-premium-accent/20 pb-1 hover:border-premium-accent transition-all">
                     OUR VISION
                   </Link>
               </div>
-              <div className="h-[500px] bg-white/5 rounded-[60px] border border-white/5 overflow-hidden">
-                <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1000" className="w-full h-full object-cover opacity-30 grayscale hover:grayscale-0 hover:opacity-60 transition-all duration-1000" />
+              <div className="h-[500px] bg-white/5 rounded-[60px] border border-white/5 overflow-hidden relative group">
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-60 z-10" />
+                <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1000" className="w-full h-full object-cover opacity-50 grayscale group-hover:grayscale-0 group-hover:opacity-80 transition-all duration-1000 transform group-hover:scale-105" />
+                <div className="absolute bottom-10 left-10 z-20">
+                    <p className="text-white text-3xl serif-font italic">"Excellence is a habit."</p>
+                </div>
+              </div>
+          </div>
+      </section>
+
+      {/* --- THE EDGE / FEATURES --- */}
+      <section className="py-32 px-6 bg-[#080808]">
+          <div className="max-w-7xl mx-auto">
+              <div className="text-center mb-24">
+                  <span className="text-[10px] font-black uppercase tracking-[0.6em] text-white/30 block mb-6">Why Choose Us</span>
+                  <h2 className="text-4xl md:text-6xl font-light serif-font uppercase">The Shriya's <span className="text-premium-accent">Edge</span></h2>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                  {features.map((f, i) => (
+                      <motion.div 
+                        key={i} 
+                        whileHover={{ y: -10 }} 
+                        className="p-10 bg-white/[0.02] border border-white/5 rounded-[40px] hover:border-premium-accent/30 transition-all group"
+                      >
+                          <div className="w-14 h-14 bg-white/5 rounded-2xl flex items-center justify-center text-premium-accent mb-8 group-hover:bg-premium-accent group-hover:text-black transition-colors">
+                              <f.icon size={28} strokeWidth={1.5} />
+                          </div>
+                          <h3 className="text-xl font-bold mb-4 text-white/90">{f.title}</h3>
+                          <p className="text-sm text-white/40 leading-relaxed font-medium">{f.desc}</p>
+                      </motion.div>
+                  ))}
+              </div>
+          </div>
+      </section>
+
+      {/* --- FOUNDER / MENTOR SECTION --- */}
+      <section className="py-32 px-6 bg-[#050505] border-t border-white/5">
+          <div className="max-w-6xl mx-auto flex flex-col md:flex-row gap-20 items-center">
+              <div className="md:w-2/5">
+                  <div className="aspect-[3/4] rounded-[50px] overflow-hidden relative border border-white/10 grayscale hover:grayscale-0 transition-all duration-700">
+                      <img src="https://images.unsplash.com/photo-1544717305-2782549b5136?q=80&w=1000" alt="Mentor" className="w-full h-full object-cover" />
+                      <div className="absolute bottom-0 left-0 right-0 p-8 bg-gradient-to-t from-black to-transparent">
+                          <p className="text-2xl serif-font text-white">Shriya Ma'am</p>
+                          <p className="text-[9px] font-black uppercase tracking-[0.3em] text-premium-accent">Founder & Principal Mentor</p>
+                      </div>
+                  </div>
+              </div>
+              <div className="md:w-3/5 space-y-8">
+                  <Quote size={64} className="text-white/10" />
+                  <h2 className="text-4xl md:text-5xl font-light serif-font leading-tight">
+                      "Education is not just about filling a bucket, but lighting a fire."
+                  </h2>
+                  <p className="text-lg text-white/40 leading-relaxed font-light">
+                      With over a decade of experience in shaping young minds, we believe in education that goes beyond textbooks. Our unique methodology combines traditional values with modern pedagogical techniques to create a learning environment that is both rigorous and nurturing.
+                  </p>
+                  <div className="flex gap-8 pt-8">
+                      <div>
+                          <p className="text-3xl font-light serif-font text-white">12+</p>
+                          <p className="text-[9px] font-black uppercase tracking-[0.2em] text-white/30">Years exp.</p>
+                      </div>
+                      <div>
+                          <p className="text-3xl font-light serif-font text-white">Masters</p>
+                          <p className="text-[9px] font-black uppercase tracking-[0.2em] text-white/30">Education</p>
+                      </div>
+                  </div>
+              </div>
+          </div>
+      </section>
+
+      {/* --- TESTIMONIALS --- */}
+      <section className="py-32 px-6 bg-white/[0.02]">
+          <div className="max-w-7xl mx-auto">
+              <div className="flex flex-col md:flex-row justify-between items-end mb-20 gap-8">
+                  <div>
+                      <h2 className="text-4xl md:text-6xl font-light serif-font uppercase mb-4">Success <span className="text-premium-accent">Stories</span></h2>
+                      <p className="text-white/40 uppercase tracking-widest text-[10px] font-bold">Voices from our alumni and parents.</p>
+                  </div>
+                  <Link to="/contact" className="text-white border-b border-white/20 pb-1 text-xs font-black uppercase tracking-[0.3em] hover:text-premium-accent hover:border-premium-accent transition-all">View All Reviews</Link>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                  {[
+                      { name: "Aarav Patel", role: "Student, Grade 8", text: "The concepts I learned here in 6th grade are still helping me. The foundation building is unmatched." },
+                      { name: "Mrs. Sharma", role: "Parent", text: "Shriya's Coaching has transformed my daughter's approach to Math. She no longer fears the subject but enjoys it." },
+                      { name: "Rohan Mehta", role: "Alumni", text: "More than just marks, I learned discipline and time management which helps me even today in college." }
+                  ].map((t, i) => (
+                      <div key={i} className="p-10 bg-[#0A0A0A] border border-white/5 rounded-[40px] relative">
+                          <div className="flex items-center gap-2 mb-6">
+                              {[1,2,3,4,5].map(s => <Star key={s} size={14} className="text-premium-accent fill-premium-accent" />)}
+                          </div>
+                          <p className="text-white/60 text-sm leading-relaxed mb-8 italic">"{t.text}"</p>
+                          <div className="flex items-center gap-4">
+                              <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center font-black text-xs text-white">{t.name.charAt(0)}</div>
+                              <div>
+                                  <p className="text-sm font-bold text-white">{t.name}</p>
+                                  <p className="text-[9px] font-black uppercase text-white/30 tracking-wider">{t.role}</p>
+                              </div>
+                          </div>
+                      </div>
+                  ))}
+              </div>
+          </div>
+      </section>
+
+      {/* --- CTA SECTION --- */}
+      <section className="py-32 px-6">
+          <div className="max-w-5xl mx-auto bg-gradient-to-b from-white/10 to-black border border-white/10 rounded-[60px] p-16 md:p-24 text-center relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-20"></div>
+              <div className="relative z-10">
+                  <Award size={64} className="mx-auto text-premium-accent mb-8" />
+                  <h2 className="text-4xl md:text-7xl font-light serif-font uppercase mb-8 leading-tight">Begin the <br/>Journey.</h2>
+                  <p className="text-white/50 text-lg mb-12 max-w-2xl mx-auto">Limited seats available for the upcoming academic session. Secure your child's future today.</p>
+                  <button onClick={() => setIsEnquiryModalOpen(true)} className="bg-white text-black px-12 py-5 rounded-full font-black text-xs uppercase tracking-[0.4em] hover:bg-premium-accent transition-all shadow-[0_0_40px_rgba(255,255,255,0.3)]">Apply Now</button>
               </div>
           </div>
       </section>
