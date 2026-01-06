@@ -1,7 +1,8 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { db } from '../services/db';
 import { Student, TabView, Grade, Subdivision, Teacher, FeeSubmission, SystemSettings, GatewayConfig, Enquiry, Product, Order, StudentNotification, Notice } from '../types';
-import { Users, Settings, LogOut, Plus, Edit2, Search, Briefcase, CreditCard, Save, Layers, UserPlus, Lock, ShieldAlert, Key, Power, X, Trash2, GraduationCap, TrendingUp, DollarSign, RefreshCw, Menu, Check, Upload, Calendar, MessageCircle, Phone, Clock, ShoppingBag, Send, MapPin, Truck, Megaphone, Bell, Info, AlertTriangle, User, UserCheck, AlertCircle, Globe, Smartphone, QrCode, Package, Image as ImageIcon, Filter, CheckCircle2 } from 'lucide-react';
+import { Users, Settings, LogOut, Plus, Edit2, Search, Briefcase, CreditCard, Save, Layers, UserPlus, Lock, ShieldAlert, Key, Power, X, Trash2, GraduationCap, TrendingUp, DollarSign, RefreshCw, Menu, Check, Upload, Calendar, MessageCircle, Phone, Clock, ShoppingBag, Send, MapPin, Truck, Megaphone, Bell, Info, AlertTriangle, User, UserCheck, AlertCircle, Globe, Smartphone, QrCode, Package, Image as ImageIcon, Filter, CheckCircle2, Wand2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -223,15 +224,19 @@ const ProductsModule = ({ products, onNotify, refresh }: any) => {
             refresh();
         } catch (err: any) { 
             console.error("Product Save Error:", err);
-            alert(`Failed to save product: ${err.message || 'Unknown database error'}. Check if products table exists in Supabase.`); 
+            alert(`Failed to save product: ${err.message || 'Unknown database error'}.`); 
         }
     };
 
     const handleDelete = async (id: string) => {
-        if (confirm("Permanently remove this product from the catalog?")) {
-            await db.deleteProduct(id);
-            onNotify("Product deleted.");
-            refresh();
+        if (confirm("Permanently remove this product from the catalog? This cannot be undone.")) {
+            try {
+                await db.deleteProduct(id);
+                onNotify("Product removed from inventory.");
+                refresh();
+            } catch (err) {
+                alert("Failed to delete product. It might be linked to existing orders.");
+            }
         }
     };
 
@@ -293,7 +298,7 @@ const ProductsModule = ({ products, onNotify, refresh }: any) => {
                 {isModalOpen && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
                         <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} className="bg-white rounded-[40px] p-10 w-full max-w-xl shadow-2xl relative max-h-[90vh] overflow-y-auto scrollbar-hide">
-                            <button onClick={() => setIsModalOpen(false)} className="absolute top-8 right-8 text-slate-400 hover:text-slate-800"><X/></button>
+                            <button onClick={() => { setIsModalOpen(false); setEditingProduct(null); }} className="absolute top-8 right-8 text-slate-400 hover:text-slate-800"><X/></button>
                             <h3 className="text-3xl font-black text-slate-800 mb-2 flex items-center gap-3">
                                 <Package className="text-indigo-600" size={32}/> {editingProduct ? 'Modify Product' : 'Add New Collectible'}
                             </h3>
@@ -370,30 +375,79 @@ const OrdersModule = ({ orders, onNotify, refresh }: any) => {
             <div className="overflow-x-auto">
                 <table className="w-full text-left">
                     <thead className="bg-slate-50 text-[10px] uppercase font-black tracking-widest text-slate-400 border-b">
-                        <tr><th className="p-6">Client & Product</th><th className="p-6">Contact</th><th className="p-6">Price</th><th className="p-6">UTR Reference</th><th className="p-6">Action</th></tr>
+                        <tr><th className="p-6">Client & Bespoke Details</th><th className="p-6">Shipping Destination</th><th className="p-6">UTR Reference</th><th className="p-6">Price</th><th className="p-6">Status Action</th></tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 text-sm">
                         {orders.map((o: Order) => (
                             <tr key={o.id} className="hover:bg-slate-50/50 transition-colors">
                                 <td className="p-6">
-                                    <div className="flex items-center gap-3">
-                                        <img src={o.productImage} className="w-10 h-10 rounded-lg object-cover bg-slate-100" />
-                                        <div><p className="font-bold text-slate-800">{o.studentName}</p><p className="text-[10px] text-slate-400 font-medium truncate max-w-[120px]">{o.productName}</p></div>
+                                    <div className="flex items-start gap-4">
+                                        <div className="w-14 h-14 rounded-xl bg-slate-100 overflow-hidden shrink-0 border border-slate-200">
+                                            <img src={o.productImage} className="w-full h-full object-cover" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <p className="font-black text-slate-800 text-base">{o.studentName}</p>
+                                            <div className="flex items-center gap-2 px-2 py-1 bg-indigo-50 rounded-lg w-fit">
+                                                <Package size={12} className="text-indigo-600" />
+                                                <span className="text-[10px] font-bold text-indigo-700 uppercase tracking-tight">{o.productName}</span>
+                                            </div>
+                                            
+                                            {/* --- Customization Details --- */}
+                                            {(o.customName || o.changeRequest) && (
+                                                <div className="mt-3 p-4 bg-amber-50 rounded-2xl border border-amber-100 space-y-2">
+                                                    <div className="flex items-center gap-2">
+                                                        <Wand2 size={12} className="text-amber-600" />
+                                                        <span className="text-[10px] font-black uppercase text-amber-700">Customization Protocol</span>
+                                                    </div>
+                                                    {o.customName && (
+                                                        <p className="text-xs font-bold text-slate-700">
+                                                            <span className="text-slate-400 uppercase text-[9px] mr-1">Name:</span> {o.customName}
+                                                        </p>
+                                                    )}
+                                                    {o.changeRequest && (
+                                                        <p className="text-xs text-slate-500 italic leading-relaxed">
+                                                            <span className="text-slate-400 uppercase text-[9px] mr-1 not-italic">Instructions:</span> {o.changeRequest}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
                                 </td>
-                                <td className="p-6 text-slate-600 font-mono text-xs">{o.mobile}</td>
-                                <td className="p-6 font-black text-slate-800">₹{o.finalPrice}</td>
-                                <td className="p-6 font-mono text-xs uppercase text-indigo-500 font-bold">{o.transactionRef || 'N/A'}</td>
+                                <td className="p-6">
+                                    <div className="space-y-1">
+                                        <div className="flex items-center gap-2 text-slate-400">
+                                            <Phone size={12} />
+                                            <span className="text-xs font-mono font-bold">{o.mobile}</span>
+                                        </div>
+                                        <div className="flex items-start gap-2 text-slate-500 max-w-[200px]">
+                                            <MapPin size={12} className="shrink-0 mt-1" />
+                                            <p className="text-xs leading-tight">{o.address}, {o.pincode}, {o.state}</p>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td className="p-6">
+                                    {o.transactionRef ? (
+                                        <div className="space-y-1">
+                                            <p className="text-[9px] font-black uppercase text-slate-400">Transaction ID</p>
+                                            <p className="font-mono text-xs font-black text-indigo-600 uppercase tracking-widest">{o.transactionRef}</p>
+                                        </div>
+                                    ) : (
+                                        <span className="text-[10px] font-black text-rose-300 uppercase italic">Awaiting Payment</span>
+                                    )}
+                                </td>
+                                <td className="p-6 font-black text-slate-800 text-lg">₹{o.finalPrice}</td>
                                 <td className="p-6">
                                     <select 
-                                        className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase outline-none ${
-                                            o.status === 'Completed' ? 'bg-emerald-50 text-emerald-600' : 
-                                            o.status === 'Rejected' ? 'bg-rose-50 text-rose-600' : 'bg-slate-100 text-slate-600'
+                                        className={`px-3 py-2 rounded-xl text-[10px] font-black uppercase outline-none shadow-sm transition-all cursor-pointer ${
+                                            o.status === 'Completed' ? 'bg-emerald-500 text-white' : 
+                                            o.status === 'Rejected' ? 'bg-rose-500 text-white' : 
+                                            o.status === 'Processing Order' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'
                                         }`}
                                         value={o.status}
                                         onChange={(e) => handleStatusUpdate(o.id, e.target.value as Order['status'])}
                                     >
-                                        <option value="Payment Pending">Pending</option>
+                                        <option value="Payment Pending">Payment Pending</option>
                                         <option value="Payment Under Verification">Under Verif.</option>
                                         <option value="Processing Order">Processing</option>
                                         <option value="Completed">Completed</option>
@@ -409,6 +463,8 @@ const OrdersModule = ({ orders, onNotify, refresh }: any) => {
         </div>
     );
 };
+
+// ... keep BroadcastModule, StudentsModule, TeachersModule, GradesModule, FeesModule, NoticesModule, EnquiriesModule, SettingsModule ...
 
 const BroadcastModule = ({ grades, subdivisions, students, onNotify }: any) => {
     const [targetType, setTargetType] = useState<'all' | 'grade' | 'division' | 'student'>('all');

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { db } from '../services/db';
 import { Product, Order, User, SystemSettings, GatewayConfig } from '../types';
@@ -7,7 +8,7 @@ import {
   ShoppingBag, ArrowRight, Check, X, CreditCard, 
   Smartphone, QrCode, Copy, MapPin, User as UserIcon, 
   Phone, Hash, Plus, Minus, ShoppingCart, Trash2,
-  Sparkles, MessageCircle, Filter, Zap
+  Sparkles, MessageCircle, Filter, Zap, PencilLine, Wand2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
@@ -72,7 +73,7 @@ const Shop: React.FC = () => {
     const categories = ['All', 'Decor', 'Stationery', 'Gifts', 'Jewelry'];
     const filteredProducts = activeCategory === 'All' 
         ? products 
-        : products.filter(p => p.description.toLowerCase().includes(activeCategory.toLowerCase()));
+        : products.filter(p => p.category === activeCategory);
 
     const addToCart = (product: Product) => {
         const existing = cart.find(item => item.product.id === product.id);
@@ -106,16 +107,16 @@ const Shop: React.FC = () => {
         setIsSubmitting(true);
         
         try {
-            // For now, we create one order per cart item to maintain DB compatibility
-            // or create a bulk order if schema supports it.
-            // Using first item for backward compatibility in this demo
-            const item = cart[0];
+            // Bulk product description for order summary
+            const productSummary = cart.map(item => `${item.product.name} (x${item.quantity})`).join(', ');
+            const mainProduct = cart[0].product;
+
             const orderData: Omit<Order, 'id' | 'createdAt'> = {
                 studentId: user?.id || 'guest',
                 studentName: checkoutForm.name,
-                productId: item.product.id,
-                productName: `${item.product.name} (Qty: ${item.quantity})`,
-                productImage: item.product.imageUrl,
+                productId: mainProduct.id,
+                productName: productSummary,
+                productImage: mainProduct.imageUrl,
                 customName: checkoutForm.customName,
                 changeRequest: checkoutForm.changeRequest,
                 address: checkoutForm.address,
@@ -129,7 +130,7 @@ const Shop: React.FC = () => {
             const newOrder = await db.createOrder(orderData);
             setActiveOrder(newOrder);
             setIsCheckoutOpen(false);
-            setCart([]); // Clear cart
+            setCart([]); 
             
             const s = await db.getSettings();
             setSettings(s);
@@ -137,7 +138,8 @@ const Shop: React.FC = () => {
             if (firstKey) setSelectedGatewayKey(firstKey);
 
         } catch (err) {
-            alert("Order registry failed.");
+            console.error(err);
+            alert("Order registry failed. Please try again.");
         } finally {
             setIsSubmitting(false);
         }
@@ -171,7 +173,6 @@ const Shop: React.FC = () => {
         <div className="min-h-screen bg-[#050505] text-white font-sans pt-24 pb-12 relative overflow-x-hidden transition-colors duration-300">
             <ThreeOrb className="absolute top-0 left-0 w-[600px] h-[600px] opacity-10 pointer-events-none -translate-x-1/2 -translate-y-1/2" color="#C5A059" />
             
-            {/* --- CART DRAWER --- */}
             <AnimatePresence>
                 {isCartOpen && (
                     <>
@@ -239,7 +240,11 @@ const Shop: React.FC = () => {
                         <p className="text-[10px] md:text-xs text-white/30 uppercase tracking-[0.5em] font-black ml-1">Handcrafted Resin Collectibles</p>
                     </div>
 
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-6">
+                        <div className="flex p-1 bg-white/5 rounded-2xl border border-white/10">
+                            <button onClick={() => setActiveTab('products')} className={`px-6 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${activeTab === 'products' ? 'bg-white text-black shadow-lg' : 'text-white/40 hover:text-white'}`}>Products</button>
+                            <button onClick={() => setActiveTab('my-orders')} className={`px-6 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${activeTab === 'my-orders' ? 'bg-white text-black shadow-lg' : 'text-white/40 hover:text-white'}`}>My Registry</button>
+                        </div>
                         <button 
                             onClick={() => setIsCartOpen(true)}
                             className="relative bg-white/5 border border-white/10 p-4 rounded-2xl hover:bg-white/10 transition-all group"
@@ -281,7 +286,6 @@ const Shop: React.FC = () => {
                                     <img src={product.imageUrl} className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110 grayscale-[0.5] group-hover:grayscale-0" />
                                     <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A] via-transparent to-transparent opacity-60" />
                                     
-                                    {/* Action Overlays */}
                                     <div className="absolute inset-0 flex items-center justify-center gap-4 opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-500">
                                         <button 
                                             onClick={() => addToCart(product)}
@@ -304,7 +308,7 @@ const Shop: React.FC = () => {
                                     <div className="flex justify-between items-start mb-6">
                                         <div>
                                             <h3 className="text-2xl font-light serif-font mb-1 tracking-tight group-hover:text-premium-accent transition-colors">{product.name}</h3>
-                                            <p className="text-[9px] font-black uppercase text-white/20 tracking-[0.2em]">In Stock • Authenticated</p>
+                                            <p className="text-[9px] font-black uppercase text-white/20 tracking-[0.2em]">{product.stockStatus} • Authenticated</p>
                                         </div>
                                         <p className="text-xl font-light text-white/80">₹{product.basePrice}</p>
                                     </div>
@@ -318,6 +322,7 @@ const Shop: React.FC = () => {
                                 </div>
                             </motion.div>
                         ))}
+                        {filteredProducts.length === 0 && <div className="col-span-full py-40 text-center opacity-20 font-black uppercase tracking-[1em] text-xs">Category Empty</div>}
                     </div>
                 ) : (
                     <div className="max-w-4xl mx-auto space-y-6 mb-32">
@@ -349,44 +354,87 @@ const Shop: React.FC = () => {
 
             <Footer />
 
-            {/* --- CHECKOUT OVERLAY --- */}
             <AnimatePresence>
                 {isCheckoutOpen && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[200] flex items-center justify-center bg-black/98 p-4 backdrop-blur-3xl">
-                        <motion.div initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} className="bg-[#0A0A0A] border border-white/10 rounded-[50px] w-full max-w-2xl overflow-hidden relative shadow-2xl flex flex-col max-h-[90vh]">
+                        <motion.div initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} className="bg-[#0A0A0A] border border-white/10 rounded-[50px] w-full max-w-2xl overflow-hidden relative shadow-2xl flex flex-col max-h-[95vh]">
                             <button onClick={() => setIsCheckoutOpen(false)} className="absolute top-10 right-10 text-white/20 hover:text-white z-50"><X size={32}/></button>
                             
                             <div className="p-12 md:p-16 overflow-y-auto scrollbar-hide">
                                 <h3 className="text-4xl font-light serif-font mb-4 luxury-text-gradient">Secure Entry.</h3>
                                 <p className="text-[10px] font-black uppercase tracking-[0.5em] text-white/20 mb-12">Authorized Shipment Protocol</p>
                                 
-                                <form onSubmit={handleCheckoutSubmit} className="space-y-8">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div className="space-y-1">
-                                            <label className="text-[9px] font-black uppercase text-white/20 ml-1">Full Name</label>
-                                            <input required value={checkoutForm.name} onChange={e => setCheckoutForm({...checkoutForm, name: e.target.value})} className="w-full bg-white/[0.03] border border-white/5 rounded-2xl px-6 py-4 outline-none focus:border-premium-accent text-sm" />
+                                <form onSubmit={handleCheckoutSubmit} className="space-y-10">
+                                    {/* --- Client Details --- */}
+                                    <div className="space-y-6">
+                                        <div className="flex items-center gap-3 border-b border-white/5 pb-3">
+                                            <UserIcon size={14} className="text-premium-accent" />
+                                            <h4 className="text-[10px] font-black uppercase tracking-widest text-white/60">Contact Identity</h4>
                                         </div>
-                                        <div className="space-y-1">
-                                            <label className="text-[9px] font-black uppercase text-white/20 ml-1">Mobile Contact</label>
-                                            <input required type="tel" value={checkoutForm.mobile} onChange={e => setCheckoutForm({...checkoutForm, mobile: e.target.value})} className="w-full bg-white/[0.03] border border-white/5 rounded-2xl px-6 py-4 outline-none focus:border-premium-accent text-sm" />
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <div className="space-y-1">
+                                                <label className="text-[9px] font-black uppercase text-white/20 ml-1">Full Name</label>
+                                                <input required value={checkoutForm.name} onChange={e => setCheckoutForm({...checkoutForm, name: e.target.value})} className="w-full bg-white/[0.03] border border-white/5 rounded-2xl px-6 py-4 outline-none focus:border-premium-accent text-sm" />
+                                            </div>
+                                            <div className="space-y-1">
+                                                <label className="text-[9px] font-black uppercase text-white/20 ml-1">Mobile Contact</label>
+                                                <input required type="tel" value={checkoutForm.mobile} onChange={e => setCheckoutForm({...checkoutForm, mobile: e.target.value})} className="w-full bg-white/[0.03] border border-white/5 rounded-2xl px-6 py-4 outline-none focus:border-premium-accent text-sm" />
+                                            </div>
                                         </div>
                                     </div>
 
-                                    <div className="space-y-1">
-                                        <label className="text-[9px] font-black uppercase text-white/20 ml-1">Shipment Address</label>
-                                        <textarea required value={checkoutForm.address} onChange={e => setCheckoutForm({...checkoutForm, address: e.target.value})} className="w-full bg-white/[0.03] border border-white/5 rounded-2xl px-6 py-4 h-24 outline-none resize-none focus:border-premium-accent text-sm" />
+                                    {/* --- Bespoke Customization --- */}
+                                    <div className="space-y-6 p-8 bg-white/[0.02] rounded-[32px] border border-white/5">
+                                        <div className="flex items-center gap-3 border-b border-white/5 pb-3">
+                                            <Wand2 size={14} className="text-premium-accent" />
+                                            <h4 className="text-[10px] font-black uppercase tracking-widest text-white/60">Bespoke Customization</h4>
+                                        </div>
+                                        <div className="space-y-6">
+                                            <div className="space-y-1">
+                                                <label className="text-[9px] font-black uppercase text-white/20 ml-1">Name/Text on Product (Optional)</label>
+                                                <input 
+                                                    placeholder="e.g. SANYA, HAPPY BIRTHDAY"
+                                                    value={checkoutForm.customName} 
+                                                    onChange={e => setCheckoutForm({...checkoutForm, customName: e.target.value})} 
+                                                    className="w-full bg-white/[0.03] border border-white/10 rounded-2xl px-6 py-4 outline-none focus:border-premium-accent text-sm placeholder:text-white/10" 
+                                                />
+                                            </div>
+                                            <div className="space-y-1">
+                                                <label className="text-[9px] font-black uppercase text-white/20 ml-1">Change Request / Design Notes</label>
+                                                <textarea 
+                                                    placeholder="Describe colors, flower preferences, or specific layout requests..."
+                                                    value={checkoutForm.changeRequest} 
+                                                    onChange={e => setCheckoutForm({...checkoutForm, changeRequest: e.target.value})} 
+                                                    className="w-full bg-white/[0.03] border border-white/10 rounded-2xl px-6 py-4 h-24 outline-none resize-none focus:border-premium-accent text-sm placeholder:text-white/10" 
+                                                />
+                                            </div>
+                                        </div>
                                     </div>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div className="space-y-1">
-                                            <label className="text-[9px] font-black uppercase text-white/20 ml-1">Pincode</label>
-                                            <input required value={checkoutForm.pincode} onChange={e => setCheckoutForm({...checkoutForm, pincode: e.target.value})} className="w-full bg-white/[0.03] border border-white/5 rounded-2xl px-6 py-4 outline-none focus:border-premium-accent text-sm font-mono" />
+                                    {/* --- Logistics --- */}
+                                    <div className="space-y-6">
+                                        <div className="flex items-center gap-3 border-b border-white/5 pb-3">
+                                            <MapPin size={14} className="text-premium-accent" />
+                                            <h4 className="text-[10px] font-black uppercase tracking-widest text-white/60">Logistics Destination</h4>
                                         </div>
-                                        <div className="space-y-1">
-                                            <label className="text-[9px] font-black uppercase text-white/20 ml-1">State Origin</label>
-                                            <select required value={checkoutForm.state} onChange={e => setCheckoutForm({...checkoutForm, state: e.target.value})} className="w-full bg-white/[0.03] border border-white/5 rounded-2xl px-6 py-4 outline-none focus:border-premium-accent text-sm appearance-none">
-                                                {INDIAN_STATES.map(s => <option key={s} value={s} className="bg-black">{s}</option>)}
-                                            </select>
+                                        <div className="space-y-6">
+                                            <div className="space-y-1">
+                                                <label className="text-[9px] font-black uppercase text-white/20 ml-1">Shipment Address</label>
+                                                <textarea required value={checkoutForm.address} onChange={e => setCheckoutForm({...checkoutForm, address: e.target.value})} className="w-full bg-white/[0.03] border border-white/5 rounded-2xl px-6 py-4 h-20 outline-none resize-none focus:border-premium-accent text-sm" />
+                                            </div>
+
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                <div className="space-y-1">
+                                                    <label className="text-[9px] font-black uppercase text-white/20 ml-1">Pincode</label>
+                                                    <input required value={checkoutForm.pincode} onChange={e => setCheckoutForm({...checkoutForm, pincode: e.target.value})} className="w-full bg-white/[0.03] border border-white/5 rounded-2xl px-6 py-4 outline-none focus:border-premium-accent text-sm font-mono" />
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <label className="text-[9px] font-black uppercase text-white/20 ml-1">State Origin</label>
+                                                    <select required value={checkoutForm.state} onChange={e => setCheckoutForm({...checkoutForm, state: e.target.value})} className="w-full bg-white/[0.03] border border-white/5 rounded-2xl px-6 py-4 outline-none focus:border-premium-accent text-sm appearance-none">
+                                                        {INDIAN_STATES.map(s => <option key={s} value={s} className="bg-black">{s}</option>)}
+                                                    </select>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
 
