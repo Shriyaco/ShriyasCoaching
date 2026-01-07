@@ -31,6 +31,7 @@ const TeacherDashboard: React.FC = () => {
     const [availableSubdivisions, setAvailableSubdivisions] = useState<Subdivision[]>([]);
     const [selectedGradeId, setSelectedGradeId] = useState('');
     const [selectedDivisionId, setSelectedDivisionId] = useState('');
+    const [refreshTrigger, setRefreshTrigger] = useState(0);
 
     const refreshGrades = useCallback(async () => {
         const g = await db.getGrades();
@@ -45,6 +46,19 @@ const TeacherDashboard: React.FC = () => {
         if (parsedUser.role !== 'teacher') { navigate('/'); return; }
         setUser(parsedUser);
         refreshGrades();
+
+        // Real-time synchronization for relevant tables
+        const studentChannel = db.subscribe('students', () => setRefreshTrigger(t => t + 1));
+        const examChannel = db.subscribe('exams', () => setRefreshTrigger(t => t + 1));
+        const queryChannel = db.subscribe('queries', () => setRefreshTrigger(t => t + 1));
+        const leaveChannel = db.subscribe('leave_applications', () => setRefreshTrigger(t => t + 1));
+        
+        return () => {
+            db.unsubscribe(studentChannel);
+            db.unsubscribe(examChannel);
+            db.unsubscribe(queryChannel);
+            db.unsubscribe(leaveChannel);
+        };
     }, [navigate, refreshGrades]);
 
     useEffect(() => {
@@ -52,8 +66,15 @@ const TeacherDashboard: React.FC = () => {
             if (selectedGradeId) {
                 const subs = await db.getSubdivisions(selectedGradeId);
                 setAvailableSubdivisions(subs);
-                if (subs.length > 0 && !selectedDivisionId) {
-                    setSelectedDivisionId(subs[0].id);
+                
+                // CRITICAL FIX: Properly reset/select subdivision when grade changes
+                if (subs.length > 0) {
+                    const currentStillValid = subs.find(s => s.id === selectedDivisionId);
+                    if (!selectedDivisionId || !currentStillValid) {
+                        setSelectedDivisionId(subs[0].id);
+                    }
+                } else {
+                    setSelectedDivisionId('');
                 }
             }
         }
@@ -108,16 +129,16 @@ const TeacherDashboard: React.FC = () => {
             <main className="flex-1 px-4 md:px-12 py-6 relative z-10 overflow-y-auto scrollbar-hide">
                 <div className="max-w-6xl mx-auto w-full">
                     <AnimatePresence mode="wait">
-                        <motion.div key={activeTab} variants={pageTransition} initial="initial" animate="animate" exit="exit" className="pb-40">
-                            {activeTab === 'attendance' && <AttendanceModule gradeId={selectedGradeId} divisionId={selectedDivisionId} />}
+                        <motion.div key={`${activeTab}-${refreshTrigger}`} variants={pageTransition} initial="initial" animate="animate" exit="exit" className="pb-40">
+                            {activeTab === 'attendance' && <AttendanceModule gradeId={selectedGradeId} divisionId={selectedDivisionId} refreshTrigger={refreshTrigger} />}
                             {activeTab === 'live' && <LiveManagementModule division={selectedDivision} />}
-                            {activeTab === 'homework' && <HomeworkManagementModule gradeId={selectedGradeId} divisionId={selectedDivisionId} teacherId={user?.id || ''} />}
-                            {activeTab === 'notes' && <NotesModule gradeId={selectedGradeId} divisionId={selectedDivisionId} teacherId={user?.id || ''} />}
-                            {activeTab === 'exams' && <ExamBuilderModule gradeId={selectedGradeId} divisionId={selectedDivisionId} teacherId={user?.id || ''} />}
-                            {activeTab === 'grading' && <CheckExamsModule />}
-                            {activeTab === 'leaves' && <LeaveRequestsModule gradeId={selectedGradeId} divisionId={selectedDivisionId} />}
-                            {activeTab === 'student-exams' && <StudentExamsView gradeId={selectedGradeId} divisionId={selectedDivisionId} />}
-                            {activeTab === 'queries' && <DoubtSolveModule />}
+                            {activeTab === 'homework' && <HomeworkManagementModule gradeId={selectedGradeId} divisionId={selectedDivisionId} teacherId={user?.id || ''} refreshTrigger={refreshTrigger} />}
+                            {activeTab === 'notes' && <NotesModule gradeId={selectedGradeId} divisionId={selectedDivisionId} teacherId={user?.id || ''} refreshTrigger={refreshTrigger} />}
+                            {activeTab === 'exams' && <ExamBuilderModule gradeId={selectedGradeId} divisionId={selectedDivisionId} teacherId={user?.id || ''} refreshTrigger={refreshTrigger} />}
+                            {activeTab === 'grading' && <CheckExamsModule refreshTrigger={refreshTrigger} />}
+                            {activeTab === 'leaves' && <LeaveRequestsModule gradeId={selectedGradeId} divisionId={selectedDivisionId} refreshTrigger={refreshTrigger} />}
+                            {activeTab === 'student-exams' && <StudentExamsView gradeId={selectedGradeId} divisionId={selectedDivisionId} refreshTrigger={refreshTrigger} />}
+                            {activeTab === 'queries' && <DoubtSolveModule refreshTrigger={refreshTrigger} />}
                             {activeTab === 'settings' && <CoreSettings user={user!} />}
                         </motion.div>
                     </AnimatePresence>
@@ -144,7 +165,7 @@ const TeacherDashboard: React.FC = () => {
 };
 
 // --- MODULE: ATTENDANCE ---
-const AttendanceModule = ({ gradeId, divisionId }: any) => {
+const AttendanceModule = ({ gradeId, divisionId, refreshTrigger }: any) => {
     const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
     const [students, setStudents] = useState<Student[]>([]);
     const [attendanceMap, setAttendanceMap] = useState<Record<string, 'Present' | 'Absent'>>({});
@@ -159,7 +180,7 @@ const AttendanceModule = ({ gradeId, divisionId }: any) => {
         });
     }, [gradeId, divisionId]);
 
-    useEffect(() => { load(); }, [load]);
+    useEffect(() => { load(); }, [load, refreshTrigger]);
 
     const save = async () => {
         const records = students.map(s => ({ studentId: s.id, division_id: divisionId, date, status: attendanceMap[s.id] }));
@@ -238,7 +259,7 @@ const LiveManagementModule = ({ division }: { division?: Subdivision }) => {
 };
 
 // --- MODULE: HOMEWORK ---
-const HomeworkManagementModule = ({ gradeId, divisionId, teacherId }: any) => {
+const HomeworkManagementModule = ({ gradeId, divisionId, teacherId, refreshTrigger }: any) => {
     const [list, setList] = useState<Homework[]>([]);
     const [form, setForm] = useState<any>({ subject: '', task: '', dueDate: '', targetType: 'Division', targetStudentId: '' });
     const [students, setStudents] = useState<Student[]>([]);
@@ -250,7 +271,7 @@ const HomeworkManagementModule = ({ gradeId, divisionId, teacherId }: any) => {
         }
     }, [gradeId, divisionId]);
 
-    useEffect(() => { load(); }, [load]);
+    useEffect(() => { load(); }, [load, refreshTrigger]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -307,7 +328,7 @@ const HomeworkManagementModule = ({ gradeId, divisionId, teacherId }: any) => {
 };
 
 // --- MODULE: NOTES ---
-const NotesModule = ({ gradeId, divisionId, teacherId }: any) => {
+const NotesModule = ({ gradeId, divisionId, teacherId, refreshTrigger }: any) => {
     const [notes, setNotes] = useState<StudyNote[]>([]);
     const [isAdding, setIsAdding] = useState(false);
     const [form, setForm] = useState<any>({ subject: '', title: '', content: '', targetType: 'Grade', targetStudentId: '' });
@@ -320,7 +341,7 @@ const NotesModule = ({ gradeId, divisionId, teacherId }: any) => {
         }
     }, [gradeId, divisionId]);
 
-    useEffect(() => { load(); }, [load]);
+    useEffect(() => { load(); }, [load, refreshTrigger]);
 
     return (
         <div className="space-y-8">
@@ -377,7 +398,7 @@ const NotesModule = ({ gradeId, divisionId, teacherId }: any) => {
 };
 
 // --- MODULE: CONDUCT EXAM ---
-const ExamBuilderModule = ({ gradeId, divisionId, teacherId }: any) => {
+const ExamBuilderModule = ({ gradeId, divisionId, teacherId, refreshTrigger }: any) => {
     const [exams, setExams] = useState<Exam[]>([]);
     const [isCreating, setIsCreating] = useState(false);
     const [form, setForm] = useState<any>({ 
@@ -386,7 +407,7 @@ const ExamBuilderModule = ({ gradeId, divisionId, teacherId }: any) => {
     });
 
     const load = useCallback(() => db.getExams(gradeId).then(setExams), [gradeId]);
-    useEffect(() => { load(); }, [load]);
+    useEffect(() => { load(); }, [load, refreshTrigger]);
 
     const addQuestion = (type: 'mcq' | 'short' | 'paragraph') => {
         const newQ: Question = {
@@ -436,7 +457,7 @@ const ExamBuilderModule = ({ gradeId, divisionId, teacherId }: any) => {
             <AnimatePresence>
                 {isCreating && (
                     <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/95 backdrop-blur-md p-4">
-                        <motion.div initial={{ scale: 0.98, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-[#0A0A0E] border border-white/10 rounded-[48px] w-full max-w-2xl p-8 md:p-12 max-h-[90vh] overflow-y-auto scrollbar-hide relative shadow-2xl">
+                        <motion.div initial={{ scale: 0.98, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-[#0A0A0E] border border-white/10 rounded-[48px] w-full max-w-2xl p-8 md:p-12 max-h-[90vh] overflow-y-auto scrollbar-hide relative shadow-2xl pb-24 md:pb-12">
                             <button onClick={()=>setIsCreating(false)} className="absolute top-8 right-8 text-white/20 hover:text-white z-20"><X size={28}/></button>
                             <h3 className="text-3xl font-light serif-font mb-10 text-center italic luxury-text-gradient tracking-tighter">Exam Builder.</h3>
                             
@@ -519,7 +540,7 @@ const ExamBuilderModule = ({ gradeId, divisionId, teacherId }: any) => {
                                     </div>
                                 </div>
 
-                                <div className="pt-8 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-6 bg-black/40 -mx-8 -mb-12 p-8 md:-mx-12 md:p-12">
+                                <div className="pt-8 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-6 bg-black/40 -mx-8 -mb-12 p-8 md:-mx-12 md:p-12 sticky bottom-0 z-20">
                                     <div className="text-center sm:text-left">
                                         <p className="text-[7px] font-black text-white/30 uppercase tracking-[0.4em] mb-1">Mark Configuration Balance</p>
                                         <p className={`text-2xl font-black italic tracking-tighter transition-colors ${(form.questions as any[]).reduce((a:number,b:any)=>a+(parseInt(b.marks)||0),0) === parseInt(form.totalMarks) ? 'text-emerald-400' : 'text-rose-500'}`}>
@@ -538,7 +559,7 @@ const ExamBuilderModule = ({ gradeId, divisionId, teacherId }: any) => {
 };
 
 // --- MODULE: CHECK EXAM ---
-const CheckExamsModule = () => {
+const CheckExamsModule = ({ refreshTrigger }: any) => {
     const [submissions, setSubmissions] = useState<ExamSubmission[]>([]);
     const [selectedSub, setSelectedSub] = useState<ExamSubmission | null>(null);
     const [marks, setMarks] = useState<Record<string, number>>({});
@@ -550,7 +571,7 @@ const CheckExamsModule = () => {
         setExams(exList);
     }, []);
 
-    useEffect(() => { load(); }, [load]);
+    useEffect(() => { load(); }, [load, refreshTrigger]);
 
     const activeExam = selectedSub ? exams.find(e => e.id === selectedSub.examId) : null;
 
@@ -632,10 +653,10 @@ const CheckExamsModule = () => {
 };
 
 // --- MODULE: LEAVE MANAGEMENT ---
-const LeaveRequestsModule = ({ gradeId, divisionId }: any) => {
+const LeaveRequestsModule = ({ gradeId, divisionId, refreshTrigger }: any) => {
     const [leaves, setLeaves] = useState<LeaveApplication[]>([]);
     const load = useCallback(() => { if(gradeId && divisionId) db.getLeaveApplications(undefined, gradeId, divisionId).then(setLeaves); }, [gradeId, divisionId]);
-    useEffect(() => { load(); }, [load]);
+    useEffect(() => { load(); }, [load, refreshTrigger]);
     const handleAction = async (id: string, status: 'Approved' | 'Rejected') => { 
         await db.updateLeaveStatus(id, status); 
         load(); 
@@ -674,9 +695,9 @@ const LeaveRequestsModule = ({ gradeId, divisionId }: any) => {
 };
 
 // --- MODULE: UPCOMING EXAMS ---
-const StudentExamsView = ({ gradeId, divisionId }: any) => {
+const StudentExamsView = ({ gradeId, divisionId, refreshTrigger }: any) => {
     const [exams, setExams] = useState<StudentOwnExam[]>([]);
-    useEffect(() => { if(gradeId && divisionId) db.getStudentExams(undefined, gradeId, divisionId).then(setExams); }, [gradeId, divisionId]);
+    useEffect(() => { if(gradeId && divisionId) db.getStudentExams(undefined, gradeId, divisionId).then(setExams); }, [gradeId, divisionId, refreshTrigger]);
     return (
         <div className="space-y-8">
             <div className="pb-4 border-b border-white/5">
@@ -705,11 +726,11 @@ const StudentExamsView = ({ gradeId, divisionId }: any) => {
 };
 
 // --- MODULE: DOUBTS ---
-const DoubtSolveModule = () => {
+const DoubtSolveModule = ({ refreshTrigger }: any) => {
     const [queries, setQueries] = useState<StudentQuery[]>([]);
     const [replyText, setReplyText] = useState<Record<string, string>>({});
     const load = useCallback(() => db.getQueries().then(setQueries), []);
-    useEffect(() => { load(); }, [load]);
+    useEffect(() => { load(); }, [load, refreshTrigger]);
     return (
         <div className="max-w-4xl mx-auto space-y-12">
             <div className="pb-4 border-b border-white/5">
