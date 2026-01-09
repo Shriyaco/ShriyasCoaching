@@ -8,10 +8,10 @@ import {
   ShoppingBag, ArrowRight, Check, X, CreditCard, 
   Smartphone, QrCode, Copy, MapPin, User as UserIcon, 
   Phone, Hash, Plus, Minus, ShoppingCart, Trash2,
-  Sparkles, MessageCircle, Filter, Zap, PencilLine, Wand2
+  Sparkles, MessageCircle, Filter, Zap, PencilLine, Wand2, ShieldCheck
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 const INDIAN_STATES = [
     "Gujarat", "Maharashtra", "Rajasthan", "Delhi", "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Haryana", 
@@ -42,6 +42,7 @@ const Shop: React.FC = () => {
         state: 'Gujarat', 
         mobile: '' 
     });
+    const [agreedToPolicies, setAgreedToPolicies] = useState(false);
     
     // Payment States
     const [activeOrder, setActiveOrder] = useState<Order | null>(null);
@@ -104,6 +105,10 @@ const Shop: React.FC = () => {
     const handleCheckoutSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (cart.length === 0) return;
+        if (!agreedToPolicies) {
+            alert("Please acknowledge the Refund & Cancellation policy to proceed.");
+            return;
+        }
         setIsSubmitting(true);
         
         try {
@@ -189,7 +194,7 @@ const Shop: React.FC = () => {
                 {isCartOpen && (
                     <>
                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsCartOpen(false)} className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[150]" />
-                        <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} transition={{ type: 'spring', damping: 25, stiffness: 200 }} className="fixed inset-y-0 right-0 w-full max-w-md bg-[#0A0A0A] border-l border-white/10 z-[160] flex flex-col shadow-2xl">
+                        <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} transition={{ type: 'spring', damping: 25, stiffness: 200 }} className="fixed inset-y-0 right-0 w-full max-w-md bg-[#0A0A0E] border-l border-white/10 z-[160] flex flex-col shadow-2xl">
                             <div className="p-8 border-b border-white/5 flex justify-between items-center">
                                 <h3 className="text-xl font-bold serif-font flex items-center gap-3">
                                     <ShoppingBag className="text-premium-accent" /> Shopping Bag
@@ -369,7 +374,7 @@ const Shop: React.FC = () => {
             <AnimatePresence>
                 {isCheckoutOpen && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[200] flex items-center justify-center bg-black/98 p-4 backdrop-blur-3xl">
-                        <motion.div initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} className="bg-[#0A0A0A] border border-white/10 rounded-[50px] w-full max-w-2xl overflow-hidden relative shadow-2xl flex flex-col max-h-[95vh]">
+                        <motion.div initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95 }} className="bg-[#0A0A0E] border border-white/10 rounded-[50px] w-full max-w-2xl overflow-hidden relative shadow-2xl flex flex-col max-h-[95vh]">
                             <button onClick={() => setIsCheckoutOpen(false)} className="absolute top-10 right-10 text-white/20 hover:text-white z-50"><X size={32}/></button>
                             
                             <div className="p-12 md:p-16 overflow-y-auto scrollbar-hide">
@@ -450,14 +455,36 @@ const Shop: React.FC = () => {
                                         </div>
                                     </div>
 
-                                    <div className="pt-8 border-t border-white/5">
-                                        <div className="flex justify-between items-end mb-8">
-                                            <span className="text-[10px] font-black uppercase tracking-widest text-white/20">Final Amount</span>
-                                            <span className="text-4xl font-light text-premium-accent">₹{totalCartValue}</span>
+                                    <div className="pt-8 border-t border-white/5 space-y-8">
+                                        <label className="flex items-start gap-4 cursor-pointer group">
+                                            <div className="relative mt-1">
+                                                <input 
+                                                    type="checkbox" 
+                                                    checked={agreedToPolicies} 
+                                                    onChange={e => setAgreedToPolicies(e.target.checked)} 
+                                                    className="sr-only" 
+                                                />
+                                                <div className={`w-5 h-5 rounded border transition-all flex items-center justify-center ${agreedToPolicies ? 'bg-premium-accent border-premium-accent' : 'bg-white/5 border-white/20'}`}>
+                                                    {agreedToPolicies && <Check size={12} className="text-black" strokeWidth={4} />}
+                                                </div>
+                                            </div>
+                                            <p className="text-[10px] uppercase font-bold tracking-widest text-white/40 group-hover:text-white/60 transition-colors leading-relaxed">
+                                                I acknowledge and agree to the <Link to="/terms-and-conditions" target="_blank" className="text-premium-accent underline">Terms of Service</Link> and the <Link to="/refund-policy" target="_blank" className="text-premium-accent underline">Refund & Cancellation Policy</Link>.
+                                            </p>
+                                        </label>
+
+                                        <div>
+                                            <div className="flex justify-between items-end mb-8">
+                                                <span className="text-[10px] font-black uppercase tracking-widest text-white/20">Final Amount</span>
+                                                <span className="text-4xl font-light text-premium-accent">₹{totalCartValue}</span>
+                                            </div>
+                                            <button 
+                                                disabled={isSubmitting || !agreedToPolicies} 
+                                                className="w-full py-6 bg-white text-black rounded-2xl font-black text-[12px] uppercase tracking-[0.5em] shadow-2xl hover:bg-premium-accent transition-all disabled:opacity-20"
+                                            >
+                                                {isSubmitting ? 'Syncing...' : 'Authorize Transaction'}
+                                            </button>
                                         </div>
-                                        <button disabled={isSubmitting} className="w-full py-6 bg-white text-black rounded-2xl font-black text-[12px] uppercase tracking-[0.5em] shadow-2xl hover:bg-premium-accent transition-all">
-                                            {isSubmitting ? 'Syncing...' : 'Authorize Transaction'}
-                                        </button>
                                     </div>
                                 </form>
                             </div>
@@ -470,7 +497,7 @@ const Shop: React.FC = () => {
             <AnimatePresence>
                 {activeOrder && settings && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[300] flex items-center justify-center bg-black/98 p-4 backdrop-blur-3xl">
-                        <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} className="bg-[#0A0A0A] border border-white/10 rounded-[60px] w-full max-w-4xl overflow-hidden shadow-2xl flex flex-col md:flex-row min-h-[500px]">
+                        <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} className="bg-[#0A0A0E] border border-white/10 rounded-[60px] w-full max-w-4xl overflow-hidden shadow-2xl flex flex-col md:flex-row min-h-[500px]">
                             <button onClick={() => setActiveOrder(null)} className="absolute top-10 right-10 text-white/20 hover:text-white z-50"><X size={32}/></button>
                             
                             <div className="w-full md:w-2/5 bg-white/[0.02] p-12 border-r border-white/5 flex flex-col justify-between">

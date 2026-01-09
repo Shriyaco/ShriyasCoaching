@@ -2,9 +2,9 @@
 import React, { useEffect, useState } from 'react';
 import { db } from '../services/db';
 import { User, SystemSettings, Student, GatewayConfig } from '../types';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import ThreeOrb from '../components/ThreeOrb';
-import { QrCode, Smartphone, Copy, Check, Shield, ArrowRight, Search, User as UserIcon, AlertCircle, Lock, CreditCard, Phone } from 'lucide-react';
+import { QrCode, Smartphone, Copy, Check, Shield, ArrowRight, Search, User as UserIcon, AlertCircle, Lock, CreditCard, Phone, ShieldCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function PayFees() {
@@ -18,6 +18,7 @@ export default function PayFees() {
     // Payment State
     const [amount, setAmount] = useState('');
     const [transactionRef, setTransactionRef] = useState('');
+    const [agreedToPolicies, setAgreedToPolicies] = useState(false);
     const [submitted, setSubmitted] = useState(false);
     const [copied, setCopied] = useState(false);
     
@@ -97,6 +98,10 @@ export default function PayFees() {
     const handleManualSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!activeStudentId || !activeStudentName || !transactionRef) return;
+        if (!agreedToPolicies) {
+            alert("You must acknowledge the legal policies before submitting.");
+            return;
+        }
 
         await db.addFeeSubmission({
             studentId: activeStudentId,
@@ -286,20 +291,40 @@ export default function PayFees() {
                                                 </button>
                                             </div>
 
-                                            <form onSubmit={handleManualSubmit} className="mt-auto pt-6">
-                                                <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Transaction ID / UTR Number</label>
-                                                <input 
-                                                    required
-                                                    type="text" 
-                                                    placeholder="Enter 12-digit number"
-                                                    value={transactionRef}
-                                                    onChange={(e) => setTransactionRef(e.target.value)}
-                                                    className="w-full border-2 border-slate-100 rounded-2xl px-5 py-4 focus:border-indigo-500 outline-none font-mono uppercase bg-slate-50 transition-all text-lg"
-                                                />
+                                            <form onSubmit={handleManualSubmit} className="mt-auto pt-6 space-y-4">
+                                                <div className="space-y-1">
+                                                    <label className="block text-xs font-bold text-slate-500 uppercase">Transaction ID / UTR Number</label>
+                                                    <input 
+                                                        required
+                                                        type="text" 
+                                                        placeholder="Enter 12-digit number"
+                                                        value={transactionRef}
+                                                        onChange={(e) => setTransactionRef(e.target.value)}
+                                                        className="w-full border-2 border-slate-100 rounded-2xl px-5 py-4 focus:border-indigo-500 outline-none font-mono uppercase bg-slate-50 transition-all text-lg"
+                                                    />
+                                                </div>
+
+                                                <label className="flex items-start gap-3 cursor-pointer group p-2 rounded-xl hover:bg-slate-50 transition-colors">
+                                                    <div className="relative mt-1">
+                                                        <input 
+                                                            type="checkbox" 
+                                                            checked={agreedToPolicies} 
+                                                            onChange={e => setAgreedToPolicies(e.target.checked)} 
+                                                            className="sr-only" 
+                                                        />
+                                                        <div className={`w-5 h-5 rounded border transition-all flex items-center justify-center ${agreedToPolicies ? 'bg-indigo-600 border-indigo-600' : 'bg-white border-slate-200'}`}>
+                                                            {agreedToPolicies && <Check size={12} className="text-white" strokeWidth={4} />}
+                                                        </div>
+                                                    </div>
+                                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide leading-tight group-hover:text-slate-600">
+                                                        I confirm these details are correct and I agree to the <Link to="/terms-and-conditions" target="_blank" className="text-indigo-600 underline">Terms</Link> and <Link to="/refund-policy" target="_blank" className="text-indigo-600 underline">Refund Policy</Link>.
+                                                    </p>
+                                                </label>
+
                                                 <button 
-                                                    disabled={!activeStudentId || !amount}
+                                                    disabled={!activeStudentId || !amount || !agreedToPolicies}
                                                     type="submit" 
-                                                    className="w-full mt-4 bg-slate-900 hover:bg-indigo-600 text-white py-4 rounded-2xl font-black text-lg shadow-xl transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                                                    className="w-full bg-slate-900 hover:bg-indigo-600 text-white py-4 rounded-2xl font-black text-lg shadow-xl transition-all disabled:opacity-30 disabled:cursor-not-allowed"
                                                 >
                                                     {activeStudentId ? 'Submit Payment Details' : 'Verify ID to Pay'}
                                                 </button>

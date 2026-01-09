@@ -35,7 +35,7 @@ const Footer: React.FC = () => {
                <li><Link to="/vision" className="hover:text-white transition-colors">Our Vision</Link></li>
                <li><Link to="/terms-and-conditions" className="hover:text-white transition-colors">Terms of Service</Link></li>
                <li><Link to="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link></li>
-               <li><Link to="/refund-policy" className="hover:text-white transition-colors">Refund Policy</Link></li>
+               <li><Link to="/refund-policy" className="hover:text-white transition-colors">Refund & Cancellation</Link></li>
                <li><Link to="/login" className="hover:text-white transition-colors">Faculty Portal</Link></li>
                <li><Link to="/pay-fees" className="hover:text-white transition-colors">Financial Hub</Link></li>
              </ul>
