@@ -48,7 +48,10 @@ const Navbar: React.FC = () => {
       name: 'About Us', 
       submenu: [
         { name: 'Why Us', path: '/why-us' },
-        { name: 'Vision', path: '/vision' }
+        { name: 'Vision', path: '/vision' },
+        { name: 'Privacy Policy', path: '/privacy' },
+        { name: 'Terms and Conditions', path: '/terms-and-conditions' },
+        { name: 'Refund and Cancellation', path: '/refund-policy' }
       ]
     },
     { name: 'Connect', path: '/contact' }
@@ -245,6 +248,9 @@ const Navbar: React.FC = () => {
                     >
                       <Link to="/why-us" onClick={() => setIsOpen(false)} className="text-2xl text-white/40 serif-font italic">Why Us</Link>
                       <Link to="/vision" onClick={() => setIsOpen(false)} className="text-2xl text-white/40 serif-font italic">Vision</Link>
+                      <Link to="/privacy" onClick={() => setIsOpen(false)} className="text-2xl text-white/40 serif-font italic">Privacy Policy</Link>
+                      <Link to="/terms-and-conditions" onClick={() => setIsOpen(false)} className="text-2xl text-white/40 serif-font italic">Terms and Conditions</Link>
+                      <Link to="/refund-policy" onClick={() => setIsOpen(false)} className="text-2xl text-white/40 serif-font italic">Refund and Cancellation</Link>
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -272,16 +278,30 @@ const Navbar: React.FC = () => {
               </motion.div>
             </motion.div>
 
-            {/* Menu Footer */}
-            <div className="shrink-0 py-8 px-8 border-t border-white/10 flex items-center justify-between bg-black/80 backdrop-blur-xl">
-               <div className="flex flex-wrap gap-x-6 gap-y-2">
-                  <Link to="/privacy" onClick={() => setIsOpen(false)} className="text-white/40 hover:text-white text-[9px] font-black uppercase tracking-[0.2em] transition-colors">Privacy</Link>
-                  <Link to="/terms-and-conditions" onClick={() => setIsOpen(false)} className="text-white/40 hover:text-white text-[9px] font-black uppercase tracking-[0.2em] transition-colors">T&C</Link>
-                  <Link to="/refund-policy" onClick={() => setIsOpen(false)} className="text-white/40 hover:text-white text-[9px] font-black uppercase tracking-[0.2em] transition-colors">Refund</Link>
-               </div>
-               <div className="flex items-center gap-2">
-                  <Heart size={12} className="text-rose-500 fill-current mx-1" />
-                  <img src="https://advedasolutions.in/logo.png" className="h-4 w-auto object-contain" alt="Adveda Solutions" />
+            {/* Menu Footer - Compact single-line design */}
+            <div className="shrink-0 py-6 px-8 border-t border-white/10 bg-black/40 backdrop-blur-xl">
+               <div className="flex items-center justify-center gap-2 flex-wrap text-center">
+                  <span className="text-white/30 text-[8px] font-black uppercase tracking-[0.2em]">Developed and Designed with</span>
+                  <motion.div
+                    animate={{ scale: [1, 1.2, 1] }}
+                    transition={{ repeat: Infinity, duration: 1.5 }}
+                    className="shrink-0"
+                  >
+                    <Heart size={8} className="text-rose-600 fill-current" />
+                  </motion.div>
+                  <span className="text-white/30 text-[8px] font-black uppercase tracking-[0.2em] mr-1">by</span>
+                  <motion.a 
+                    href="https://advedasolutions.in" 
+                    target="_blank" 
+                    rel="noreferrer"
+                    className="flex items-center"
+                  >
+                    <img 
+                      src="https://advedasolutions.in/logo.png" 
+                      className="h-3 w-auto object-contain brightness-150 opacity-60 hover:opacity-100 transition-opacity" 
+                      alt="Adveda Solutions" 
+                    />
+                  </motion.a>
                </div>
             </div>
           </motion.div>
