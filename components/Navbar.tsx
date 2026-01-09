@@ -250,7 +250,7 @@ const Navbar: React.FC = () => {
                 </AnimatePresence>
               </motion.div>
 
-              {/* Shop Link - NEW */}
+              {/* Shop Link */}
               <motion.div variants={itemVariants}>
                 <Link to="/shop" onClick={() => setIsOpen(false)} className="text-4xl md:text-5xl serif-font text-white font-light flex items-center gap-4">
                   Shop <ShoppingBag size={28} strokeWidth={1.5} />
@@ -264,7 +264,7 @@ const Navbar: React.FC = () => {
                 </Link>
               </motion.div>
 
-              {/* Pay Fees Link - NEW */}
+              {/* Pay Fees Link */}
               <motion.div variants={itemVariants}>
                 <Link to="/pay-fees" onClick={() => setIsOpen(false)} className="text-4xl md:text-5xl serif-font text-premium-accent font-light flex items-center gap-4">
                   Pay Fees <CreditCard size={28} strokeWidth={1.5} />
@@ -272,11 +272,11 @@ const Navbar: React.FC = () => {
               </motion.div>
             </motion.div>
 
-            {/* Menu Footer - Fixed exactly as requested */}
+            {/* Menu Footer */}
             <div className="shrink-0 py-8 px-8 border-t border-white/10 flex items-center justify-between bg-black/80 backdrop-blur-xl">
                <div className="flex gap-6">
-                  <span className="text-white/40 text-[9px] font-black uppercase tracking-[0.2em]">Privacy</span>
-                  <span className="text-white/40 text-[9px] font-black uppercase tracking-[0.2em]">T&C</span>
+                  <Link to="/privacy" onClick={() => setIsOpen(false)} className="text-white/40 hover:text-white text-[9px] font-black uppercase tracking-[0.2em] transition-colors">Privacy</Link>
+                  <Link to="/terms-and-conditions" onClick={() => setIsOpen(false)} className="text-white/40 hover:text-white text-[9px] font-black uppercase tracking-[0.2em] transition-colors">T&C</Link>
                </div>
                <div className="flex items-center gap-2">
                   <span className="text-white/40 text-[9px] font-black uppercase tracking-[0.2em]">Developed by</span>

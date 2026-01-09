@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { MapPin, Phone, Mail, Instagram, Facebook, Twitter, Heart } from 'lucide-react';
@@ -32,6 +33,8 @@ const Footer: React.FC = () => {
              <ul className="space-y-6 text-[10px] font-bold uppercase tracking-[0.3em]">
                <li><Link to="/why-us" className="hover:text-white transition-colors">The Philosophy</Link></li>
                <li><Link to="/vision" className="hover:text-white transition-colors">Our Vision</Link></li>
+               <li><Link to="/terms-and-conditions" className="hover:text-white transition-colors">Terms of Service</Link></li>
+               <li><Link to="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link></li>
                <li><Link to="/login" className="hover:text-white transition-colors">Faculty Portal</Link></li>
                <li><Link to="/pay-fees" className="hover:text-white transition-colors">Financial Hub</Link></li>
              </ul>
