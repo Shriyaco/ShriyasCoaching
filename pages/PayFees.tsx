@@ -4,8 +4,24 @@ import { db } from '../services/db';
 import { User, SystemSettings, Student, GatewayConfig } from '../types';
 import { useNavigate, Link } from 'react-router-dom';
 import ThreeOrb from '../components/ThreeOrb';
-import { QrCode, Smartphone, Copy, Check, Shield, ArrowRight, Search, User as UserIcon, AlertCircle, Lock, CreditCard, Phone, ShieldCheck } from 'lucide-react';
+import Footer from '../components/Footer';
+import SEO from '../components/SEO';
+import { 
+    QrCode, Smartphone, Copy, Check, Shield, 
+    ArrowRight, Search, User as UserIcon, 
+    AlertCircle, Lock, CreditCard, Phone, 
+    ShieldCheck, Zap, Waves, ChevronLeft
+} from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+
+// --- 3D AMBIENT BACKGROUND ---
+const SpatialBackground = () => (
+    <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none bg-[#020204]">
+        <div className="absolute top-1/4 left-1/4 w-[60vw] h-[60vw] bg-premium-accent/5 rounded-full blur-[120px] animate-pulse" />
+        <div className="absolute bottom-1/4 right-1/4 w-[50vw] h-[50vw] bg-indigo-900/5 rounded-full blur-[100px]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.01)_1px,transparent_1px)] bg-[length:32px_32px] opacity-20" />
+    </div>
+);
 
 export default function PayFees() {
     const navigate = useNavigate();
@@ -33,8 +49,6 @@ export default function PayFees() {
     useEffect(() => {
         const load = async () => {
             const storedUser = sessionStorage.getItem('sc_user');
-            
-            // Parallelize fetching settings and student details
             const promises: any[] = [db.getSettings()];
             
             if (storedUser) {
@@ -113,244 +127,297 @@ export default function PayFees() {
         setSubmitted(true);
     };
 
+    const getDynamicQR = () => {
+        const upiID = "tejanishriya64-3@oksbi";
+        const name = "SHRIYA TEJANI";
+        const am = amount || "0";
+        const upiLink = `upi://pay?pa=${upiID}&pn=${encodeURIComponent(name)}&am=${am}&cu=INR&mode=02`;
+        return `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(upiLink)}&ecc=M&margin=1`;
+    };
+
     if (!settings) return (
-        <div className="min-h-screen bg-slate-900 flex items-center justify-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500"></div>
+        <div className="min-h-screen bg-[#020204] flex flex-col items-center justify-center gap-4">
+            <div className="w-8 h-8 border-2 border-premium-accent border-t-transparent rounded-full animate-spin"></div>
+            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/20">Handshaking Gateways...</p>
         </div>
     );
 
     const currentGateway = selectedGatewayKey ? settings.gateways[selectedGatewayKey] : null;
 
-    // --- DYNAMIC QR GENERATION (FIXED FOR MODIFIABLE AMOUNT & BANKING NAME) ---
-    const getDynamicQR = () => {
-        // Updated UPI VPA and Name based on specific user identity for tejanishriya64-3@oksbi
-        const upiID = "tejanishriya64-3@oksbi";
-        const name = "SHRIYA TEJANI"; // Matches the handle to ensure bank name loads correctly
-        const am = amount || "0";
-        
-        // mode=02 ensures the amount is fixed and non-modifiable in many UPI apps
-        const upiLink = `upi://pay?pa=${upiID}&pn=${encodeURIComponent(name)}&am=${am}&cu=INR&mode=02`;
-        
-        // High quality QR with margin and error correction
-        return `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(upiLink)}&ecc=M&margin=1`;
-    };
-
     return (
-        <div className="min-h-screen bg-slate-900 text-white relative font-sans pt-32 pb-16 px-4 flex justify-center">
-             <ThreeOrb className="absolute top-0 right-0 w-[600px] h-[600px] opacity-20 pointer-events-none" color="#00E5FF" />
-            
-             <div className="max-w-6xl w-full grid grid-cols-1 md:grid-cols-2 gap-8 relative z-10">
-                
-                {/* Left Side: Information */}
-                <div className="flex flex-col space-y-6">
-                    <div>
-                        <h1 className="text-4xl font-extrabold font-[Poppins] mb-2 tracking-tight">Fee Payment</h1>
-                        <p className="text-cyan-400 text-lg flex items-center gap-2">
-                             <Shield size={20} /> Official Payment Portal
-                        </p>
-                    </div>
-                    
-                    {!activeStudentId ? (
-                        <div className="bg-white/5 border border-white/10 p-8 rounded-3xl space-y-6 shadow-2xl backdrop-blur-md">
-                            <div className="flex items-center gap-3">
-                                <div className="p-3 bg-[#00E5FF]/10 rounded-2xl text-[#00E5FF]">
-                                    <Phone size={24} />
-                                </div>
-                                <div>
-                                    <h3 className="text-xl font-bold text-white">Student Verification</h3>
-                                    <p className="text-gray-400 text-xs uppercase tracking-widest font-bold">Use Registered Mobile</p>
-                                </div>
-                            </div>
-                            
-                            <form onSubmit={handleLookup} className="space-y-4">
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-400 mb-2 uppercase tracking-wider">Registered Mobile Number</label>
-                                    <input 
-                                        type="tel" 
-                                        required
-                                        value={lookupMobile}
-                                        onChange={(e) => setLookupMobile(e.target.value)}
-                                        placeholder="e.g. 9876543210"
-                                        className="w-full bg-slate-800 border border-gray-600 rounded-xl px-4 py-4 focus:ring-2 focus:ring-[#00E5FF] outline-none text-white transition-all text-xl font-mono"
-                                    />
-                                </div>
+        <div className="min-h-screen bg-[#050505] text-white selection:bg-premium-accent selection:text-black overflow-x-hidden pt-32 transition-colors duration-300">
+            <SEO 
+                title="Pay Fees" 
+                description="Secure official fee payment portal for Shriya's Coaching students." 
+            />
+            <SpatialBackground />
+            <ThreeOrb className="absolute top-0 right-0 w-[500px] h-[500px] opacity-10 pointer-events-none -translate-y-1/4" color="#C5A059" />
 
-                                <button 
-                                    type="submit" 
-                                    disabled={isSearching}
-                                    className="w-full bg-gradient-to-r from-[#00E5FF] to-cyan-600 text-[#002366] py-4 rounded-xl hover:shadow-[0_0_25px_rgba(0,229,255,0.4)] transition-all font-black text-lg flex items-center justify-center gap-2"
-                                >
-                                    {isSearching ? 'Verifying...' : <><Search size={20} /> Find Student Details</>}
-                                </button>
-                                
-                                {lookupError && (
-                                    <div className="flex items-center gap-2 text-rose-400 text-sm bg-rose-400/10 p-3 rounded-lg border border-rose-400/20">
-                                        <AlertCircle size={16} /> {lookupError}
-                                    </div>
-                                )}
-                            </form>
-                        </div>
-                    ) : (
-                        <div className="space-y-6 animate-fade-in">
-                            <div className="p-8 bg-emerald-500/10 border border-emerald-500/30 rounded-3xl shadow-lg backdrop-blur-md relative overflow-hidden">
-                                <div className="absolute -right-4 -bottom-4 opacity-5">
-                                    <UserIcon size={120} />
-                                </div>
-                                <p className="text-xs text-emerald-400 font-bold uppercase mb-2 tracking-widest">Identified Student</p>
-                                <p className="text-3xl font-black text-white font-[Poppins] leading-tight">{activeStudentName}</p>
-                                <div className="flex items-center gap-3 mt-3">
-                                    <span className="bg-white/10 px-3 py-1 rounded-full text-xs font-mono text-gray-300">ID: {identifiedStudent?.studentCustomId}</span>
-                                    <span className="bg-white/10 px-3 py-1 rounded-full text-xs font-mono text-gray-300">Grade: {identifiedStudent?.gradeId}</span>
-                                </div>
-                                {!user && (
-                                    <button onClick={() => setIdentifiedStudent(null)} className="text-xs text-[#00E5FF] hover:underline mt-6 font-bold flex items-center gap-1">
-                                        Not you? Change Mobile Number <ArrowRight size={14}/>
-                                    </button>
-                                )}
-                            </div>
-                            
-                            <div className="p-6 bg-white/5 border border-white/10 rounded-2xl">
-                                <label className="block text-xs font-bold text-gray-400 mb-2 uppercase">Payment Amount (₹)</label>
-                                <input 
-                                    type="number"
-                                    value={amount}
-                                    onChange={e => setAmount(e.target.value)}
-                                    className="w-full bg-transparent text-5xl font-black text-white outline-none focus:text-[#00E5FF] transition-colors"
-                                    placeholder="0"
-                                />
-                                <p className="text-xs text-gray-500 mt-2 italic">You can modify this amount for part-payments. QR will update automatically.</p>
-                            </div>
-                        </div>
-                    )}
+            <div className="max-w-7xl mx-auto px-6 relative z-10 pb-24">
+                <button 
+                    onClick={() => navigate(-1)}
+                    className="flex items-center gap-2 text-white/40 hover:text-white transition-colors mb-12 group"
+                >
+                    <ChevronLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
+                    <span className="text-[10px] font-black uppercase tracking-[0.3em]">Back to Hub</span>
+                </button>
 
-                    <div className="flex items-center space-x-4 p-5 bg-white/5 rounded-2xl border border-white/10 mt-auto">
-                        <div className="p-3 bg-emerald-500/20 rounded-xl text-emerald-400">
-                             <Shield size={24} />
+                <div className="mb-20 text-center md:text-left">
+                    <motion.div 
+                        initial={{ opacity: 0, y: 20 }} 
+                        animate={{ opacity: 1, y: 0 }} 
+                        className="flex flex-col md:flex-row md:items-end gap-4 mb-4"
+                    >
+                        <h1 className="text-5xl md:text-8xl font-light serif-font uppercase luxury-text-gradient tracking-tighter">Financials.</h1>
+                        <div className="px-4 py-1 bg-premium-accent/10 border border-premium-accent/20 rounded-full w-fit mx-auto md:mx-0 mb-4 md:mb-6">
+                            <span className="text-[8px] font-black uppercase tracking-[0.3em] text-premium-accent">Secure Transaction Layer</span>
                         </div>
-                        <div>
-                            <p className="text-sm font-bold text-white">Secure Gateway</p>
-                            <p className="text-xs text-gray-500">Your payments are protected and verified.</p>
-                        </div>
-                    </div>
+                    </motion.div>
+                    <p className="text-xs text-white/30 uppercase tracking-[0.4em] font-black">Official Tuition & Services Payment Terminal</p>
                 </div>
 
-                {/* Right Side: Payment Methods */}
-                <div className="bg-white text-gray-900 rounded-3xl shadow-2xl overflow-hidden relative flex flex-col min-h-[500px]">
-                    {submitted ? (
-                        <div className="h-full flex flex-col items-center justify-center p-12 text-center space-y-6">
-                            <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="w-24 h-24 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600 mb-2 shadow-inner">
-                                <Check size={48} strokeWidth={3} />
-                            </motion.div>
-                            <h3 className="text-3xl font-black text-gray-800 font-[Poppins]">Sent Successfully!</h3>
-                            <p className="text-gray-500">Your payment reference has been recorded for verification.</p>
-                            <button onClick={() => navigate('/')} className="w-full py-4 bg-slate-900 text-white rounded-xl font-bold">Done</button>
-                        </div>
-                    ) : (
-                        <div className="p-8 flex-1 flex flex-col">
-                            {/* Tabs */}
-                            <div className="mb-8 flex space-x-2 overflow-x-auto pb-2 scrollbar-hide">
-                                {Object.entries(settings.gateways)
-                                    .filter(([_, conf]: [string, GatewayConfig]) => conf.enabled)
-                                    .map(([key, conf]: [string, GatewayConfig]) => (
-                                    <button
-                                        key={key}
-                                        onClick={() => setSelectedGatewayKey(key)}
-                                        className={`px-5 py-2.5 rounded-xl font-bold text-sm whitespace-nowrap transition-all border-2 ${
-                                            selectedGatewayKey === key 
-                                            ? 'bg-indigo-600 text-white border-indigo-600 shadow-lg' 
-                                            : 'bg-gray-50 text-gray-400 border-gray-100 hover:border-gray-200'
-                                        }`}
-                                    >
-                                        {key === 'manual' ? <QrCode size={18} className="inline mr-2"/> : <Smartphone size={18} className="inline mr-2"/>}
-                                        {conf.name}
-                                    </button>
-                                ))}
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+                    
+                    {/* --- LEFT WING: VERIFICATION & IDENTITY --- */}
+                    <div className="lg:col-span-5 space-y-8">
+                        <AnimatePresence mode="wait">
+                            {!activeStudentId ? (
+                                <motion.div 
+                                    key="lookup"
+                                    initial={{ opacity: 0, x: -20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: 20 }}
+                                    className="bg-white/[0.02] border border-white/5 p-10 rounded-[50px] shadow-2xl backdrop-blur-xl relative overflow-hidden group"
+                                >
+                                    <div className="absolute top-0 right-0 p-10 opacity-[0.03] group-hover:opacity-[0.07] transition-opacity">
+                                        <Search size={120} />
+                                    </div>
+                                    <h3 className="text-2xl font-bold serif-font italic mb-8">Access Identity</h3>
+                                    <form onSubmit={handleLookup} className="space-y-8">
+                                        <div className="space-y-1">
+                                            <label className="text-[9px] font-black uppercase text-white/30 ml-2 tracking-widest">Registered Mobile Protocol</label>
+                                            <div className="relative">
+                                                <Phone size={16} className="absolute left-6 top-1/2 -translate-y-1/2 text-premium-accent" />
+                                                <input 
+                                                    type="tel" 
+                                                    required
+                                                    value={lookupMobile}
+                                                    onChange={(e) => setLookupMobile(e.target.value)}
+                                                    placeholder="Enter 10 Digits"
+                                                    className="w-full bg-black border border-white/10 rounded-[28px] pl-14 pr-8 py-5 outline-none focus:border-premium-accent text-lg font-mono tracking-[0.3em] transition-all"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <button 
+                                            type="submit" 
+                                            disabled={isSearching}
+                                            className="w-full bg-white text-black py-5 rounded-[28px] font-black text-[10px] uppercase tracking-[0.4em] hover:bg-premium-accent hover:text-white transition-all shadow-xl active:scale-95 disabled:opacity-50 flex items-center justify-center gap-4"
+                                        >
+                                            {isSearching ? 'Synchronizing...' : <><Search size={16} /> Locate Academic File</>}
+                                        </button>
+                                        
+                                        {lookupError && (
+                                            <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} className="flex items-center gap-3 text-rose-500 text-[10px] font-black uppercase tracking-widest bg-rose-500/5 p-4 rounded-2xl border border-rose-500/10">
+                                                <AlertCircle size={14} /> {lookupError}
+                                            </motion.div>
+                                        )}
+                                    </form>
+                                </motion.div>
+                            ) : (
+                                <motion.div 
+                                    key="identity"
+                                    initial={{ opacity: 0, x: -20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    className="space-y-8"
+                                >
+                                    <div className="p-10 bg-premium-accent/5 border border-premium-accent/10 rounded-[50px] shadow-2xl backdrop-blur-xl relative overflow-hidden group">
+                                        <div className="absolute -right-4 -bottom-4 opacity-[0.03]">
+                                            <UserIcon size={160} />
+                                        </div>
+                                        <p className="text-[9px] text-premium-accent font-black uppercase mb-4 tracking-[0.4em]">Verified Academic Entity</p>
+                                        <h3 className="text-4xl font-bold text-white serif-font italic leading-tight mb-6">{activeStudentName}</h3>
+                                        
+                                        <div className="flex flex-wrap gap-3">
+                                            <span className="bg-white/5 border border-white/10 px-4 py-2 rounded-full text-[9px] font-black uppercase tracking-widest text-white/50">Sector: Grade {identifiedStudent?.gradeId}</span>
+                                            <span className="bg-white/5 border border-white/10 px-4 py-2 rounded-full text-[9px] font-black uppercase tracking-widest text-white/50">Hash ID: {identifiedStudent?.studentCustomId}</span>
+                                        </div>
+
+                                        {!user && (
+                                            <button onClick={() => setIdentifiedStudent(null)} className="text-[8px] text-premium-accent/40 hover:text-premium-accent mt-8 font-black uppercase tracking-[0.3em] flex items-center gap-2 transition-colors">
+                                                <ArrowRight size={12}/> Reset Transmission Session
+                                            </button>
+                                        )}
+                                    </div>
+                                    
+                                    <div className="p-10 bg-white/[0.02] border border-white/5 rounded-[50px] relative">
+                                        <label className="block text-[9px] font-black uppercase text-white/20 mb-4 tracking-widest ml-2">Transaction Value (INR)</label>
+                                        <div className="flex items-end gap-4 border-b border-white/10 pb-4">
+                                            <span className="text-4xl font-light text-premium-accent serif-font">₹</span>
+                                            <input 
+                                                type="number"
+                                                value={amount}
+                                                onChange={e => setAmount(e.target.value)}
+                                                className="w-full bg-transparent text-6xl font-light serif-font text-white outline-none focus:text-premium-accent transition-colors"
+                                                placeholder="0"
+                                            />
+                                        </div>
+                                        <p className="text-[8px] text-white/20 mt-4 uppercase font-black tracking-widest italic leading-relaxed">
+                                            Value modifiable for modular or part-payment protocols. QR dynamic sync active.
+                                        </p>
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+
+                        <div className="flex items-center space-x-6 p-8 bg-white/[0.01] rounded-[40px] border border-white/5">
+                            <div className="p-4 bg-emerald-500/5 rounded-2xl text-emerald-500 border border-emerald-500/10">
+                                 <ShieldCheck size={32} />
                             </div>
-                            
-                            {currentGateway && (
-                                <div className="flex-1 flex flex-col animate-fade-in">
-                                    {selectedGatewayKey === 'manual' ? (
-                                        <div className="space-y-6 flex-1 flex flex-col">
-                                            <div className="flex justify-center">
-                                                <div className="p-4 bg-white border-4 border-slate-50 rounded-3xl shadow-xl">
-                                                    <img 
-                                                        src={getDynamicQR()}
-                                                        alt="UPI QR Code" 
-                                                        className="w-48 h-48 md:w-56 md:h-56 object-contain"
-                                                    />
-                                                </div>
-                                            </div>
-                                            
-                                            <div className="bg-slate-50 p-5 rounded-2xl flex items-center justify-between border border-slate-100">
-                                                <div className="overflow-hidden mr-2">
-                                                    <p className="text-[10px] text-slate-400 font-bold uppercase mb-1">Receiver VPA</p>
-                                                    <p className="text-sm font-mono text-slate-800 font-bold truncate">tejanishriya64-3@oksbi</p>
-                                                </div>
-                                                <button onClick={() => handleCopy('tejanishriya64-3@oksbi')} className="text-indigo-600 hover:bg-indigo-50 p-2.5 rounded-xl transition-all border border-indigo-100">
-                                                    {copied ? <Check size={20} className="text-emerald-500" /> : <Copy size={20} />}
-                                                </button>
-                                            </div>
+                            <div>
+                                <p className="text-xs font-black uppercase tracking-widest text-white/80 mb-1">Encrypted Gateway</p>
+                                <p className="text-[10px] text-white/30 uppercase font-bold tracking-wider leading-relaxed">Verified 256-bit institutional authentication.</p>
+                            </div>
+                        </div>
+                    </div>
 
-                                            <form onSubmit={handleManualSubmit} className="mt-auto pt-6 space-y-4">
-                                                <div className="space-y-1">
-                                                    <label className="block text-xs font-bold text-slate-500 uppercase">Transaction ID / UTR Number</label>
-                                                    <input 
-                                                        required
-                                                        type="text" 
-                                                        placeholder="Enter 12-digit number"
-                                                        value={transactionRef}
-                                                        onChange={(e) => setTransactionRef(e.target.value)}
-                                                        className="w-full border-2 border-slate-100 rounded-2xl px-5 py-4 focus:border-indigo-500 outline-none font-mono uppercase bg-slate-50 transition-all text-lg"
-                                                    />
-                                                </div>
-
-                                                <label className="flex items-start gap-3 cursor-pointer group p-2 rounded-xl hover:bg-slate-50 transition-colors">
-                                                    <div className="relative mt-1">
-                                                        <input 
-                                                            type="checkbox" 
-                                                            checked={agreedToPolicies} 
-                                                            onChange={e => setAgreedToPolicies(e.target.checked)} 
-                                                            className="sr-only" 
+                    {/* --- RIGHT WING: GATEWAY TERMINAL --- */}
+                    <div className="lg:col-span-7 bg-[#0A0A0E] text-white rounded-[60px] border border-white/10 shadow-[0_40px_100px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col min-h-[600px] relative group">
+                        <div className="absolute inset-0 bg-gradient-to-br from-premium-accent/[0.02] to-transparent pointer-events-none" />
+                        
+                        {submitted ? (
+                            <motion.div 
+                                initial={{ opacity: 0, scale: 0.9 }} 
+                                animate={{ opacity: 1, scale: 1 }} 
+                                className="h-full flex flex-col items-center justify-center p-16 text-center space-y-8"
+                            >
+                                <div className="w-32 h-32 bg-premium-accent/10 rounded-full flex items-center justify-center text-premium-accent mb-4 border border-premium-accent/20 shadow-[0_0_50px_rgba(197,160,89,0.2)]">
+                                    <Check size={64} strokeWidth={3} className="animate-reveal" />
+                                </div>
+                                <div className="space-y-2">
+                                    <h3 className="text-4xl font-light serif-font italic luxury-text-gradient">Registry Updated.</h3>
+                                    <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/20">Transmission Logged for Verification</p>
+                                </div>
+                                <button onClick={() => navigate('/')} className="px-12 py-5 bg-white text-black rounded-2xl font-black text-xs uppercase tracking-[0.4em] hover:bg-premium-accent transition-all shadow-xl">Return to Hub</button>
+                            </motion.div>
+                        ) : (
+                            <div className="p-12 flex-1 flex flex-col relative z-10">
+                                {/* Gateway Switcher */}
+                                <div className="mb-12 flex gap-4 overflow-x-auto scrollbar-hide pb-2">
+                                    {Object.entries(settings.gateways)
+                                        .filter(([_, conf]: [string, GatewayConfig]) => conf.enabled)
+                                        .map(([key, conf]: [string, GatewayConfig]) => (
+                                        <button
+                                            key={key}
+                                            onClick={() => setSelectedGatewayKey(key)}
+                                            className={`px-8 py-3 rounded-2xl font-black text-[9px] uppercase tracking-[0.3em] whitespace-nowrap transition-all border shrink-0 ${
+                                                selectedGatewayKey === key 
+                                                ? 'bg-white text-black border-white shadow-2xl' 
+                                                : 'bg-white/5 text-white/30 border-white/5 hover:border-white/20'
+                                            }`}
+                                        >
+                                            {key === 'manual' ? <QrCode size={14} className="inline mr-2"/> : <Smartphone size={14} className="inline mr-2"/>}
+                                            {conf.name}
+                                        </button>
+                                    ))}
+                                </div>
+                                
+                                {currentGateway && (
+                                    <div className="flex-1 flex flex-col animate-fade-in">
+                                        {selectedGatewayKey === 'manual' ? (
+                                            <div className="space-y-10 flex-1 flex flex-col">
+                                                <div className="flex flex-col md:flex-row items-center gap-10">
+                                                    <div className="p-6 bg-white border border-white/20 rounded-[40px] shadow-[0_20px_50px_rgba(255,255,255,0.05)] shrink-0">
+                                                        <img 
+                                                            src={getDynamicQR()}
+                                                            alt="UPI QR Code" 
+                                                            className="w-48 h-48 md:w-56 md:h-56 object-contain"
                                                         />
-                                                        <div className={`w-5 h-5 rounded border transition-all flex items-center justify-center ${agreedToPolicies ? 'bg-indigo-600 border-indigo-600' : 'bg-white border-slate-200'}`}>
-                                                            {agreedToPolicies && <Check size={12} className="text-white" strokeWidth={4} />}
+                                                    </div>
+                                                    <div className="space-y-6 flex-1">
+                                                        <div className="bg-white/5 p-6 rounded-[32px] flex items-center justify-between border border-white/5">
+                                                            <div className="overflow-hidden mr-4">
+                                                                <p className="text-[8px] text-white/20 font-black uppercase mb-1 tracking-widest">Master Handle VPA</p>
+                                                                <p className="text-sm font-mono text-premium-accent font-bold truncate">tejanishriya64-3@oksbi</p>
+                                                            </div>
+                                                            <button onClick={() => handleCopy('tejanishriya64-3@oksbi')} className="p-3 bg-white/5 hover:bg-premium-accent hover:text-black rounded-xl transition-all border border-white/10 group/copy">
+                                                                {copied ? <Check size={18} className="text-emerald-500" /> : <Copy size={18} />}
+                                                            </button>
+                                                        </div>
+                                                        <div className="flex gap-4 p-5 bg-white/[0.02] rounded-[32px] border border-white/5">
+                                                            <div className="w-10 h-10 rounded-xl bg-premium-accent/10 flex items-center justify-center text-premium-accent shrink-0"><Zap size={20}/></div>
+                                                            <p className="text-[10px] font-bold text-white/40 uppercase leading-relaxed tracking-widest">Scan with any UPI app. QR updates in real-time based on input amount.</p>
                                                         </div>
                                                     </div>
-                                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide leading-tight group-hover:text-slate-600">
-                                                        I confirm these details are correct and I agree to the <Link to="/terms-and-conditions" target="_blank" className="text-indigo-600 underline">Terms</Link> and <Link to="/refund-policy" target="_blank" className="text-indigo-600 underline">Refund Policy</Link>.
-                                                    </p>
-                                                </label>
+                                                </div>
 
-                                                <button 
-                                                    disabled={!activeStudentId || !amount || !agreedToPolicies}
-                                                    type="submit" 
-                                                    className="w-full bg-slate-900 hover:bg-indigo-600 text-white py-4 rounded-2xl font-black text-lg shadow-xl transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-                                                >
-                                                    {activeStudentId ? 'Submit Payment Details' : 'Verify ID to Pay'}
-                                                </button>
-                                            </form>
-                                        </div>
-                                    ) : (
-                                        <div className="flex-1 flex flex-col justify-center items-center text-center space-y-8">
-                                            <div className="w-28 h-28 bg-white border-4 border-purple-50 rounded-full flex items-center justify-center text-purple-600 shadow-2xl">
-                                                <Smartphone size={56} />
+                                                <form onSubmit={handleManualSubmit} className="mt-auto space-y-8">
+                                                    <div className="space-y-3">
+                                                        <label className="block text-[9px] font-black text-white/30 uppercase tracking-[0.4em] ml-2">Verification Registry ID (UTR/TXN)</label>
+                                                        <input 
+                                                            required
+                                                            type="text" 
+                                                            placeholder="12 DIGIT REFERENCE"
+                                                            value={transactionRef}
+                                                            onChange={(e) => setTransactionRef(e.target.value)}
+                                                            className="w-full bg-white/[0.03] border border-white/10 rounded-[28px] px-8 py-5 focus:border-premium-accent outline-none font-mono text-xl tracking-[0.5em] text-center uppercase transition-all"
+                                                        />
+                                                    </div>
+
+                                                    <label className="flex items-start gap-4 cursor-pointer group p-2">
+                                                        <div className="relative mt-1 shrink-0">
+                                                            <input 
+                                                                type="checkbox" 
+                                                                checked={agreedToPolicies} 
+                                                                onChange={e => setAgreedToPolicies(e.target.checked)} 
+                                                                className="sr-only" 
+                                                            />
+                                                            <div className={`w-5 h-5 rounded border transition-all flex items-center justify-center ${agreedToPolicies ? 'bg-premium-accent border-premium-accent' : 'bg-white/5 border-white/20'}`}>
+                                                                {agreedToPolicies && <Check size={12} className="text-black" strokeWidth={4} />}
+                                                            </div>
+                                                        </div>
+                                                        <p className="text-[10px] font-black text-white/30 uppercase tracking-widest leading-relaxed group-hover:text-white/60 transition-colors">
+                                                            I verify transaction accuracy and agree to the <Link to="/terms-and-conditions" target="_blank" className="text-premium-accent underline">Terms</Link> & <Link to="/refund-policy" target="_blank" className="text-premium-accent underline">Refund Protocol</Link>.
+                                                        </p>
+                                                    </label>
+
+                                                    <button 
+                                                        disabled={!activeStudentId || !amount || !agreedToPolicies}
+                                                        type="submit" 
+                                                        className="w-full bg-white text-black py-6 rounded-[28px] font-black text-xs uppercase tracking-[0.5em] shadow-[0_20px_50px_rgba(255,255,255,0.1)] hover:bg-premium-accent hover:text-white transition-all active:scale-95 disabled:opacity-20"
+                                                    >
+                                                        {activeStudentId ? 'Commit Payment Log' : 'Authorize Identity to Pay'}
+                                                    </button>
+                                                </form>
                                             </div>
-                                            <h3 className="text-2xl font-black text-slate-800 font-[Poppins]">Direct Checkout</h3>
-                                            <p className="text-slate-500">Redirecting to {currentGateway.name} secure portal.</p>
-                                            <button 
-                                                disabled={!activeStudentId}
-                                                className="w-full py-5 rounded-2xl font-black text-xl bg-purple-700 text-white hover:bg-purple-800 transition-all shadow-xl disabled:opacity-30"
-                                            >
-                                                {activeStudentId ? 'Pay Now' : 'Verify ID First'}
-                                            </button>
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-                        </div>
-                    )}
+                                        ) : (
+                                            <div className="flex-1 flex flex-col justify-center items-center text-center space-y-10 py-12">
+                                                <div className="w-32 h-32 bg-white/[0.02] border border-white/10 rounded-full flex items-center justify-center text-premium-accent shadow-2xl relative group-hover:scale-105 transition-transform duration-700">
+                                                    <Smartphone size={64} strokeWidth={1} className="animate-pulse" />
+                                                    <div className="absolute inset-0 rounded-full border-2 border-premium-accent/20 animate-ping opacity-20" />
+                                                </div>
+                                                <div className="space-y-4">
+                                                    <h3 className="text-3xl font-light serif-font italic">Handshake Pending.</h3>
+                                                    <p className="text-[10px] font-black uppercase text-white/20 tracking-[0.5em]">Establishing Connection with {currentGateway.name} Secure Cloud</p>
+                                                </div>
+                                                <button 
+                                                    disabled={!activeStudentId}
+                                                    className="w-full py-6 rounded-[28px] font-black text-xs uppercase tracking-[0.5em] bg-white text-black hover:bg-premium-accent hover:text-white transition-all shadow-2xl disabled:opacity-20 max-w-sm"
+                                                >
+                                                    {activeStudentId ? 'Launch Portal' : 'Identity Verification Required'}
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
                 </div>
-             </div>
+            </div>
+
+            <Footer />
         </div>
     );
 }
+
