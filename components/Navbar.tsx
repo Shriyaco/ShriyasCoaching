@@ -274,12 +274,12 @@ const Navbar: React.FC = () => {
 
             {/* Menu Footer */}
             <div className="shrink-0 py-8 px-8 border-t border-white/10 flex items-center justify-between bg-black/80 backdrop-blur-xl">
-               <div className="flex gap-6">
+               <div className="flex flex-wrap gap-x-6 gap-y-2">
                   <Link to="/privacy" onClick={() => setIsOpen(false)} className="text-white/40 hover:text-white text-[9px] font-black uppercase tracking-[0.2em] transition-colors">Privacy</Link>
                   <Link to="/terms-and-conditions" onClick={() => setIsOpen(false)} className="text-white/40 hover:text-white text-[9px] font-black uppercase tracking-[0.2em] transition-colors">T&C</Link>
+                  <Link to="/refund-policy" onClick={() => setIsOpen(false)} className="text-white/40 hover:text-white text-[9px] font-black uppercase tracking-[0.2em] transition-colors">Refund</Link>
                </div>
                <div className="flex items-center gap-2">
-                  <span className="text-white/40 text-[9px] font-black uppercase tracking-[0.2em]">Developed by</span>
                   <Heart size={12} className="text-rose-500 fill-current mx-1" />
                   <img src="https://advedasolutions.in/logo.png" className="h-4 w-auto object-contain" alt="Adveda Solutions" />
                </div>

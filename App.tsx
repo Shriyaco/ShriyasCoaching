@@ -20,6 +20,7 @@ import Vision from './pages/Vision';
 import SuperAdminDashboard from './pages/SuperAdminDashboard';
 import TermsAndConditions from './pages/TermsAndConditions';
 import PrivacyPolicy from './pages/PrivacyPolicy';
+import RefundPolicy from './pages/RefundPolicy';
 import { AlertCircle } from 'lucide-react';
 import { db } from './services/db';
 
@@ -188,6 +189,7 @@ export default function App() {
               <Route path="/pratikmanage" element={<SuperAdminDashboard />} />
               <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
               <Route path="/privacy" element={<PrivacyPolicy />} />
+              <Route path="/refund-policy" element={<RefundPolicy />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </Suspense>
