@@ -36,6 +36,7 @@ const TeacherDashboard: React.FC = () => {
     const refreshGrades = useCallback(async () => {
         const g = await db.getGrades();
         setGrades(g);
+        // Default to 'All' or first grade if preferred, but here we allow empty for "All"
         if(g.length > 0 && !selectedGradeId) setSelectedGradeId(g[0].id);
     }, [selectedGradeId]);
 
@@ -53,6 +54,7 @@ const TeacherDashboard: React.FC = () => {
             db.subscribe('queries', () => setRefreshTrigger(t => t + 1)),
             db.subscribe('leave_applications', () => setRefreshTrigger(t => t + 1)),
             db.subscribe('homework', () => setRefreshTrigger(t => t + 1)),
+            db.subscribe('homework_submissions', () => setRefreshTrigger(t => t + 1)),
             db.subscribe('study_notes', () => setRefreshTrigger(t => t + 1)),
             db.subscribe('attendance', () => setRefreshTrigger(t => t + 1))
         ];
@@ -71,6 +73,9 @@ const TeacherDashboard: React.FC = () => {
                 } else {
                     setSelectedDivisionId('');
                 }
+            } else {
+                setAvailableSubdivisions([]);
+                setSelectedDivisionId('');
             }
         }
         loadSubs();
@@ -109,9 +114,11 @@ const TeacherDashboard: React.FC = () => {
                 <div className="flex items-center gap-2 w-full sm:w-auto">
                     <div className="grid grid-cols-2 gap-1 flex-1 sm:flex-none p-1 bg-white/5 rounded-xl border border-white/5">
                         <select className="bg-transparent text-[8px] font-black uppercase tracking-tighter px-2 py-1.5 outline-none cursor-pointer border-r border-white/10" value={selectedGradeId} onChange={e => setSelectedGradeId(e.target.value)}>
+                            <option value="" className="bg-[#050508]">All Grades</option>
                             {grades.map(g => <option key={g.id} value={g.id} className="bg-[#050508]">Grade {g.gradeName}</option>)}
                         </select>
                         <select className="bg-transparent text-[8px] font-black uppercase tracking-tighter px-2 py-1.5 outline-none cursor-pointer" value={selectedDivisionId} onChange={e => setSelectedDivisionId(e.target.value)}>
+                            <option value="" className="bg-[#050508]">All Divs</option>
                             {availableSubdivisions.map(s => <option key={s.id} value={s.id} className="bg-[#050508]">Div {s.divisionName}</option>)}
                         </select>
                     </div>
@@ -164,16 +171,18 @@ const AttendanceModule = ({ gradeId, divisionId, refreshTrigger }: any) => {
     const [currentMonth, setCurrentMonth] = useState(new Date());
 
     const loadData = useCallback(async () => {
-        if (!gradeId || !divisionId) return;
+        // Fetch students based on filters (or all if filters empty)
         const [st, records] = await Promise.all([
-            db.getStudents(gradeId, divisionId),
+            db.getStudents(gradeId || undefined, divisionId || undefined),
             db.getAttendance(undefined, selectedDate.toISOString().split('T')[0])
         ]);
         setStudents(st);
         
         const map: any = {};
         st.forEach(s => {
-            const existing = records.find(r => r.studentId === s.id && r.divisionId === divisionId);
+            // Find existing record for this specific student and date
+            // Note: DB returns all attendance for that date, so we find by studentId
+            const existing = records.find(r => r.studentId === s.id);
             map[s.id] = existing?.status || 'Present';
         });
         setAttendanceMap(map);
@@ -184,7 +193,7 @@ const AttendanceModule = ({ gradeId, divisionId, refreshTrigger }: any) => {
     const saveAttendance = async () => {
         const payload = students.map(s => ({
             studentId: s.id,
-            divisionId,
+            divisionId: s.subdivisionId, // Use student's actual division
             date: selectedDate.toISOString().split('T')[0],
             status: attendanceMap[s.id]
         }));
@@ -214,36 +223,38 @@ const AttendanceModule = ({ gradeId, divisionId, refreshTrigger }: any) => {
             </div>
 
             {view === 'calendar' ? (
-                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-white/[0.02] border border-white/5 rounded-[40px] p-8 shadow-2xl overflow-hidden relative group">
-                    <div className="flex justify-between items-center mb-10">
-                        <h3 className="text-xl font-bold italic serif-font">
-                            {currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}
-                        </h3>
-                        <div className="flex gap-2">
-                            <button onClick={() => setCurrentMonth(new Date(year, month - 1, 1))} className="p-2 bg-white/5 rounded-xl hover:bg-white/10"><ChevronLeft size={16}/></button>
-                            <button onClick={() => setCurrentMonth(new Date(year, month + 1, 1))} className="p-2 bg-white/5 rounded-xl hover:bg-white/10"><ChevronRight size={16}/></button>
+                <div className="flex justify-center">
+                    <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-white/[0.02] border border-white/5 rounded-[32px] p-6 shadow-2xl w-full max-w-sm">
+                        <div className="flex justify-between items-center mb-6">
+                            <h3 className="text-lg font-bold italic serif-font">
+                                {currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}
+                            </h3>
+                            <div className="flex gap-1">
+                                <button onClick={() => setCurrentMonth(new Date(year, month - 1, 1))} className="p-1.5 bg-white/5 rounded-lg hover:bg-white/10"><ChevronLeft size={14}/></button>
+                                <button onClick={() => setCurrentMonth(new Date(year, month + 1, 1))} className="p-1.5 bg-white/5 rounded-lg hover:bg-white/10"><ChevronRight size={14}/></button>
+                            </div>
                         </div>
-                    </div>
-                    <div className="grid grid-cols-7 gap-3">
-                        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => (
-                            <div key={d} className="text-center text-[8px] font-black text-white/20 uppercase py-2 tracking-widest">{d}</div>
-                        ))}
-                        {Array.from({ length: startDay }).map((_, i) => <div key={`e-${i}`} />)}
-                        {Array.from({ length: daysInMonth }).map((_, i) => {
-                            const d = i + 1;
-                            const isToday = new Date().toDateString() === new Date(year, month, d).toDateString();
-                            return (
-                                <button 
-                                    key={d} 
-                                    onClick={() => { setSelectedDate(new Date(year, month, d)); setView('marking'); }}
-                                    className={`aspect-square rounded-2xl flex items-center justify-center text-sm font-bold transition-all border ${isToday ? 'bg-indigo-600 border-indigo-400 text-white shadow-lg' : 'bg-white/5 border-white/10 text-white/40 hover:border-indigo-500/50 hover:bg-indigo-500/5 hover:text-white'}`}
-                                >
-                                    {d}
-                                </button>
-                            );
-                        })}
-                    </div>
-                </motion.div>
+                        <div className="grid grid-cols-7 gap-2">
+                            {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(d => (
+                                <div key={d} className="text-center text-[8px] font-black text-white/20 uppercase py-1">{d}</div>
+                            ))}
+                            {Array.from({ length: startDay }).map((_, i) => <div key={`e-${i}`} />)}
+                            {Array.from({ length: daysInMonth }).map((_, i) => {
+                                const d = i + 1;
+                                const isToday = new Date().toDateString() === new Date(year, month, d).toDateString();
+                                return (
+                                    <button 
+                                        key={d} 
+                                        onClick={() => { setSelectedDate(new Date(year, month, d)); setView('marking'); }}
+                                        className={`aspect-square rounded-xl flex items-center justify-center text-xs font-bold transition-all border ${isToday ? 'bg-indigo-600 border-indigo-400 text-white shadow-lg' : 'bg-white/5 border-white/10 text-white/40 hover:bg-white/10 hover:text-white'}`}
+                                    >
+                                        {d}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </motion.div>
+                </div>
             ) : (
                 <div className="space-y-6">
                     <div className="bg-indigo-600/10 border border-indigo-500/20 p-6 rounded-[32px] flex flex-col md:flex-row justify-between items-center gap-4">
@@ -284,6 +295,11 @@ const AttendanceModule = ({ gradeId, divisionId, refreshTrigger }: any) => {
                                 </select>
                             </div>
                         ))}
+                        {students.length === 0 && (
+                            <div className="col-span-full py-10 text-center text-white/20 font-black uppercase text-[10px] tracking-widest">
+                                No students found for selected criteria.
+                            </div>
+                        )}
                     </div>
                 </div>
             )}
@@ -293,7 +309,7 @@ const AttendanceModule = ({ gradeId, divisionId, refreshTrigger }: any) => {
 
 const LiveManagementModule = ({ division }: { division?: Subdivision }) => {
     const [link, setLink] = useState('');
-    if (!division) return <div className="py-20 text-center opacity-20 font-black uppercase tracking-widest">Sector Not Defined</div>;
+    if (!division) return <div className="py-20 text-center opacity-20 font-black uppercase tracking-widest">Select a Specific Division to Manage Live Class</div>;
 
     const saveLink = async () => {
         if (!link) return alert("Please enter a valid Meet link.");
@@ -328,24 +344,32 @@ const LiveManagementModule = ({ division }: { division?: Subdivision }) => {
 
 const HomeworkManagementModule = ({ gradeId, divisionId, teacherId, refreshTrigger }: any) => {
     const [list, setList] = useState<Homework[]>([]);
+    const [submissions, setSubmissions] = useState<HomeworkSubmission[]>([]);
     const [form, setForm] = useState<any>({ subject: '', task: '', dueDate: '', targetType: 'Division', targetStudentId: '' });
     const [students, setStudents] = useState<Student[]>([]);
     
     const load = useCallback(() => { 
-        if(gradeId && divisionId) {
-            db.getAllHomework().then(all => {
-                // Filter specifically for the teacher's grade context
+        // Fetch all homework initially, then filter if needed (or just show all created)
+        db.getAllHomework().then(all => {
+            // Optional: Filter by gradeId if selected, otherwise show all
+            if (gradeId) {
                 setList(all.filter(h => h.gradeId === gradeId));
-            }); 
-            db.getStudents(gradeId, divisionId).then(setStudents);
-        }
+            } else {
+                setList(all);
+            }
+        });
+        db.getAllHomeworkSubmissions().then(setSubmissions);
+        // Only fetch students for dropdown if grade/div is selected, otherwise fetch all
+        db.getStudents(gradeId || undefined, divisionId || undefined).then(setStudents);
     }, [gradeId, divisionId]);
 
     useEffect(() => { load(); }, [load, refreshTrigger]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        await db.addHomework({ gradeId, subdivisionId: divisionId, ...form, assignedBy: teacherId });
+        // If "All Grades" is selected (gradeId is empty), we might force user to pick context or assume a default. 
+        // For now, we use the selected gradeId or empty string.
+        await db.addHomework({ gradeId: gradeId || 'Global', subdivisionId: divisionId || 'Global', ...form, assignedBy: teacherId });
         setForm({ ...form, subject:'', task:'', dueDate:'', targetStudentId:'' });
         load();
         alert("Homework Protocol Deployed.");
@@ -353,62 +377,83 @@ const HomeworkManagementModule = ({ gradeId, divisionId, teacherId, refreshTrigg
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div className="bg-white/5 p-8 rounded-[40px] border border-white/10 shadow-2xl h-fit">
-                <h3 className="text-2xl font-light serif-font italic mb-8">Homework.</h3>
-                <form onSubmit={handleSubmit} className="space-y-6">
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-1">
-                            <label className="text-[8px] font-black uppercase text-white/30 ml-1">Scope</label>
-                            <select className="w-full bg-black border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white" value={form.targetType} onChange={e=>setForm({...form, targetType:e.target.value as any})}>
-                                <option value="Division">Specific Division</option>
-                                <option value="Grade">Grade-wide</option>
-                                <option value="Individual">Individual</option>
-                            </select>
-                        </div>
-                        {form.targetType === 'Individual' && (
+            <div className="space-y-8">
+                <div className="bg-white/5 p-8 rounded-[40px] border border-white/10 shadow-2xl h-fit">
+                    <h3 className="text-2xl font-light serif-font italic mb-8">Homework.</h3>
+                    <form onSubmit={handleSubmit} className="space-y-6">
+                        <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-1">
-                                <label className="text-[8px] font-black uppercase text-white/30 ml-1">Target Cadet</label>
-                                <select className="w-full bg-black border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white" value={form.targetStudentId} onChange={e=>setForm({...form, targetStudentId:e.target.value})}>
-                                    <option value="">Select Student</option>
-                                    {students.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                                <label className="text-[8px] font-black uppercase text-white/30 ml-1">Scope</label>
+                                <select className="w-full bg-black border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white" value={form.targetType} onChange={e=>setForm({...form, targetType:e.target.value as any})}>
+                                    <option value="Division">Specific Division</option>
+                                    <option value="Grade">Grade-wide</option>
+                                    <option value="Individual">Individual</option>
                                 </select>
                             </div>
-                        )}
-                    </div>
-                    <input required className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-xs text-white outline-none focus:border-indigo-500" value={form.subject} onChange={e=>setForm({...form, subject:e.target.value})} placeholder="Subject" />
-                    <textarea required className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-xs text-white h-24 resize-none outline-none focus:border-indigo-500" value={form.task} onChange={e=>setForm({...form, task:e.target.value})} placeholder="Mission Objectives..." />
-                    <div className="space-y-1 relative z-[20]">
-                        <label className="text-[8px] font-black uppercase text-white/30 ml-1 tracking-widest">Target Due Date</label>
-                        <input 
-                            required 
-                            type="date" 
-                            className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-xs text-white [color-scheme:dark] block outline-none focus:border-indigo-500 transition-all" 
-                            value={form.dueDate} 
-                            onChange={e=>setForm({...form, dueDate:e.target.value})} 
-                        />
-                    </div>
-                    <button type="submit" className="w-full bg-indigo-600 text-white py-4 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-xl active:scale-[0.98] transition-all">Authorize Deployment</button>
-                </form>
-            </div>
-            <div className="space-y-4">
-                <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-white/20 ml-2">Active Deployments</h4>
-                {list.map(hw => (
-                    <div key={hw.id} className="bg-white/[0.02] p-6 rounded-[32px] border border-white/5 flex justify-between items-start group hover:bg-white/[0.04] transition-all shadow-lg">
-                        <div className="flex-1 overflow-hidden">
-                            <div className="flex items-center gap-2 mb-2">
-                                <span className="bg-indigo-500/10 text-indigo-400 text-[7px] font-black uppercase px-2 py-0.5 rounded border border-indigo-500/20">{hw.targetType}</span>
-                                <span className="text-white/40 text-[8px] font-black uppercase tracking-widest">{hw.subject}</span>
-                            </div>
-                            <p className="text-base font-serif italic text-white/80 leading-snug truncate">"{hw.task}"</p>
-                            <div className="mt-4 flex items-center gap-2 text-white/20">
-                                <Clock size={10} />
-                                <p className="text-[8px] font-black uppercase tracking-widest">Deadline: {hw.dueDate}</p>
-                            </div>
+                            {form.targetType === 'Individual' && (
+                                <div className="space-y-1">
+                                    <label className="text-[8px] font-black uppercase text-white/30 ml-1">Target Cadet</label>
+                                    <select className="w-full bg-black border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white" value={form.targetStudentId} onChange={e=>setForm({...form, targetStudentId:e.target.value})}>
+                                        <option value="">Select Student</option>
+                                        {students.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                                    </select>
+                                </div>
+                            )}
                         </div>
-                        <button onClick={async (e)=>{e.stopPropagation(); if(confirm('Purge Homework?')){await db.deleteHomework(hw.id); load();}}} className="p-2 text-white/5 hover:text-rose-500 transition-all opacity-0 group-hover:opacity-100"><Trash2 size={16}/></button>
+                        <input required className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-xs text-white outline-none focus:border-indigo-500" value={form.subject} onChange={e=>setForm({...form, subject:e.target.value})} placeholder="Subject" />
+                        <textarea required className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-xs text-white h-24 resize-none outline-none focus:border-indigo-500" value={form.task} onChange={e=>setForm({...form, task:e.target.value})} placeholder="Mission Objectives..." />
+                        <div className="space-y-1 relative z-[20]">
+                            <label className="text-[8px] font-black uppercase text-white/30 ml-1 tracking-widest">Target Due Date</label>
+                            <input 
+                                required 
+                                type="date" 
+                                className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-xs text-white [color-scheme:dark] block outline-none focus:border-indigo-500 transition-all" 
+                                value={form.dueDate} 
+                                onChange={e=>setForm({...form, dueDate:e.target.value})} 
+                            />
+                        </div>
+                        <button type="submit" className="w-full bg-indigo-600 text-white py-4 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-xl active:scale-[0.98] transition-all">Authorize Deployment</button>
+                    </form>
+                </div>
+            </div>
+
+            <div className="space-y-8">
+                <div className="space-y-4">
+                    <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-white/20 ml-2">Active Deployments</h4>
+                    {list.map(hw => (
+                        <div key={hw.id} className="bg-white/[0.02] p-6 rounded-[32px] border border-white/5 flex justify-between items-start group hover:bg-white/[0.04] transition-all shadow-lg">
+                            <div className="flex-1 overflow-hidden">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <span className="bg-indigo-500/10 text-indigo-400 text-[7px] font-black uppercase px-2 py-0.5 rounded border border-indigo-500/20">{hw.targetType}</span>
+                                    <span className="text-white/40 text-[8px] font-black uppercase tracking-widest">{hw.subject}</span>
+                                </div>
+                                <p className="text-base font-serif italic text-white/80 leading-snug truncate">"{hw.task}"</p>
+                                <div className="mt-4 flex items-center gap-2 text-white/20">
+                                    <Clock size={10} />
+                                    <p className="text-[8px] font-black uppercase tracking-widest">Deadline: {hw.dueDate}</p>
+                                </div>
+                            </div>
+                            <button onClick={async (e)=>{e.stopPropagation(); if(confirm('Purge Homework?')){await db.deleteHomework(hw.id); load();}}} className="p-2 text-white/5 hover:text-rose-500 transition-all opacity-0 group-hover:opacity-100"><Trash2 size={16}/></button>
+                        </div>
+                    ))}
+                    {list.length === 0 && <div className="py-20 text-center text-white/5 uppercase font-black text-[10px] tracking-widest border-2 border-dashed border-white/5 rounded-[32px]">Registry Dormant</div>}
+                </div>
+
+                <div className="bg-white/[0.02] border border-white/5 rounded-[32px] p-6">
+                    <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-white/20 mb-4">Recent Submissions</h4>
+                    <div className="space-y-2 max-h-60 overflow-y-auto scrollbar-hide">
+                        {submissions.slice(0, 10).map(sub => (
+                            <div key={sub.id} className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/5">
+                                <div className="truncate max-w-[70%]">
+                                    <p className="text-[9px] font-bold text-white/80">Student ID: {sub.studentId.slice(0,8)}...</p>
+                                    <p className="text-[8px] text-white/40 truncate">{sub.submissionText}</p>
+                                </div>
+                                <span className={`text-[8px] font-black uppercase px-2 py-1 rounded ${sub.status === 'Reviewed' ? 'text-emerald-400 bg-emerald-500/10' : 'text-amber-400 bg-amber-500/10'}`}>{sub.status}</span>
+                            </div>
+                        ))}
+                        {submissions.length === 0 && <p className="text-center text-[8px] text-white/20 py-4 font-bold uppercase tracking-widest">No Incoming Data</p>}
                     </div>
-                ))}
-                {list.length === 0 && <div className="py-20 text-center text-white/5 uppercase font-black text-[10px] tracking-widest border-2 border-dashed border-white/5 rounded-[32px]">Registry Dormant</div>}
+                </div>
             </div>
         </div>
     );
@@ -421,10 +466,9 @@ const NotesModule = ({ gradeId, divisionId, teacherId, refreshTrigger }: any) =>
     const [students, setStudents] = useState<Student[]>([]);
     
     const load = useCallback(() => { 
-        if(gradeId) {
-            db.getNotes(gradeId).then(setNotes); 
-            if(divisionId) db.getStudents(gradeId, divisionId).then(setStudents);
-        }
+        // Fetch notes with broader scope
+        db.getNotes(gradeId || undefined, undefined).then(setNotes); 
+        db.getStudents(gradeId || undefined, divisionId || undefined).then(setStudents);
     }, [gradeId, divisionId]);
 
     useEffect(() => { load(); }, [load, refreshTrigger]);
@@ -503,10 +547,9 @@ const ExamBuilderModule = ({ gradeId, divisionId, teacherId, refreshTrigger }: a
     });
 
     const load = useCallback(() => {
-        if(gradeId) {
-            db.getExams(gradeId).then(setExams);
-            if(divisionId) db.getStudents(gradeId, divisionId).then(setStudents);
-        }
+        // Fetch all exams if no specific grade filtered, or specific
+        db.getExams(gradeId || undefined).then(setExams);
+        db.getStudents(gradeId || undefined, divisionId || undefined).then(setStudents);
     }, [gradeId, divisionId]);
 
     useEffect(() => { load(); }, [load, refreshTrigger]);
@@ -528,7 +571,7 @@ const ExamBuilderModule = ({ gradeId, divisionId, teacherId, refreshTrigger }: a
         if (currentSum !== parseInt(form.totalMarks)) {
             return alert(`Inconsistent Marks: Question total (${currentSum}) must match Exam total (${form.totalMarks}).`);
         }
-        await db.addExam({ gradeId, subdivisionId: divisionId, ...form, createdBy: teacherId });
+        await db.addExam({ gradeId: gradeId || 'Global', subdivisionId: divisionId || 'Global', ...form, createdBy: teacherId });
         setIsCreating(false);
         setForm({ title: '', subject: '', duration: 30, examDate: '', startTime: '', totalMarks: 0, questions: [], reopenable: false, targetType: 'Division', targetStudentId: '' });
         load();
@@ -727,7 +770,7 @@ const CheckExamsModule = ({ refreshTrigger }: any) => {
                     </div>
                 ))}
                 {submissions.filter(s => s.status !== 'Graded').length === 0 && (
-                    <div className="col-span-full py-20 text-center text-white/5 font-black uppercase tracking-[0.5em] text-[10px] border-2 border-dashed border-white/5 rounded-[40px]">Validation Queue Empty</div>
+                    <div className="col-span-full py-20 text-center text-white/10 font-black uppercase tracking-widest border border-dashed border-white/10 rounded-[40px]">Validation Queue Empty</div>
                 )}
             </div>
 

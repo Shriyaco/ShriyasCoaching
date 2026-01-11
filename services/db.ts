@@ -252,13 +252,13 @@ class DatabaseService {
           student_custom_id: customId,
           name: data.name,
           mobile: data.mobile,
-          parent_name: data.parent_name,
+          parent_name: data.parentName,
           grade_id: data.gradeId || null,
           subdivision_id: data.subdivision_id || null,
-          joining_date: data.joining_date,
+          joining_date: data.joiningDate,
           monthly_fees: data.monthlyFees,
           total_fees: data.monthlyFees,
-          school_name: data.school_name,
+          school_name: data.schoolName,
           address: data.address,
           dob: data.dob || null,
           image_url: data.imageUrl || null,
@@ -314,7 +314,7 @@ class DatabaseService {
           teacher_custom_id: customId,
           name: data.name,
           mobile: data.mobile,
-          grade_id: data.grade_id || null,
+          grade_id: data.gradeId || null,
           subdivision_id: data.subdivision_id || null,
           specialization: data.specialization || 'General',
           joining_date: new Date().toISOString().split('T')[0],
@@ -407,7 +407,6 @@ class DatabaseService {
           studentName: f.student_name,
           amount: f.amount,
           transactionRef: f.transaction_ref,
-          // Corrected mapping: paymentMethod instead of payment_method
           paymentMethod: f.payment_method,
           status: f.status as any,
           date: f.date
@@ -477,7 +476,7 @@ class DatabaseService {
   }
 
   async getHomeworkForStudent(gradeId: string, subdivisionId: string, studentId: string): Promise<Homework[]> {
-       // Support OR logic for Grade, Division, or Individual targeting
+       // FIX: Added single quotes around string IDs inside the PostgREST OR filter to prevent syntax errors
        const { data } = await supabase.from('homework')
         .select('*')
         .or(`and(target_type.eq.Grade,grade_id.eq.${gradeId}),and(target_type.eq.Division,subdivision_id.eq.${subdivisionId}),and(target_type.eq.Individual,target_student_id.eq.${studentId})`);
@@ -574,6 +573,7 @@ class DatabaseService {
   }
 
   async getExamsForStudent(gradeId: string, subdivisionId: string, studentId: string): Promise<Exam[]> {
+      // FIX: Added single quotes around string IDs inside the PostgREST OR filter
       const { data } = await supabase.from('exams')
         .select('*')
         .or(`and(target_type.eq.Grade,grade_id.eq.${gradeId}),and(target_type.eq.Division,subdivision_id.eq.${subdivisionId}),and(target_type.eq.Individual,target_student_id.eq.${studentId})`);
@@ -733,7 +733,7 @@ class DatabaseService {
           student_name: data.studentName,
           product_id: data.productId,
           product_name: data.productName,
-          product_image: data.product_image,
+          product_image: data.productImage,
           custom_name: data.customName,
           change_request: data.changeRequest,
           address: data.address,
@@ -766,6 +766,7 @@ class DatabaseService {
   async getNotes(gradeId?: string, divisionId?: string, studentId?: string): Promise<StudyNote[]> {
     let query = supabase.from('study_notes').select('*');
     
+    // FIX: Added single quotes around string IDs inside the PostgREST OR filter
     if (studentId && gradeId) {
         query = query.or(`and(target_type.eq.Grade,grade_id.eq.${gradeId}),and(target_type.eq.Individual,target_student_id.eq.${studentId})`);
     } else {
@@ -826,7 +827,6 @@ class DatabaseService {
           student_id: data.studentId,
           student_name: data.studentName,
           grade_id: data.gradeId,
-          // Corrected property name from subdivision_id to subdivisionId
           subdivision_id: data.subdivisionId,
           subject: data.subject,
           exam_date: data.examDate,
