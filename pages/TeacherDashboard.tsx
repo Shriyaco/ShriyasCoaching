@@ -1,12 +1,12 @@
 
 import React, { useState, useEffect } from 'react';
 import { db } from '../services/db';
-import { TabView, StudentProfile, AttendanceStatus, Homework, HomeworkSubmission, Exam, Doubt, LeaveRequest } from '../types';
+import { TabView, StudentProfile, AttendanceStatus, Homework, HomeworkSubmission, Exam, Doubt, LeaveRequest, Grade } from '../types';
 import { 
     LayoutDashboard, ClipboardCheck, BookOpen, PenTool, 
     MessageSquare, LogOut, CheckCircle, XCircle, Clock, 
     Calendar, Plus, User, Send, ChevronRight, FileText,
-    Star, GraduationCap, AlertCircle
+    Star, GraduationCap, AlertCircle, Search, Trash2, X
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -136,59 +136,103 @@ const StatCard = ({ label, value, icon: Icon, color }: any) => (
 );
 
 const Attendance = ({ teacher }: any) => {
-    const [grades, setGrades] = useState<any[]>([]);
-    const [selectedGrade, setSelectedGrade] = useState('');
-    const [students, setStudents] = useState<StudentProfile[]>([]);
+    const [allStudents, setAllStudents] = useState<StudentProfile[]>([]);
+    const [grades, setGrades] = useState<Grade[]>([]);
+    const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
     const [attendance, setAttendance] = useState<Record<string, AttendanceStatus>>({});
     const [loading, setLoading] = useState(false);
 
-    useEffect(() => { db.getGrades().then(setGrades); }, []);
-    useEffect(() => { if (selectedGrade) db.getStudentsByGrade(selectedGrade).then(setStudents); }, [selectedGrade]);
+    useEffect(() => {
+        const load = async () => {
+            try {
+                const [g, s] = await Promise.all([db.getGrades(), db.getAllStudents()]);
+                setGrades(g);
+                setAllStudents(s);
+                // Initialize default attendance
+                const initial: Record<string, AttendanceStatus> = {};
+                s.forEach(student => initial[student.id] = 'Present');
+                setAttendance(initial);
+            } catch (e) {
+                console.error(e);
+            }
+        };
+        load();
+    }, []);
 
     const handleSave = async () => {
         setLoading(true);
         try {
-            const records = students.map(s => ({
-                studentId: s.id, date: new Date().toISOString().split('T')[0],
-                status: attendance[s.id] || 'Present', markedBy: teacher.id
+            const records = allStudents.map(s => ({
+                studentId: s.id, 
+                date: selectedDate,
+                status: attendance[s.id] || 'Present', 
+                markedBy: teacher.id
             }));
             await db.markAttendance(records);
-            alert("Attendance Synced for " + new Date().toDateString());
-        } finally { setLoading(false); }
+            alert(`Master Registry Sync: Attendance for ${selectedDate} finalized.`);
+        } finally { 
+            setLoading(false); 
+        }
     };
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-                <select className="w-full md:w-64 bg-white border border-slate-200 px-6 py-4 rounded-2xl text-sm font-semibold outline-none" value={selectedGrade} onChange={e => setSelectedGrade(e.target.value)}>
-                    <option value="">Select Class</option>
-                    {grades.map(g => <option key={g.id} value={g.id}>{g.gradeName}</option>)}
-                </select>
-                <button disabled={!selectedGrade || loading} onClick={handleSave} className="w-full md:w-auto px-10 py-4 bg-indigo-600 text-white rounded-2xl font-bold text-sm hover:bg-indigo-700 transition-all disabled:opacity-30 shadow-lg">
-                    {loading ? 'Syncing...' : 'Commit Attendance Registry'}
+            <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-white p-6 rounded-[32px] border border-slate-200 shadow-sm">
+                <div className="flex items-center gap-4">
+                   <div className="p-3 bg-indigo-50 text-indigo-600 rounded-xl"><Calendar size={20}/></div>
+                   <div>
+                       <label className="block text-[10px] font-black uppercase text-slate-400 mb-1">Select Attendance Date</label>
+                       <input 
+                         type="date" 
+                         value={selectedDate} 
+                         onChange={e => setSelectedDate(e.target.value)} 
+                         className="bg-transparent text-sm font-bold outline-none" 
+                       />
+                   </div>
+                </div>
+                <button 
+                  disabled={loading} 
+                  onClick={handleSave} 
+                  className="w-full md:w-auto px-10 py-4 bg-slate-900 text-white rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-indigo-600 transition-all disabled:opacity-30 shadow-lg"
+                >
+                    {loading ? 'Commiting...' : 'Submit Records'}
                 </button>
             </div>
             <div className="bg-white border border-slate-200 rounded-[40px] overflow-hidden">
                 <table className="w-full text-left">
                     <thead className="bg-slate-50 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 border-b border-slate-100">
-                        <tr><th className="px-8 py-6">R/N</th><th className="px-8 py-6">Student Entity</th><th className="px-8 py-6 text-center">Protocol</th></tr>
+                        <tr><th className="px-8 py-6">Identity</th><th className="px-8 py-6">Grade Scope</th><th className="px-8 py-6 text-center">Protocol</th></tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                        {students.map(s => (
-                            <tr key={s.id}>
-                                <td className="px-8 py-6 text-sm font-mono text-slate-400">{s.rollNo}</td>
-                                <td className="px-8 py-6 font-bold text-slate-800">{s.name}</td>
-                                <td className="px-8 py-6 flex justify-center gap-2">
-                                    {['Present', 'Absent', 'Leave'].map(st => (
-                                        <button key={st} onClick={() => setAttendance({...attendance, [s.id]: st as any})} className={`w-12 h-12 rounded-2xl border text-[10px] font-bold transition-all ${attendance[s.id] === st ? 'bg-indigo-600 border-indigo-600 text-white' : 'border-slate-200 text-slate-400'}`}>
-                                            {st[0]}
-                                        </button>
-                                    ))}
-                                </td>
-                            </tr>
-                        ))}
+                        {allStudents.map(s => {
+                            const grade = grades.find(g => g.id === s.gradeId);
+                            return (
+                                <tr key={s.id} className="hover:bg-slate-50/50 transition-colors">
+                                    <td className="px-8 py-6 font-bold text-slate-800">{s.name}</td>
+                                    <td className="px-8 py-6 text-xs font-black uppercase text-indigo-500 tracking-widest">{grade?.gradeName || 'System'}</td>
+                                    <td className="px-8 py-6 flex justify-center gap-3">
+                                        <div className="flex gap-2 p-1 bg-slate-50 rounded-xl border border-slate-100">
+                                            {[
+                                                { label: 'P', value: 'Present', color: 'bg-emerald-500' },
+                                                { label: 'A', value: 'Absent', color: 'bg-rose-500' },
+                                                { label: 'L', value: 'Leave', color: 'bg-amber-500' }
+                                            ].map(st => (
+                                                <button 
+                                                  key={st.value} 
+                                                  onClick={() => setAttendance({...attendance, [s.id]: st.value as any})} 
+                                                  className={`w-10 h-10 rounded-lg font-black transition-all text-xs ${attendance[s.id] === st.value ? `${st.color} text-white shadow-md scale-110` : 'text-slate-300 hover:text-slate-500 hover:bg-white'}`}
+                                                >
+                                                    {st.label}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </td>
+                                </tr>
+                            );
+                        })}
                     </tbody>
                 </table>
+                {allStudents.length === 0 && <div className="p-20 text-center text-slate-300 font-bold uppercase tracking-widest">No Students Found</div>}
             </div>
         </div>
     );
@@ -196,22 +240,42 @@ const Attendance = ({ teacher }: any) => {
 
 const HomeworkHub = ({ teacher }: any) => {
     const [view, setView] = useState<'list' | 'create' | 'grading'>('list');
-    const [grades, setGrades] = useState<any[]>([]);
-    const [form, setForm] = useState({ subject: '', topic: '', description: '', dueDate: '', gradeId: '' });
-    const [submissions, setSubmissions] = useState<HomeworkSubmission[]>([]);
-    const [activeSubmission, setActiveSubmission] = useState<HomeworkSubmission | null>(null);
+    const [grades, setGrades] = useState<Grade[]>([]);
+    const [students, setStudents] = useState<StudentProfile[]>([]);
+    const [form, setForm] = useState({ 
+        subject: '', 
+        topic: '', 
+        description: '', 
+        dueDate: '', 
+        targetType: 'Grade' as 'Grade' | 'Individual',
+        targetGradeId: '',
+        targetStudentId: ''
+    });
 
-    useEffect(() => { db.getGrades().then(setGrades); }, []);
+    useEffect(() => { 
+        db.getGrades().then(setGrades); 
+        db.getAllStudents().then(setStudents);
+    }, []);
 
     const handleCreate = async (e: any) => {
         e.preventDefault();
-        await db.createHomework({
-            teacherId: teacher.id, subject: form.subject, topic: form.topic,
-            description: form.description, dueDate: form.dueDate,
-            targetType: 'Grade', targetGradeId: form.gradeId
-        });
-        alert("Assignment Published Successfully.");
-        setView('list');
+        try {
+            await db.createHomework({
+                teacherId: teacher.id, 
+                subject: form.subject, 
+                topic: form.topic,
+                description: form.description, 
+                dueDate: form.dueDate,
+                targetType: form.targetType,
+                targetGradeId: form.targetType === 'Grade' ? form.targetGradeId : undefined,
+                targetStudentId: form.targetType === 'Individual' ? form.targetStudentId : undefined
+            });
+            alert("Assignment Published Successfully.");
+            setView('list');
+            setForm({ subject: '', topic: '', description: '', dueDate: '', targetType: 'Grade', targetGradeId: '', targetStudentId: '' });
+        } catch (e) {
+            alert("Broadcast Failure.");
+        }
     };
 
     return (
@@ -219,23 +283,66 @@ const HomeworkHub = ({ teacher }: any) => {
             <div className="flex justify-between items-center">
                 <h3 className="text-xl font-bold uppercase tracking-tight">Assignment Engine</h3>
                 <button onClick={() => setView(view === 'list' ? 'create' : 'list')} className="px-6 py-3 bg-white border border-slate-200 rounded-2xl text-xs font-bold uppercase tracking-widest flex items-center gap-2 hover:bg-slate-50">
-                    {view === 'list' ? <><Plus size={16}/> New Assignment</> : 'Back to Registry'}
+                    {view === 'list' ? <><Plus size={16}/> New Task</> : 'Close Panel'}
                 </button>
             </div>
 
             {view === 'create' ? (
-                <form onSubmit={handleCreate} className="bg-white border border-slate-200 p-10 rounded-[40px] space-y-6 max-w-2xl">
+                <form onSubmit={handleCreate} className="bg-white border border-slate-200 p-10 rounded-[40px] space-y-6 max-w-2xl shadow-xl">
                     <div className="grid grid-cols-2 gap-4">
-                        <select required className="bg-slate-50 p-4 rounded-2xl text-sm border-none outline-none ring-1 ring-slate-200 focus:ring-indigo-600" value={form.gradeId} onChange={e => setForm({...form, gradeId: e.target.value})}>
-                            <option value="">Select Grade</option>
-                            {grades.map(g => <option key={g.id} value={g.id}>{g.gradeName}</option>)}
-                        </select>
-                        <input required placeholder="Subject Name" className="bg-slate-50 p-4 rounded-2xl text-sm border-none outline-none ring-1 ring-slate-200 focus:ring-indigo-600" value={form.subject} onChange={e => setForm({...form, subject: e.target.value})} />
+                         <div className="space-y-1">
+                            <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Assign To</label>
+                            <select 
+                               className="w-full bg-slate-50 p-4 rounded-2xl text-sm border-none outline-none ring-1 ring-slate-200 focus:ring-indigo-600" 
+                               value={form.targetType} 
+                               onChange={e => setForm({...form, targetType: e.target.value as any})}
+                            >
+                                <option value="Grade">Whole Grade</option>
+                                <option value="Individual">Specific Student</option>
+                            </select>
+                        </div>
+                        <div className="space-y-1">
+                            <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Subject Entity</label>
+                            <input required placeholder="Mathematics" className="w-full bg-slate-50 p-4 rounded-2xl text-sm border-none outline-none ring-1 ring-slate-200 focus:ring-indigo-600" value={form.subject} onChange={e => setForm({...form, subject: e.target.value})} />
+                        </div>
                     </div>
-                    <input required placeholder="Topic Title" className="w-full bg-slate-50 p-4 rounded-2xl text-sm border-none outline-none ring-1 ring-slate-200 focus:ring-indigo-600" value={form.topic} onChange={e => setForm({...form, topic: e.target.value})} />
-                    <textarea required placeholder="Detailed Instructions & Requirements..." className="w-full h-40 bg-slate-50 p-4 rounded-2xl text-sm border-none outline-none ring-1 ring-slate-200 focus:ring-indigo-600 resize-none" value={form.description} onChange={e => setForm({...form, description: e.target.value})} />
-                    <input required type="date" className="w-full bg-slate-50 p-4 rounded-2xl text-sm border-none outline-none ring-1 ring-slate-200 focus:ring-indigo-600" value={form.dueDate} onChange={e => setForm({...form, dueDate: e.target.value})} />
-                    <button className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold uppercase tracking-widest text-xs shadow-xl">Broadcast Assignment</button>
+
+                    <AnimatePresence mode="wait">
+                        {form.targetType === 'Grade' ? (
+                            <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-1">
+                                <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Target Grade</label>
+                                <select required className="w-full bg-slate-50 p-4 rounded-2xl text-sm border-none outline-none ring-1 ring-slate-200 focus:ring-indigo-600" value={form.targetGradeId} onChange={e => setForm({...form, targetGradeId: e.target.value})}>
+                                    <option value="">Choose Grade</option>
+                                    {grades.map(g => <option key={g.id} value={g.id}>{g.gradeName}</option>)}
+                                </select>
+                            </motion.div>
+                        ) : (
+                            <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-1">
+                                <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Select Student</label>
+                                <select required className="w-full bg-slate-50 p-4 rounded-2xl text-sm border-none outline-none ring-1 ring-slate-200 focus:ring-indigo-600" value={form.targetStudentId} onChange={e => setForm({...form, targetStudentId: e.target.value})}>
+                                    <option value="">Search Student Identity</option>
+                                    {students.map(s => <option key={s.id} value={s.id}>{s.name} (Grade {grades.find(g => g.id === s.gradeId)?.gradeName})</option>)}
+                                </select>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+
+                    <div className="space-y-1">
+                        <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Topic Title</label>
+                        <input required placeholder="Algebra Mastery" className="w-full bg-slate-50 p-4 rounded-2xl text-sm border-none outline-none ring-1 ring-slate-200 focus:ring-indigo-600" value={form.topic} onChange={e => setForm({...form, topic: e.target.value})} />
+                    </div>
+                    
+                    <div className="space-y-1">
+                        <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Detailed Directive</label>
+                        <textarea required placeholder="Instructions for student..." className="w-full h-32 bg-slate-50 p-4 rounded-2xl text-sm border-none outline-none ring-1 ring-slate-200 focus:ring-indigo-600 resize-none" value={form.description} onChange={e => setForm({...form, description: e.target.value})} />
+                    </div>
+
+                    <div className="space-y-1">
+                        <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Submission Deadline</label>
+                        <input required type="date" className="w-full bg-slate-50 p-4 rounded-2xl text-sm border-none outline-none ring-1 ring-slate-200 focus:ring-indigo-600" value={form.dueDate} onChange={e => setForm({...form, dueDate: e.target.value})} />
+                    </div>
+
+                    <button className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold uppercase tracking-widest text-xs shadow-xl active:scale-[0.98] transition-all">Broadcast Assignment</button>
                 </form>
             ) : (
                 <div className="bg-white border-2 border-dashed border-slate-200 rounded-[40px] p-20 text-center opacity-30">
@@ -248,23 +355,86 @@ const HomeworkHub = ({ teacher }: any) => {
 };
 
 const ExamMaster = ({ teacher }: any) => {
+    const [view, setView] = useState<'list' | 'create'>('list');
+    const [grades, setGrades] = useState<Grade[]>([]);
+    const [form, setForm] = useState({ title: '', subject: '', gradeId: '', duration: 60, totalMarks: 100 });
+
+    useEffect(() => { db.getGrades().then(setGrades); }, []);
+
+    const handleCreate = async (e: any) => {
+        e.preventDefault();
+        try {
+            await db.createExam({
+                teacherId: teacher.id,
+                title: form.title,
+                subject: form.subject,
+                gradeId: form.gradeId,
+                startTime: new Date().toISOString(),
+                endTime: new Date(Date.now() + 86400000).toISOString(),
+                durationMinutes: form.duration,
+                totalMarks: form.totalMarks,
+                questions: [],
+                isPublished: true
+            });
+            alert("Evaluation Paper Generated and Dispatched.");
+            setView('list');
+            setForm({ title: '', subject: '', gradeId: '', duration: 60, totalMarks: 100 });
+        } catch (err) {
+            alert("Evaluation Generation Failed.");
+        }
+    };
+
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center mb-8">
                 <h3 className="text-xl font-bold">Paper Builder</h3>
-                <button className="px-6 py-3 bg-indigo-600 text-white rounded-2xl text-xs font-bold uppercase tracking-widest flex items-center gap-2 hover:bg-indigo-700">
-                    <Plus size={16}/> Create Paper
+                <button onClick={() => setView(view === 'list' ? 'create' : 'list')} className="px-6 py-3 bg-indigo-600 text-white rounded-2xl text-xs font-bold uppercase tracking-widest flex items-center gap-2 hover:bg-indigo-700 transition-colors">
+                    {view === 'list' ? <><Plus size={16}/> Create Paper</> : 'View Registry'}
                 </button>
             </div>
-            <div className="bg-white border border-slate-200 p-10 rounded-[40px] text-center">
-                <PenTool className="mx-auto mb-6 text-slate-200" size={80} />
-                <h4 className="text-2xl font-bold mb-2">Automated Evaluation Engine</h4>
-                <p className="text-slate-400 text-sm max-w-sm mx-auto mb-8 uppercase font-bold tracking-widest leading-relaxed">Design MCQ and Theory papers with instant feedback for students.</p>
-                <div className="flex gap-4 justify-center">
-                   <div className="p-6 bg-slate-50 rounded-3xl w-40"><p className="text-3xl font-black mb-1">00</p><p className="text-[10px] text-slate-400 uppercase font-black">Live Tests</p></div>
-                   <div className="p-6 bg-slate-50 rounded-3xl w-40"><p className="text-3xl font-black mb-1">00</p><p className="text-[10px] text-slate-400 uppercase font-black">Evaluated</p></div>
+
+            {view === 'create' ? (
+                <form onSubmit={handleCreate} className="bg-white border border-slate-200 p-10 rounded-[40px] space-y-6 max-w-2xl shadow-xl">
+                    <div className="space-y-1">
+                        <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Examination Title</label>
+                        <input required placeholder="e.g. Mid-Term Phase 1" className="w-full bg-slate-50 p-4 rounded-2xl text-sm outline-none ring-1 ring-slate-100 focus:ring-indigo-600" value={form.title} onChange={e => setForm({...form, title: e.target.value})} />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1">
+                            <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Subject Authority</label>
+                            <input required placeholder="Physics / Bio" className="w-full bg-slate-50 p-4 rounded-2xl text-sm outline-none ring-1 ring-slate-100 focus:ring-indigo-600" value={form.subject} onChange={e => setForm({...form, subject: e.target.value})} />
+                        </div>
+                        <div className="space-y-1">
+                            <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Academic Grade</label>
+                            <select required className="w-full bg-slate-50 p-4 rounded-2xl text-sm outline-none ring-1 ring-slate-100 focus:ring-indigo-600" value={form.gradeId} onChange={e => setForm({...form, gradeId: e.target.value})}>
+                                <option value="">Select Grade Node</option>
+                                {grades.map(g => <option key={g.id} value={g.id}>{g.gradeName}</option>)}
+                            </select>
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1">
+                            <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Duration (Mins)</label>
+                            <input required type="number" className="w-full bg-slate-50 p-4 rounded-2xl text-sm outline-none ring-1 ring-slate-100 focus:ring-indigo-600" value={form.duration} onChange={e => setForm({...form, duration: parseInt(e.target.value)})} />
+                        </div>
+                        <div className="space-y-1">
+                            <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Weightage (Marks)</label>
+                            <input required type="number" className="w-full bg-slate-50 p-4 rounded-2xl text-sm outline-none ring-1 ring-slate-100 focus:ring-indigo-600" value={form.totalMarks} onChange={e => setForm({...form, totalMarks: parseInt(e.target.value)})} />
+                        </div>
+                    </div>
+                    <button type="submit" className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold uppercase tracking-widest text-xs active:scale-[0.98] transition-all">Initialize Evaluation Protocol</button>
+                </form>
+            ) : (
+                <div className="bg-white border border-slate-200 p-10 rounded-[40px] text-center">
+                    <PenTool className="mx-auto mb-6 text-slate-200" size={80} />
+                    <h4 className="text-2xl font-bold mb-2">Automated Evaluation Engine</h4>
+                    <p className="text-slate-400 text-sm max-w-sm mx-auto mb-8 uppercase font-bold tracking-widest leading-relaxed">Design MCQ and Theory papers with instant feedback for students.</p>
+                    <div className="flex gap-4 justify-center">
+                       <div className="p-6 bg-slate-50 rounded-3xl w-40"><p className="text-3xl font-black mb-1">00</p><p className="text-[10px] text-slate-400 uppercase font-black">Live Tests</p></div>
+                       <div className="p-6 bg-slate-50 rounded-3xl w-40"><p className="text-3xl font-black mb-1">00</p><p className="text-[10px] text-slate-400 uppercase font-black">Evaluated</p></div>
+                    </div>
                 </div>
-            </div>
+            )}
         </div>
     );
 };

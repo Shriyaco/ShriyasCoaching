@@ -18,11 +18,10 @@ const PublicHome: React.FC = () => {
     expectations: '', mobile: '', connectTime: '', board: '' 
   });
 
-  // Dynamic Content State with Defaults
   const [content, setContent] = useState<any>({
-      heroTitle1: 'Future',
+      heroTitle1: 'FUTURE',
       heroTitle2: 'Crafted here.',
-      heroTagline: 'The Zenith of Learning',
+      heroTagline: 'THE ZENITH OF LEARNING',
       tickerText: 'ADMISSION OPENS FOR 2026-27. LIMITED SEATS AVAILABLE.',
       philHeading: 'Precision \n Mastery.',
       philDesc: "The most sophisticated coaching environment for primary years. Our collective experience and tailored methodology elevate education to a whole new level. We don't just teach; we sculpt intellects.",
@@ -34,11 +33,8 @@ const PublicHome: React.FC = () => {
         try {
             const all = await db.getNotices();
             setNotices(all.filter(n => n.important));
-            
-            // Fetch CMS Content
             const cmsData = await db.getPageContent('home');
             if (cmsData) {
-                // Merge with defaults to ensure no keys are missing
                 setContent((prev: any) => ({ ...prev, ...cmsData }));
             }
         } catch (e) { console.error(e); }
@@ -89,7 +85,6 @@ const PublicHome: React.FC = () => {
   return (
     <div className="min-h-screen bg-black text-white selection:bg-premium-accent overflow-x-hidden">
       
-      {/* --- HERO SECTION --- */}
       <section className="relative h-screen flex flex-col items-center justify-center overflow-hidden pt-32">
         <div className="absolute inset-0 z-0">
           <ThreeHero />
@@ -103,35 +98,35 @@ const PublicHome: React.FC = () => {
               variants={headlineVariants}
               className="flex flex-col items-center mb-10"
             >
-              <span className="text-[11px] font-black uppercase tracking-[0.8em] text-premium-accent mb-8 block opacity-90">
+              <span className="text-[11px] font-black uppercase tracking-[1em] text-white/60 mb-12 block opacity-90">
                 {content.heroTagline}
               </span>
               <h1 className="flex flex-col items-center">
-                <span className="text-7xl md:text-[9rem] font-black uppercase tracking-tighter leading-none luxury-text-gradient font-[Montserrat]">
+                <span className="text-[5rem] md:text-[11rem] font-black uppercase tracking-tighter leading-[0.8] text-white font-sans mb-2 drop-shadow-2xl">
                   {content.heroTitle1}
                 </span>
-                <span className="text-5xl md:text-[7.5rem] font-light serif-font italic leading-none text-white/90 -mt-2 md:-mt-6">
+                <span className="text-[3rem] md:text-[7rem] font-light serif-font italic leading-none text-white/90">
                   {content.heroTitle2}
                 </span>
               </h1>
             </motion.div>
 
             <motion.button 
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 20 }} 
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.8, duration: 1 }}
               onClick={() => setIsEnquiryModalOpen(true)}
-              className="group relative flex items-center gap-3 px-10 py-4 border border-white/20 rounded-full hover:bg-white hover:text-black transition-all duration-700 backdrop-blur-xl hover:shadow-[0_0_40px_rgba(255,255,255,0.2)] mb-12"
+              className="group relative flex items-center gap-4 px-12 py-5 border border-white/20 rounded-full hover:bg-white hover:text-black transition-all duration-700 backdrop-blur-xl hover:shadow-[0_0_50px_rgba(255,255,255,0.2)] mb-16"
             >
               <span className="text-[11px] md:text-[13px] font-black uppercase tracking-[0.5em] ml-[0.5em]">ENROLL NOW</span>
-              <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" strokeWidth={2.5} />
+              <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" strokeWidth={2.5} />
             </motion.button>
 
             <motion.div 
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 1.2, duration: 1 }}
-              className="w-full max-w-4xl bg-white/5 backdrop-blur-2xl border border-white/10 py-5 rounded-[2rem] overflow-hidden"
+              className="w-full max-w-4xl bg-white/5 backdrop-blur-2xl border border-white/10 py-5 rounded-[2.5rem] overflow-hidden"
             >
                 <div className="flex whitespace-nowrap">
                   <motion.div 
@@ -167,7 +162,6 @@ const PublicHome: React.FC = () => {
         </motion.div>
       </section>
 
-      {/* --- STATS BANNER --- */}
       <section className="py-20 border-b border-white/5 bg-[#080808]">
           <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-white/10">
               {stats.map((stat, index) => (
@@ -179,7 +173,6 @@ const PublicHome: React.FC = () => {
           </div>
       </section>
 
-      {/* --- Philosophy Section --- */}
       <section className="py-32 px-6 bg-[#050505]">
           <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-24 items-center">
               <div className="space-y-8">
@@ -201,7 +194,6 @@ const PublicHome: React.FC = () => {
           </div>
       </section>
 
-      {/* --- ACADEMIC PATHWAYS --- */}
       <section className="py-32 px-6 bg-[#030303] border-t border-white/5">
           <div className="max-w-7xl mx-auto">
               <div className="mb-20 text-center md:text-left">
@@ -228,7 +220,6 @@ const PublicHome: React.FC = () => {
           </div>
       </section>
 
-      {/* --- THE EDGE / FEATURES --- */}
       <section className="py-32 px-6 bg-[#080808]">
           <div className="max-w-7xl mx-auto">
               <div className="text-center mb-24">
@@ -254,7 +245,6 @@ const PublicHome: React.FC = () => {
           </div>
       </section>
 
-      {/* --- HALL OF FAME --- */}
       <section className="py-24 px-6 bg-premium-black relative overflow-hidden">
           <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-premium-accent/5 rounded-full blur-[120px] pointer-events-none" />
           <div className="max-w-7xl mx-auto relative z-10">
@@ -279,7 +269,6 @@ const PublicHome: React.FC = () => {
           </div>
       </section>
 
-      {/* --- FOUNDER SECTION --- */}
       <section className="py-32 px-6 bg-[#050505] border-t border-white/5">
           <div className="max-w-6xl mx-auto flex flex-col md:flex-row gap-20 items-center">
               <div className="md:w-2/5">
@@ -313,7 +302,6 @@ const PublicHome: React.FC = () => {
           </div>
       </section>
 
-      {/* --- CTA SECTION --- */}
       <section className="py-32 px-6">
           <div className="max-w-5xl mx-auto bg-gradient-to-b from-white/10 to-black border border-white/10 rounded-[60px] p-16 md:p-24 text-center relative overflow-hidden">
               <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-20"></div>
@@ -328,7 +316,6 @@ const PublicHome: React.FC = () => {
 
       <Footer />
 
-      {/* Enquiry Modal */}
       <AnimatePresence>
         {isEnquiryModalOpen && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[200] flex items-center justify-center bg-black/95 p-4 backdrop-blur-xl">

@@ -48,7 +48,8 @@ class DatabaseService {
     const { error } = await supabase.from('homework').insert({
       teacher_id: hw.teacherId, subject: hw.subject, topic: hw.topic,
       description: hw.description, due_date: hw.dueDate, target_type: hw.targetType,
-      target_grade_id: hw.targetGradeId
+      target_grade_id: hw.targetGradeId,
+      target_student_id: hw.targetStudentId
     });
     if (error) throw error;
   }
@@ -57,11 +58,11 @@ class DatabaseService {
     const { data } = await supabase.from('homework').select('*').eq('target_grade_id', gradeId).is('deleted_at', null);
     return (data || []).map(d => ({
       id: d.id, teacherId: d.teacher_id, subject: d.subject, topic: d.topic,
-      description: d.description, dueDate: d.due_date, targetType: d.target_type
+      description: d.description, dueDate: d.due_date, targetType: d.target_type,
+      targetGradeId: d.target_grade_id, targetStudentId: d.target_student_id
     }));
   }
 
-  // Updated signature to Omit status as it is hardcoded to 'Submitted' in this method
   async submitHomework(sub: Omit<HomeworkSubmission, 'id' | 'submittedAt' | 'status'>) {
     const { error } = await supabase.from('homework_submissions').insert({
       homework_id: sub.homeworkId, student_id: sub.studentId, 
@@ -173,6 +174,14 @@ class DatabaseService {
     }));
   }
 
+  async getAllStudents(): Promise<StudentProfile[]> {
+    const { data } = await supabase.from('students').select('*');
+    return (data || []).map(d => ({
+      id: d.id, profileId: d.profile_id, name: d.name, rollNo: d.roll_no, 
+      gradeId: d.grade_id, divisionId: d.division_id, mobile: d.mobile
+    }));
+  }
+
   async getAnnouncements(): Promise<any[]> {
     const { data } = await supabase.from('announcements').select('*').eq('is_active', true);
     return data || [];
@@ -236,7 +245,8 @@ class DatabaseService {
     const { data } = await supabase.from('homework').select('*').is('deleted_at', null);
     return (data || []).map(d => ({
       id: d.id, teacherId: d.teacher_id, subject: d.subject, topic: d.topic,
-      description: d.description, dueDate: d.due_date, targetType: d.target_type
+      description: d.description, dueDate: d.due_date, targetType: d.target_type,
+      targetGradeId: d.target_grade_id, targetStudentId: d.target_student_id
     }));
   }
 
