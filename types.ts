@@ -13,40 +13,6 @@ export interface Subdivision {
   liveMeetingId?: string;
 }
 
-export interface Student {
-  id: string;
-  studentCustomId: string;
-  name: string;
-  mobile: string;
-  parentName: string;
-  gradeId: string;
-  subdivisionId: string;
-  joiningDate: string;
-  dob?: string;
-  imageUrl?: string;
-  totalFees: string;
-  monthlyFees: string; 
-  schoolName: string; 
-  address: string; 
-  feesStatus: 'Paid' | 'Pending' | 'Overdue';
-  status: 'Active' | 'Suspended';
-  password?: string;
-  email?: string;
-}
-
-export interface Teacher {
-  id: string;
-  teacherCustomId: string;
-  name: string;
-  mobile: string;
-  gradeId: string;
-  subdivisionId: string;
-  joiningDate: string;
-  status: 'Active' | 'Suspended';
-  specialization: string;
-  password?: string;
-}
-
 export interface Notice {
   id: string;
   title: string;
@@ -58,10 +24,19 @@ export interface Notice {
 export interface User {
   id: string;
   username: string;
-  role: 'admin' | 'student' | 'teacher';
-  divisionId?: string; 
+  role: 'admin';
   status?: 'Active' | 'Suspended';
   imageUrl?: string;
+}
+
+// Added Student interface to support student-related features and payment portal
+export interface Student {
+  id: string;
+  name: string;
+  mobile: string;
+  gradeId: string;
+  studentCustomId: string;
+  monthlyFees?: string;
 }
 
 export interface FeeSubmission {
@@ -84,103 +59,6 @@ export interface GatewayConfig {
 export interface SystemSettings {
   googleSiteKey: string;
   gateways: Record<string, GatewayConfig>;
-}
-
-export interface TimetableEntry {
-  id: string;
-  divisionId: string;
-  day: 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday' | 'Sunday';
-  startTime: string;
-  endTime: string;
-  subject: string;
-  teacherName?: string;
-}
-
-export interface AttendanceRecord {
-  id: string;
-  studentId: string;
-  divisionId: string;
-  date: string;
-  status: 'Present' | 'Absent' | 'Leave';
-}
-
-export interface Homework {
-  id: string;
-  gradeId: string;
-  subdivisionId: string;
-  targetType: 'Grade' | 'Division' | 'Individual' | 'Global';
-  targetStudentId?: string;
-  subject: string;
-  task: string;
-  dueDate: string;
-  assignedBy: string;
-}
-
-export interface HomeworkSubmission {
-    id: string;
-    homeworkId: string;
-    studentId: string;
-    submissionText: string;
-    imageUrl?: string; 
-    submittedAt: string;
-    status: 'Submitted' | 'Reviewed';
-}
-
-export interface Question {
-    id: string;
-    text: string;
-    type: 'short' | 'mcq' | 'paragraph';
-    marks: number;
-    options?: string[]; // 4 options for OMR/MCQ
-}
-
-export interface Exam {
-    id: string;
-    title: string;
-    gradeId: string;
-    subdivisionId: string;
-    targetType: 'Grade' | 'Division' | 'Individual' | 'Global';
-    targetStudentId?: string;
-    subject: string;
-    examDate: string;
-    startTime: string;
-    duration: number;
-    totalMarks: number;
-    questions: Question[];
-    reopenable: boolean;
-    createdBy: string;
-}
-
-export interface ExamSubmission {
-    id: string;
-    examId: string;
-    studentId: string;
-    studentName?: string;
-    answers: Record<string, string>;
-    marksAwarded?: Record<string, number>;
-    totalObtained?: number;
-    submittedAt: string;
-    status: 'Submitted' | 'Graded';
-}
-
-export interface ExamResult {
-    id: string;
-    examId: string;
-    studentId: string;
-    marksObtained: number;
-    percentage: number;
-    status: 'Pass' | 'Fail';
-}
-
-export interface StudentQuery {
-    id: string;
-    studentId: string;
-    studentName: string;
-    subject: string;
-    queryText: string;
-    status: 'Unanswered' | 'Answered';
-    replyText?: string;
-    createdAt: string;
 }
 
 export interface Enquiry {
@@ -227,20 +105,6 @@ export interface Order {
     createdAt: string;
 }
 
-export interface StudyNote {
-  id: string;
-  gradeId: string;
-  divisionId: string;
-  targetType: 'Grade' | 'Division' | 'Individual' | 'Global';
-  targetStudentId?: string;
-  subject: string;
-  title: string;
-  content: string;
-  fileUrl?: string;
-  createdAt: string;
-  teacherId: string;
-}
-
 export interface StudentNotification {
     id: string;
     targetType: 'all' | 'grade' | 'division' | 'student';
@@ -251,27 +115,4 @@ export interface StudentNotification {
     createdAt: string;
 }
 
-export type TabView = 'dashboard' | 'students' | 'notices' | 'timetable' | 'grades' | 'teachers' | 'fees' | 'settings' | 'enquiries' | 'shop' | 'products' | 'broadcast' | 'homework' | 'exams';
-
-export interface StudentOwnExam {
-    id: string;
-    studentId: string;
-    studentName: string;
-    gradeId: string;
-    subdivisionId: string;
-    subject: string;
-    examDate: string;
-    description: string;
-}
-
-export interface LeaveApplication {
-    id: string;
-    studentId: string;
-    studentName: string;
-    gradeId: string;
-    subdivisionId: string;
-    startDate: string;
-    endDate: string;
-    reason: string;
-    status: 'Pending' | 'Approved' | 'Rejected';
-}
+export type TabView = 'dashboard' | 'notices' | 'grades' | 'fees' | 'settings' | 'enquiries' | 'shop' | 'products' | 'broadcast';
