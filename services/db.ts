@@ -474,7 +474,7 @@ class DatabaseService {
   }
 
   async getHomeworkForStudent(gradeId: string, subdivisionId: string, studentId: string): Promise<Homework[]> {
-       // ROBUST CLIENT-SIDE FILTERING REPLACEMENT
+       // ROBUST CLIENT-SIDE FILTERING REPLACEMENT (IMPROVED)
        const { data, error } = await supabase.from('homework').select('*');
        
        if (error || !data) {
@@ -482,35 +482,36 @@ class DatabaseService {
            return [];
        }
 
-       // Helper to normalize IDs for comparison (handle nulls/undefined safely)
        const norm = (id: any) => String(id || '').trim();
+       const sGrade = norm(gradeId);
+       const sDiv = norm(subdivisionId);
+       const sId = norm(studentId);
 
        const filtered = data.filter(h => {
-           const type = h.target_type;
+           // Default to 'Division' if target_type is missing/null to handle legacy data safely
+           const type = h.target_type || 'Division'; 
            const hGrade = norm(h.grade_id);
            const hDiv = norm(h.subdivision_id);
-           const sGrade = norm(gradeId);
-           const sDiv = norm(subdivisionId);
-           const sId = norm(studentId);
+           const hStudent = norm(h.target_student_id);
 
-           // 1. Individual: Exact Student Match
+           // 1. Individual Target (Highest Priority)
            if (type === 'Individual') {
-               return norm(h.target_student_id) === sId;
+               return hStudent === sId;
            }
 
-           // 2. Grade-Wide: Match Grade OR Global
-           // 'Global' grade_id means it applies to all grades.
-           if (type === 'Grade') {
-               return hGrade === 'Global' || hGrade === sGrade;
-           }
+           // 2. Grade Check
+           // Must match student's grade OR be 'Global' (All Grades)
+           const gradeMatches = hGrade === 'Global' || hGrade === sGrade;
+           if (!gradeMatches) return false;
 
-           // 3. Division-Specific: Match Grade AND (Division OR Global Div)
-           // Note: Even if it's 'Division' type, it must match the student's Grade first (unless Grade is Global)
-           // A 'Global' subdivision_id usually means "All Divisions in this Grade".
+           // 3. Division Check
+           // If type is 'Grade', we assume it applies to the whole grade (ignore division)
+           if (type === 'Grade') return true;
+
+           // If type is 'Division' (default), we check division
+           // Matches if division is 'Global' (All Divs) OR matches student's division
            if (type === 'Division') {
-               const gradeMatches = hGrade === 'Global' || hGrade === sGrade;
-               const divMatches = hDiv === 'Global' || hDiv === sDiv;
-               return gradeMatches && divMatches;
+               return hDiv === 'Global' || hDiv === sDiv;
            }
 
            return false;
@@ -608,29 +609,32 @@ class DatabaseService {
   }
 
   async getExamsForStudent(gradeId: string, subdivisionId: string, studentId: string): Promise<Exam[]> {
-      // ROBUST CLIENT-SIDE FILTERING REPLACEMENT FOR EXAMS
+      // ROBUST CLIENT-SIDE FILTERING REPLACEMENT FOR EXAMS (IMPROVED)
       const { data, error } = await supabase.from('exams').select('*');
       
       if (error || !data) return [];
 
       const norm = (id: any) => String(id || '').trim();
+      const sGrade = norm(gradeId);
+      const sDiv = norm(subdivisionId);
+      const sId = norm(studentId);
 
       const filtered = data.filter(e => {
-           const type = e.target_type;
+           const type = e.target_type || 'Division'; // Fail-safe default
            const eGrade = norm(e.grade_id);
            const eDiv = norm(e.subdivision_id);
-           const sGrade = norm(gradeId);
-           const sDiv = norm(subdivisionId);
-           const sId = norm(studentId);
+           const eStudent = norm(e.target_student_id);
 
-           if (type === 'Individual') return norm(e.target_student_id) === sId;
+           if (type === 'Individual') return eStudent === sId;
            
-           if (type === 'Grade') return eGrade === 'Global' || eGrade === sGrade;
+           // Grade Match
+           const gradeMatches = eGrade === 'Global' || eGrade === sGrade;
+           if (!gradeMatches) return false;
+
+           if (type === 'Grade') return true;
            
            if (type === 'Division') {
-               const gradeMatches = eGrade === 'Global' || eGrade === sGrade;
-               const divMatches = eDiv === 'Global' || eDiv === sDiv;
-               return gradeMatches && divMatches;
+               return eDiv === 'Global' || eDiv === sDiv;
            }
            
            return false;
@@ -822,7 +826,7 @@ class DatabaseService {
   }
 
   async getNotes(gradeId?: string, divisionId?: string, studentId?: string): Promise<StudyNote[]> {
-    // ROBUST CLIENT-SIDE FILTERING FOR NOTES
+    // ROBUST CLIENT-SIDE FILTERING FOR NOTES (IMPROVED)
     const { data, error } = await supabase.from('study_notes').select('*');
     if (error || !data) return [];
 
@@ -832,27 +836,30 @@ class DatabaseService {
     
     // If specific student request (Student Panel)
     if (studentId && gradeId) {
+        const sGrade = norm(gradeId);
+        const sDiv = norm(divisionId);
+        const sId = norm(studentId);
+
         filtered = data.filter(n => {
-            const sGrade = norm(gradeId);
-            const sDiv = norm(divisionId);
+            const type = n.target_type || 'Grade'; // Default to Grade if missing
             const nGrade = norm(n.grade_id);
             const nDiv = norm(n.division_id);
+            const nStudent = norm(n.target_student_id);
             
-            // Individual target
-            if (n.target_type === 'Individual') return norm(n.target_student_id) === norm(studentId);
+            // Individual
+            if (type === 'Individual') return nStudent === sId;
             
-            // Grade target (Usually implies All Divisions unless Division specific logic is added to notes later)
-            // Current note structure: target_type is 'Grade' or 'Individual'.
-            // If target_type is Grade, it matches Grade match.
-            // Some notes might have division_id set.
+            // Grade Check (Global or Match)
             const gradeMatch = nGrade === 'Global' || nGrade === sGrade;
-            const divMatch = nDiv === 'Global' || nDiv === '' || nDiv === sDiv; // Allow empty division in notes to mean global within grade
+            
+            // Division Check (Global or Match or Empty)
+            // Allow empty division in notes to mean global within grade implicitly
+            const divMatch = nDiv === 'Global' || nDiv === '' || nDiv === sDiv;
 
             return gradeMatch && divMatch;
         });
     } else {
-        // Teacher View (Show what they created/relevant to their selection)
-        // If teacher selects All Grades, show all. If specific, show specific.
+        // Teacher view logic (Show what they created/relevant to their selection)
         if (gradeId) filtered = filtered.filter(n => norm(n.grade_id) === norm(gradeId) || norm(n.grade_id) === 'Global');
         if (divisionId) filtered = filtered.filter(n => norm(n.division_id) === norm(divisionId) || norm(n.division_id) === 'Global');
     }
