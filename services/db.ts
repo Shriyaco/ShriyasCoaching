@@ -1,47 +1,193 @@
 
 import { supabase } from './supabase';
 import { 
-  Grade, StudentProfile, AttendanceRecord, Homework, HomeworkSubmission,
-  Exam, ExamQuestion, ExamAttempt, ExamResponse, LeaveApplication,
-  Doubt, StudyNote, SchoolExam, User, RequestStatus, Notice, Division,
-  Enquiry, Product, Order, FeeSubmission, SystemSettings, Student
+  Grade, StudentProfile, AttendanceRecord, Profile,
+  TeacherAssignment, User, Notice, Division,
+  Enquiry, SystemSettings, RequestStatus, Student, Product, Order,
+  Homework, Exam, Doubt
 } from '../types';
 
 class DatabaseService {
   
-  // --- AUTH & USER ---
-  async login(username: string, password: string): Promise<User | null> {
-    // Demo implementation - in production use Supabase Auth
-    if (username === 'Admin' && password === 'Reset@852') {
-      return { id: 'admin1', username: 'Shriya Admin', role: 'admin' };
+  // --- AUTH & PROFILES ---
+  async getCurrentProfile(): Promise<Profile | null> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return null;
+    const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+    if (!data) return null;
+    return {
+      id: data.id,
+      fullName: data.full_name,
+      mobile: data.mobile,
+      role: data.role as any,
+      status: data.status as any,
+      academyId: data.academy_id || 'SHRIYA_MAIN'
+    };
+  }
+
+  /**
+   * Legacy Account Creation Format:
+   * Username: First 3 of Name + First 3 of Mobile
+   * Password: Full Mobile Number
+   */
+  async createProfile(p: { fullName: string; mobile: string; role: string }) {
+    // 1. Generate Credentials
+    const cleanName = p.fullName.replace(/\s/g, '').substring(0, 3);
+    const cleanMobPrefix = p.mobile.substring(0, 3);
+    const generatedUsername = `${cleanName}${cleanMobPrefix}`;
+    const generatedEmail = `${generatedUsername.toLowerCase()}@shriyasgurukul.in`;
+    const password = p.mobile;
+
+    // 2. Create Auth User
+    const { data: authData, error: authError } = await supabase.auth.signUp({
+      email: generatedEmail,
+      password: password,
+      options: {
+        data: {
+          full_name: p.fullName,
+          role: p.role
+        }
+      }
+    });
+
+    if (authError) throw authError;
+    if (!authData.user) throw new Error("Auth creation failed");
+
+    // 3. Create Public Profile
+    const { data: profileData, error: profileError } = await supabase.from('profiles').insert({
+      id: authData.user.id, 
+      full_name: p.fullName,
+      mobile: p.mobile,
+      role: p.role,
+      status: 'Active',
+      academy_id: 'SHRIYA_MAIN'
+    }).select().single();
+
+    if (profileError) throw profileError;
+
+    // 4. Create Student Specific Record (Crucial for profile_id mapping)
+    if (p.role === 'student') {
+        const { error: studentError } = await supabase.from('students').insert({
+            profile_id: authData.user.id,
+            name: p.fullName,
+            mobile: p.mobile,
+            student_custom_id: `SID-${Math.floor(1000 + Math.random() * 9000)}`
+        });
+        if (studentError) console.error("Student specific record failed:", studentError);
     }
-    // Mobile number as login for students/teachers
-    const { data: profile } = await supabase.from('profiles').select('*').eq('mobile', username).single();
-    if (profile) return { id: profile.id, username: profile.full_name, role: profile.role as any, mobile: profile.mobile };
+    
+    return { ...profileData, generatedUsername, password };
+  }
+
+  async login(username: string, password: string): Promise<User | null> {
+    const loginEmail = username.includes('@') ? username : `${username.toLowerCase()}@shriyasgurukul.in`;
+
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: loginEmail,
+      password: password,
+    });
+    
+    if (error) {
+      if (username === 'Admin' && password === 'Reset@852') {
+        return { id: 'admin1', username: 'Shriya Admin', role: 'admin' };
+      }
+      return null;
+    }
+
+    const profile = await this.getCurrentProfile();
+    if (profile) return { id: profile.id, username: profile.fullName, role: profile.role, mobile: profile.mobile };
     return null;
   }
 
-  // --- ATTENDANCE ---
-  async getStudentsByDivision(divisionId: string): Promise<StudentProfile[]> {
-    const { data } = await supabase.from('students').select(`
-      *, profiles(full_name)
-    `).eq('division_id', divisionId);
-    return (data || []).map(s => ({
-      id: s.id,
-      profileId: s.profile_id,
-      name: s.profiles.full_name,
-      rollNo: s.roll_no,
-      gradeId: s.grade_id,
-      divisionId: s.division_id,
-      mobile: s.mobile,
-      monthlyFees: s.monthly_fees,
-      studentCustomId: s.student_custom_id
+  // --- ADMIN: OVERSIGHT & AUDIT ---
+  private async logAction(action: string, table: string, id: string, payload: any = {}) {
+    const { data: { user } } = await supabase.auth.getUser();
+    await supabase.from('audit_logs').insert({
+      admin_id: user?.id,
+      action_type: action,
+      target_table: table,
+      target_id: id,
+      payload
+    });
+  }
+
+  async getAdminAllHomework(): Promise<Homework[]> {
+    const { data } = await supabase.from('homework')
+      .select('*')
+      .is('deleted_at', null)
+      .order('created_at', { ascending: false });
+    return data || [];
+  }
+
+  async adminDeleteHomework(id: string) {
+    const { error } = await supabase.from('homework')
+      .update({ deleted_at: new Date().toISOString() })
+      .eq('id', id);
+    if (error) throw error;
+    await this.logAction('DELETE_HOMEWORK', 'homework', id);
+  }
+
+  async getAdminAllExams(): Promise<Exam[]> {
+    const { data } = await supabase.from('exams')
+      .select('*')
+      .is('deleted_at', null)
+      .order('created_at', { ascending: false });
+    return data || [];
+  }
+
+  async adminDeleteExam(id: string) {
+    const { error } = await supabase.from('exams')
+      .update({ deleted_at: new Date().toISOString() })
+      .eq('id', id);
+    if (error) throw error;
+    await this.logAction('DELETE_EXAM', 'exams', id);
+  }
+
+  // --- CMS ---
+  async getPageContent(page: string): Promise<any | null> {
+    const { data } = await supabase.from('cms_content').select('content').eq('page_id', page).maybeSingle();
+    return data?.content || null;
+  }
+
+  async updatePageContent(page: string, content: any) {
+    const { error } = await supabase.from('cms_content').upsert({
+      page_id: page,
+      content: content,
+      updated_at: new Date().toISOString()
+    });
+    if (error) throw error;
+  }
+
+  // --- NOTICES ---
+  async getNotices(): Promise<Notice[]> {
+    const { data } = await supabase.from('notices').select('*').order('created_at', { ascending: false });
+    return (data || []).map(d => ({
+      id: d.id,
+      title: d.title,
+      content: d.content,
+      important: d.important,
+      createdAt: d.created_at
     }));
   }
 
-  async markAttendance(records: Omit<AttendanceRecord, 'id'>[]) {
-    // Uses UPSERT with UNIQUE(student_id, date) constraint
-    const { error } = await supabase.from('attendance').upsert(records.map(r => ({
+  // --- STUDENTS & ATTENDANCE ---
+  async getStudentsByDivision(divisionId: string): Promise<StudentProfile[]> {
+    const { data } = await supabase.from('students').select('*').eq('division_id', divisionId);
+    return (data || []).map(d => ({
+      id: d.id,
+      profileId: d.profile_id,
+      name: d.name,
+      rollNo: d.roll_no,
+      gradeId: d.grade_id,
+      divisionId: d.division_id,
+      mobile: d.mobile,
+      monthlyFees: d.monthly_fees,
+      studentCustomId: d.student_custom_id
+    }));
+  }
+
+  async markAttendance(records: any[]) {
+    const { error } = await supabase.from('attendance').insert(records.map(r => ({
       student_id: r.studentId,
       date: r.date,
       status: r.status,
@@ -51,314 +197,256 @@ class DatabaseService {
   }
 
   async getStudentAttendanceSummary(studentId: string) {
-    const { data } = await supabase.from('attendance').select('*').eq('student_id', studentId);
+    const { data } = await supabase.from('attendance').select('status').eq('student_id', studentId);
     const total = data?.length || 0;
-    const present = data?.filter(r => r.status === 'Present').length || 0;
-    return { total, present, percentage: total ? (present / total) * 100 : 0 };
+    const present = data?.filter(d => d.status === 'Present').length || 0;
+    return {
+      total,
+      present,
+      percentage: total > 0 ? (present / total) * 100 : 0
+    };
   }
 
-  // --- HOMEWORK ---
-  async assignHomework(hw: Omit<Homework, 'id'>) {
-    const { error } = await supabase.from('homework').insert({
-      teacher_id: hw.teacherId,
-      subject: hw.subject,
-      topic: hw.topic,
-      description: hw.description,
-      due_date: hw.dueDate,
-      attachment_url: hw.attachmentUrl,
-      target_type: hw.targetType,
-      target_grade_id: hw.targetGradeId,
-      target_student_id: hw.targetStudentId
+  // --- SHOP ---
+  async getProducts(): Promise<Product[]> {
+    const { data } = await supabase.from('products').select('*').eq('is_active', true);
+    return (data || []).map(d => ({
+      id: d.id,
+      name: d.name,
+      description: d.description,
+      basePrice: d.base_price,
+      imageUrl: d.image_url,
+      category: d.category,
+      stockStatus: d.stock_status
+    }));
+  }
+
+  async adminAddProduct(p: Omit<Product, 'id'>) {
+    const { data, error } = await supabase.from('products').insert({
+      name: p.name,
+      description: p.description,
+      base_price: p.basePrice,
+      image_url: p.imageUrl,
+      category: p.category,
+      stock_status: p.stockStatus,
+      is_active: true
+    }).select().single();
+    if (error) throw error;
+    await this.logAction('ADD_PRODUCT', 'products', data.id, p);
+  }
+
+  async adminUpdateProduct(id: string, updates: Partial<Product>) {
+    const { error } = await supabase.from('products').update({
+      name: updates.name,
+      base_price: updates.basePrice,
+      stock_status: updates.stockStatus,
+      is_active: updates.stockStatus !== 'Archived'
+    }).eq('id', id);
+    if (error) throw error;
+    await this.logAction('UPDATE_PRODUCT', 'products', id, updates);
+  }
+
+  // --- ANNOUNCEMENTS ---
+  async getAnnouncements(): Promise<any[]> {
+    const { data } = await supabase.from('announcements')
+      .select('*')
+      .eq('is_active', true)
+      .order('created_at', { ascending: false });
+    return data || [];
+  }
+
+  async adminAddAnnouncement(a: any) {
+    const { data, error } = await supabase.from('announcements').insert({
+      title: a.title,
+      priority: a.priority,
+      is_ticker: a.isTicker,
+      academy_id: 'SHRIYA_MAIN'
+    }).select().single();
+    if (error) throw error;
+    await this.logAction('ADD_ANNOUNCEMENT', 'announcements', data.id, a);
+  }
+
+  // --- MANAGEMENT ---
+  async getAllProfiles(role?: string): Promise<Profile[]> {
+    let query = supabase.from('profiles').select('*');
+    if (role) query = query.eq('role', role);
+    const { data } = await query.order('full_name');
+    return (data || []).map(d => ({
+      id: d.id,
+      fullName: d.full_name,
+      mobile: d.mobile,
+      role: d.role as any,
+      status: d.status as any,
+      academyId: d.academy_id
+    }));
+  }
+
+  async getGrades(): Promise<Grade[]> {
+    const { data } = await supabase.from('grades').select('*').order('grade_name');
+    return (data || []).map(d => ({ id: d.id, gradeName: d.grade_name }));
+  }
+
+  async addGrade(name: string) {
+    await supabase.from('grades').insert({ grade_name: name, academy_id: 'SHRIYA_MAIN' });
+  }
+
+  async deleteGrade(id: string) {
+    await supabase.from('grades').delete().eq('id', id);
+  }
+
+  async getTeacherAssignments(): Promise<TeacherAssignment[]> {
+    const { data } = await supabase.from('teacher_assignments').select('*');
+    return (data || []).map(d => ({
+      id: d.id,
+      teacherId: d.teacher_id,
+      gradeId: d.grade_id,
+      subject: d.subject
+    }));
+  }
+
+  async addTeacherAssignment(a: Omit<TeacherAssignment, 'id'>) {
+    await supabase.from('teacher_assignments').insert({
+      teacher_id: a.teacherId,
+      grade_id: a.gradeId,
+      subject: a.subject
+    });
+  }
+
+  async deleteTeacherAssignment(id: string) {
+    await supabase.from('teacher_assignments').delete().eq('id', id);
+  }
+
+  async getEnquiries(): Promise<Enquiry[]> {
+    const { data } = await supabase.from('enquiries').select('*').order('created_at', { ascending: false });
+    return (data || []).map(d => ({
+      id: d.id,
+      studentName: d.student_name,
+      parentName: d.parent_name,
+      relation: d.relation,
+      grade: d.grade,
+      board: d.board,
+      mobile: d.mobile,
+      createdAt: d.created_at
+    }));
+  }
+
+  async addEnquiry(e: any) {
+    const { error } = await supabase.from('enquiries').insert({
+      student_name: e.studentName,
+      parent_name: e.parentName,
+      relation: e.relation,
+      grade: e.grade,
+      board: e.board,
+      mobile: e.mobile,
+      school_name: e.schoolName,
+      has_coaching: e.hasCoaching,
+      coaching_name: e.coachingName,
+      shifting_reason: e.shiftingReason,
+      expectations: e.expectations,
+      reason: e.reason
     });
     if (error) throw error;
   }
 
-  async getHomeworkSubmissions(homeworkId: string): Promise<HomeworkSubmission[]> {
-    const { data } = await supabase.from('homework_submissions').select('*, profiles(full_name)').eq('homework_id', homeworkId);
-    return (data || []).map(s => ({
-      id: s.id,
-      homeworkId: s.homework_id,
-      studentId: s.student_id,
-      content: s.content,
-      attachmentUrl: s.attachment_url,
-      submittedAt: s.submitted_at,
-      isChecked: s.is_checked,
-      remarks: s.remarks
-    }));
+  async getFeeSubmissions(): Promise<any[]> {
+    const { data } = await supabase.from('fee_submissions').select('*').order('created_at', { ascending: false });
+    return data || [];
   }
 
-  // --- EXAMS ---
-  async createExam(exam: Omit<Exam, 'id'>, questions: Omit<ExamQuestion, 'id' | 'examId'>[]) {
-    const { data: newExam, error: examErr } = await supabase.from('exams').insert({
-      teacher_id: exam.teacherId,
-      title: exam.title,
-      subject: exam.subject,
-      target_type: exam.targetType,
-      target_id: exam.targetId,
-      start_time: exam.startTime,
-      end_time: exam.endTime,
-      duration_minutes: exam.durationMinutes,
-      total_marks: exam.totalMarks,
-      negative_marking_factor: exam.negativeMarkingFactor
-    }).select().single();
-
-    if (examErr) throw examErr;
-
-    const questionsWithId = questions.map(q => ({ ...q, exam_id: newExam.id }));
-    const { error: qErr } = await supabase.from('exam_questions').insert(questionsWithId);
-    if (qErr) throw qErr;
-
-    return newExam.id;
-  }
-
-  async startExamAttempt(examId: string, studentId: string): Promise<string> {
-    const { data, error } = await supabase.from('exam_attempts').insert({
-      exam_id: examId,
-      student_id: studentId,
-      start_at: new Date().toISOString()
-    }).select().single();
-    if (error) throw error;
-    return data.id;
-  }
-
-  async submitExamAttempt(attemptId: string, responses: Omit<ExamResponse, 'id' | 'attemptId'>[]) {
-    const { error: rErr } = await supabase.from('exam_responses').insert(
-      responses.map(r => ({ ...r, attempt_id: attemptId }))
-    );
-    if (rErr) throw rErr;
-
-    const { error: aErr } = await supabase.from('exam_attempts').update({
-      submitted_at: new Date().toISOString()
-    }).eq('id', attemptId);
-    if (aErr) throw aErr;
-  }
-
-  // --- LEAVE & DOUBTS ---
-  async applyLeave(leave: Omit<LeaveApplication, 'id' | 'status'>) {
-    const { error } = await supabase.from('leave_applications').insert({
-      student_id: leave.studentId,
-      from_date: leave.fromDate,
-      to_date: leave.toDate,
-      reason: leave.reason,
+  async addFeeSubmission(s: any) {
+    const { error } = await supabase.from('fee_submissions').insert({
+      student_id: s.studentId,
+      student_name: s.studentName,
+      amount: s.amount,
+      transaction_ref: s.transactionRef,
+      payment_method: s.paymentMethod,
       status: 'Pending'
     });
     if (error) throw error;
   }
 
-  async updateLeaveStatus(leaveId: string, status: RequestStatus, remarks: string) {
-    const { error: lErr } = await supabase.from('leave_applications')
-      .update({ status, teacher_remarks: remarks })
-      .eq('id', leaveId);
-    
-    if (lErr) throw lErr;
-
-    // Proactive Attendance Sync: If approved, mark attendance table as 'Leave'
-    if (status === 'Approved') {
-      // Logic for generating dates array between from/to and bulk upserting to attendance
-    }
-  }
-
-  async raiseDoubt(doubt: Omit<Doubt, 'id' | 'status' | 'createdAt'>) {
-    await supabase.from('doubts').insert({
-      student_id: doubt.studentId,
-      subject: doubt.subject,
-      question: doubt.question,
-      attachment_url: doubt.attachmentUrl,
-      status: 'Open'
-    });
-  }
-
-  // --- CMS & SHOP ---
-  async getPageContent(pageKey: string): Promise<any> {
-      const { data } = await supabase.from('site_content').select('content_json').eq('page_key', pageKey).single();
-      return data?.content_json || null;
-  }
-
-  async updatePageContent(pageKey: string, content: any) {
-      await supabase.from('site_content').upsert({ page_key: pageKey, content_json: content });
-  }
-
-  async getNotices(): Promise<Notice[]> {
-    const { data } = await supabase.from('notices').select('*').order('date', { ascending: false });
-    return data || [];
-  }
-
-  async addNotice(notice: Omit<Notice, 'id'>) {
-    const { error } = await supabase.from('notices').insert(notice);
-    if (error) throw error;
-  }
-  
   async getSettings(): Promise<SystemSettings | null> {
     const { data } = await supabase.from('system_settings').select('*').single();
     return data;
   }
 
-  async updateSettings(settings: SystemSettings) {
-    const { error } = await supabase.from('system_settings').upsert(settings);
-    if (error) throw error;
+  async getStudentById(id: string): Promise<Student | null> {
+    const { data } = await supabase.from('students').select('*').eq('id', id).single();
+    if (!data) return null;
+    return {
+      id: data.id,
+      profileId: data.profile_id,
+      name: data.name,
+      rollNo: data.roll_no,
+      gradeId: data.grade_id,
+      divisionId: data.division_id,
+      mobile: data.mobile,
+      monthlyFees: data.monthly_fees,
+      studentCustomId: data.student_custom_id
+    };
   }
 
-  // --- ADMIN MODULES ---
-  async getGrades(): Promise<Grade[]> {
-    const { data } = await supabase.from('grades').select('*').order('grade_name', { ascending: true });
-    return data || [];
+  async findStudentByMobile(mobile: string): Promise<Student | null> {
+    const { data } = await supabase.from('students').select('*').eq('mobile', mobile).maybeSingle();
+    if (!data) return null;
+    return {
+      id: data.id,
+      profileId: data.profile_id,
+      name: data.name,
+      rollNo: data.roll_no,
+      gradeId: data.grade_id,
+      divisionId: data.division_id,
+      mobile: data.mobile,
+      monthlyFees: data.monthly_fees,
+      studentCustomId: data.student_custom_id
+    };
   }
 
-  async addGrade(gradeName: string, divisions: string[]) {
-    const { data: newGrade, error: gErr } = await supabase.from('grades').insert({ grade_name: gradeName }).select().single();
-    if (gErr) throw gErr;
-    if (divisions.length > 0) {
-      const divRecords = divisions.map(d => ({ grade_id: newGrade.id, division_name: d }));
-      await supabase.from('divisions').insert(divRecords);
-    }
-  }
-
-  async deleteGrade(id: string) {
-    const { error } = await supabase.from('grades').delete().eq('id', id);
-    if (error) throw error;
-  }
-
-  async getDivisions(): Promise<Division[]> {
-    const { data } = await supabase.from('divisions').select('*');
-    return data || [];
-  }
-
-  async getFeeSubmissions(): Promise<FeeSubmission[]> {
-    const { data } = await supabase.from('fee_submissions').select('*').order('created_at', { ascending: false });
-    return (data || []).map(f => ({
-      id: f.id,
-      studentId: f.student_id,
-      studentName: f.student_name,
-      amount: f.amount,
-      status: f.status,
-      transactionRef: f.transaction_ref,
-      paymentMethod: f.payment_method,
-      createdAt: f.created_at
-    }));
-  }
-
-  async addFeeSubmission(fee: Omit<FeeSubmission, 'id' | 'createdAt' | 'status'>) {
-    const { error } = await supabase.from('fee_submissions').insert({
-      student_id: fee.studentId,
-      student_name: fee.studentName,
-      amount: fee.amount,
-      transaction_ref: fee.transactionRef,
-      payment_method: fee.paymentMethod,
-      status: 'Pending'
-    });
-    if (error) throw error;
-  }
-
-  async getEnquiries(): Promise<Enquiry[]> {
-    const { data } = await supabase.from('enquiries').select('*').order('created_at', { ascending: false });
-    return data || [];
-  }
-
-  async addEnquiry(enquiry: any) {
-    const { error } = await supabase.from('enquiries').insert(enquiry);
-    if (error) throw error;
-  }
-
-  async getProducts(): Promise<Product[]> {
-    const { data } = await supabase.from('products').select('*');
-    return data || [];
-  }
-
-  async getOrders(studentId?: string): Promise<Order[]> {
-    let query = supabase.from('shop_orders').select('*');
-    if (studentId) query = query.eq('student_id', studentId);
-    const { data } = await query.order('created_at', { ascending: false });
-    return (data || []).map(o => ({
-      id: o.id,
-      studentId: o.student_id,
-      studentName: o.student_name,
-      productId: o.product_id,
-      productName: o.product_name,
-      productImage: o.product_image,
-      customName: o.custom_name,
-      changeRequest: o.change_request,
+  async createOrder(o: Omit<Order, 'id' | 'createdAt'>): Promise<Order> {
+    const { data, error } = await supabase.from('orders').insert({
+      student_id: o.studentId,
+      student_name: o.studentName,
+      product_id: o.productId,
+      product_name: o.productName,
+      product_image: o.productImage,
+      custom_name: o.customName,
+      change_request: o.changeRequest,
       address: o.address,
       pincode: o.pincode,
       state: o.state,
       mobile: o.mobile,
       status: o.status,
-      finalPrice: o.final_price,
-      transactionRef: o.transaction_ref,
-      createdAt: o.created_at
-    }));
-  }
-
-  async createOrder(order: Omit<Order, 'id' | 'createdAt'>): Promise<Order> {
-    const { data, error } = await supabase.from('shop_orders').insert({
-      student_id: order.studentId,
-      student_name: order.studentName,
-      product_id: order.productId,
-      product_name: order.productName,
-      product_image: order.productImage,
-      custom_name: order.customName,
-      change_request: order.changeRequest,
-      address: order.address,
-      pincode: order.pincode,
-      state: order.state,
-      mobile: order.mobile,
-      status: order.status,
-      final_price: order.finalPrice
+      final_price: o.finalPrice
     }).select().single();
     if (error) throw error;
-    return data;
+    return { ...o, id: data.id, createdAt: data.created_at };
   }
 
   async updateOrder(id: string, updates: Partial<Order>) {
-    const { error } = await supabase.from('shop_orders').update({
-      status: updates.status,
-      transaction_ref: updates.transactionRef
-    }).eq('id', id);
+    const { error } = await supabase.from('orders').update(updates).eq('id', id);
     if (error) throw error;
   }
 
-  async getStudentById(id: string): Promise<Student | null> {
-    const { data } = await supabase.from('students').select(`
-      *, profiles(full_name)
-    `).eq('id', id).single();
-    return data ? {
-      id: data.id,
-      profileId: data.profile_id,
-      name: data.profiles.full_name,
-      rollNo: data.roll_no,
-      gradeId: data.grade_id,
-      divisionId: data.division_id,
-      mobile: data.mobile,
-      monthlyFees: data.monthly_fees,
-      studentCustomId: data.student_custom_id
-    } : null;
-  }
-
-  async findStudentByMobile(mobile: string): Promise<Student | null> {
-    const { data } = await supabase.from('students').select(`
-      *, profiles(full_name)
-    `).eq('mobile', mobile).single();
-    return data ? {
-      id: data.id,
-      profileId: data.profile_id,
-      name: data.profiles.full_name,
-      rollNo: data.roll_no,
-      gradeId: data.grade_id,
-      divisionId: data.division_id,
-      mobile: data.mobile,
-      monthlyFees: data.monthly_fees,
-      studentCustomId: data.student_custom_id
-    } : null;
-  }
-
-  // --- REAL-TIME SUBSCRIPTION ---
-  subscribe(table: string, callback: () => void) {
-    return supabase.channel(`public:${table}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table }, callback)
-      .subscribe();
-  }
-
-  unsubscribe(channel: any) {
-    supabase.removeChannel(channel);
+  async getOrders(studentId: string): Promise<Order[]> {
+    const { data } = await supabase.from('orders').select('*').eq('student_id', studentId).order('created_at', { ascending: false });
+    return (data || []).map(d => ({
+      id: d.id,
+      studentId: d.student_id,
+      studentName: d.student_name,
+      productId: d.product_id,
+      productName: d.product_name,
+      productImage: d.product_image,
+      customName: d.custom_name,
+      change_request: d.change_request,
+      address: d.address,
+      pincode: d.pincode,
+      state: d.state,
+      mobile: d.mobile,
+      status: d.status,
+      finalPrice: d.final_price,
+      transactionRef: d.transaction_ref,
+      createdAt: d.created_at
+    }));
   }
 }
 
