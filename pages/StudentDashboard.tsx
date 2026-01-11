@@ -350,7 +350,6 @@ const HomeworkModule = ({ student, refreshTrigger }: { student: Student, refresh
     );
 };
 
-// ... (Rest of modules unchanged, make sure to include them: NotesModule, ExamsModule, ResultsModule, UpcomingExamsModule, LeaveModule, DoubtsModule, SettingsModule)
 const NotesModule = ({ student, refreshTrigger }: { student: Student, refreshTrigger: number }) => {
     // ... (Existing code)
     const [notes, setNotes] = useState<StudyNote[]>([]);
@@ -361,6 +360,16 @@ const NotesModule = ({ student, refreshTrigger }: { student: Student, refreshTri
 
     useEffect(() => { load(); }, [load, refreshTrigger]);
 
+    const getScopeLabel = (n: StudyNote) => {
+        const type = n.targetType || 'Grade';
+        const gradeId = n.gradeId || 'Global';
+        
+        if (type === 'Individual') return { text: 'PERSONAL NOTE', color: 'text-purple-400 border-purple-500/20 bg-purple-500/10' };
+        if (gradeId === 'Global') return { text: 'GLOBAL ARCHIVE', color: 'text-emerald-400 border-emerald-500/20 bg-emerald-500/10' };
+        if (type === 'Division') return { text: 'DIVISION INTEL', color: 'text-amber-400 border-amber-500/20 bg-amber-500/10' };
+        return { text: 'CLASS NOTE', color: 'text-indigo-400 border-indigo-500/20 bg-indigo-500/10' };
+    };
+
     return (
         <div className="space-y-8">
             <div className="pb-4 border-b border-white/5">
@@ -368,18 +377,28 @@ const NotesModule = ({ student, refreshTrigger }: { student: Student, refreshTri
                 <p className="text-[8px] font-black uppercase tracking-[0.5em] text-white/20 mt-1">Encrypted Study Archives</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {notes.map(n => (
-                    <div key={n.id} className="bg-white/[0.02] p-8 rounded-[40px] border border-white/5 group hover:border-emerald-500/20 transition-all shadow-xl relative overflow-hidden h-72 flex flex-col">
-                        <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity"><Database size={80}/></div>
-                        <span className="text-emerald-400 text-[8px] font-black uppercase tracking-widest mb-4 block">{n.subject} • {n.targetType}</span>
-                        <h4 className="text-2xl font-bold text-white/90 italic mb-4 truncate">{n.title}</h4>
-                        <p className="text-sm text-white/30 font-medium line-clamp-3 leading-relaxed flex-1">{n.content}</p>
-                        <div className="mt-8 pt-6 border-t border-white/5 flex items-center justify-between">
-                             <span className="text-[7px] font-black text-white/10 uppercase tracking-widest">{n.createdAt?.split('T')[0]}</span>
-                             <button className="px-5 py-2 bg-emerald-500/10 text-emerald-400 text-[8px] font-black uppercase tracking-widest rounded-xl hover:bg-emerald-500 hover:text-white transition-all shadow-lg active:scale-95">Access Data</button>
+                {notes.map(n => {
+                    const scope = getScopeLabel(n);
+                    return (
+                        <div key={n.id} className="bg-white/[0.02] p-8 rounded-[40px] border border-white/5 group hover:border-emerald-500/20 transition-all shadow-xl relative overflow-hidden h-72 flex flex-col">
+                            <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity"><Database size={80}/></div>
+                            <div className="flex flex-wrap gap-2 mb-4">
+                                <span className={`text-[7px] font-black uppercase px-2 py-1 rounded border ${scope.color}`}>
+                                    {scope.text}
+                                </span>
+                                <span className="text-white/40 text-[8px] font-black uppercase tracking-widest border border-white/10 px-2 py-1 rounded">
+                                    {n.subject}
+                                </span>
+                            </div>
+                            <h4 className="text-2xl font-bold text-white/90 italic mb-4 truncate">{n.title}</h4>
+                            <p className="text-sm text-white/30 font-medium line-clamp-3 leading-relaxed flex-1">{n.content}</p>
+                            <div className="mt-8 pt-6 border-t border-white/5 flex items-center justify-between">
+                                 <span className="text-[7px] font-black text-white/10 uppercase tracking-widest">{n.createdAt?.split('T')[0]}</span>
+                                 <button className="px-5 py-2 bg-emerald-500/10 text-emerald-400 text-[8px] font-black uppercase tracking-widest rounded-xl hover:bg-emerald-500 hover:text-white transition-all shadow-lg active:scale-95">Access Data</button>
+                            </div>
                         </div>
-                    </div>
-                ))}
+                    );
+                })}
                 {notes.length === 0 && <div className="col-span-full py-20 text-center text-white/5 font-black uppercase tracking-[0.5em] text-[10px] border-2 border-dashed border-white/5 rounded-[40px]">No Intel Logs Found</div>}
             </div>
         </div>
@@ -420,6 +439,16 @@ const ExamsModule = ({ student, refreshTrigger }: { student: Student, refreshTri
         setActiveExam(null);
     };
 
+    const getScopeLabel = (e: Exam) => {
+        const type = e.targetType || 'Grade';
+        const gradeId = e.gradeId || 'Global';
+        
+        if (type === 'Individual') return { text: 'PERSONAL TEST', color: 'text-purple-400 border-purple-500/20 bg-purple-500/10' };
+        if (gradeId === 'Global') return { text: 'GLOBAL EXAM', color: 'text-emerald-400 border-emerald-500/20 bg-emerald-500/10' };
+        if (type === 'Division') return { text: 'DIVISION TEST', color: 'text-amber-400 border-amber-500/20 bg-amber-500/10' };
+        return { text: 'CLASS EXAM', color: 'text-rose-400 border-rose-500/20 bg-rose-500/10' };
+    };
+
     return (
         <div className="space-y-8">
             <div className="pb-4 border-b border-white/5">
@@ -427,24 +456,27 @@ const ExamsModule = ({ student, refreshTrigger }: { student: Student, refreshTri
                 <p className="text-[8px] font-black uppercase tracking-[0.5em] text-white/20 mt-1">Live Institutional Assessments</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8">
-                {exams.map(e => (
-                    <div key={e.id} className="relative p-[1px] rounded-[48px] bg-gradient-to-br from-rose-500/20 to-orange-500/20 group hover:from-rose-500/40 hover:to-orange-500/40 transition-all">
-                        <div className="bg-[#0A0A0E] rounded-[47px] p-10 h-full relative overflow-hidden transition-all group-hover:bg-black">
-                            <div className="absolute top-0 right-0 p-10 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity"><PenTool size={160}/></div>
-                            <div className="flex justify-between items-start mb-8 relative z-10">
-                                <span className="bg-rose-500/10 text-rose-400 text-[9px] font-black uppercase tracking-[0.3em] px-4 py-1.5 rounded-full border border-rose-500/20 shadow-rose-500/10 shadow-lg">Target: {e.targetType}</span>
-                                <Flame size={24} className="text-orange-500 animate-pulse shadow-orange-500/20" />
+                {exams.map(e => {
+                    const scope = getScopeLabel(e);
+                    return (
+                        <div key={e.id} className="relative p-[1px] rounded-[48px] bg-gradient-to-br from-rose-500/20 to-orange-500/20 group hover:from-rose-500/40 hover:to-orange-500/40 transition-all">
+                            <div className="bg-[#0A0A0E] rounded-[47px] p-10 h-full relative overflow-hidden transition-all group-hover:bg-black">
+                                <div className="absolute top-0 right-0 p-10 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity"><PenTool size={160}/></div>
+                                <div className="flex justify-between items-start mb-8 relative z-10">
+                                    <span className={`text-[7px] font-black uppercase tracking-[0.3em] px-4 py-1.5 rounded-full border ${scope.color}`}>{scope.text}</span>
+                                    <Flame size={24} className="text-orange-500 animate-pulse shadow-orange-500/20" />
+                                </div>
+                                <h3 className="text-4xl font-black text-white italic uppercase mb-2 group-hover:text-premium-accent transition-colors">{e.subject}</h3>
+                                <p className="text-white/40 text-sm font-bold mb-10 border-l border-white/10 pl-6 uppercase tracking-widest leading-relaxed line-clamp-2">{e.title}</p>
+                                <div className="grid grid-cols-2 gap-4 mb-10">
+                                    <div className="bg-white/5 rounded-2xl p-5 text-center border border-white/5"><p className="text-[8px] text-white/20 font-black uppercase mb-1">Time Slice</p><p className="text-xl font-mono font-bold text-white">{e.duration}m</p></div>
+                                    <div className="bg-white/5 rounded-2xl p-5 text-center border border-white/5"><p className="text-[8px] text-white/20 font-black uppercase mb-1">Max Weight</p><p className="text-xl font-mono font-bold text-white">{e.totalMarks}pt</p></div>
+                                </div>
+                                <button onClick={() => startExam(e)} className="w-full bg-white text-black py-5 rounded-2xl font-black text-xs uppercase tracking-[0.4em] shadow-xl hover:bg-rose-600 hover:text-white transition-all active:scale-95">Synchronize Entry</button>
                             </div>
-                            <h3 className="text-4xl font-black text-white italic uppercase mb-2 group-hover:text-premium-accent transition-colors">{e.subject}</h3>
-                            <p className="text-white/40 text-sm font-bold mb-10 border-l border-white/10 pl-6 uppercase tracking-widest leading-relaxed line-clamp-2">{e.title}</p>
-                            <div className="grid grid-cols-2 gap-4 mb-10">
-                                <div className="bg-white/5 rounded-2xl p-5 text-center border border-white/5"><p className="text-[8px] text-white/20 font-black uppercase mb-1">Time Slice</p><p className="text-xl font-mono font-bold text-white">{e.duration}m</p></div>
-                                <div className="bg-white/5 rounded-2xl p-5 text-center border border-white/5"><p className="text-[8px] text-white/20 font-black uppercase mb-1">Max Weight</p><p className="text-xl font-mono font-bold text-white">{e.totalMarks}pt</p></div>
-                            </div>
-                            <button onClick={() => startExam(e)} className="w-full bg-white text-black py-5 rounded-2xl font-black text-xs uppercase tracking-[0.4em] shadow-xl hover:bg-rose-600 hover:text-white transition-all active:scale-95">Synchronize Entry</button>
                         </div>
-                    </div>
-                ))}
+                    );
+                })}
                 {exams.length === 0 && <div className="col-span-full py-20 text-center text-white/5 font-black uppercase tracking-[0.5em] text-[10px] border-2 border-dashed border-white/5 rounded-[48px]">No Cycles Scheduled</div>}
             </div>
 
@@ -480,6 +512,7 @@ const ExamsModule = ({ student, refreshTrigger }: { student: Student, refreshTri
     );
 };
 
+// ... (Rest of modules unchanged: ResultsModule, UpcomingExamsModule, LeaveModule, DoubtsModule, SettingsModule)
 const ResultsModule = ({ student }: { student: Student }) => {
     // ... (Existing code)
     const [results, setResults] = useState<ExamSubmission[]>([]);

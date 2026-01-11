@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../services/db';
@@ -23,7 +22,7 @@ const pageTransition: Variants = {
 };
 
 const TeacherDashboard: React.FC = () => {
-    // ... (Main dashboard state and layout remain the same, ensuring only the Homework Module is replaced below)
+    // ... (Main dashboard state and layout remain the same)
     const navigate = useNavigate();
     const [user, setUser] = useState<User | null>(null);
     const [activeTab, setActiveTab] = useState<'attendance' | 'live' | 'homework' | 'notes' | 'exams' | 'grading' | 'leaves' | 'student-exams' | 'queries' | 'settings'>('attendance');
@@ -111,7 +110,7 @@ const TeacherDashboard: React.FC = () => {
                 </div>
 
                 <div className="flex items-center gap-2 w-full sm:w-auto">
-                    {activeTab !== 'homework' && ( // Hide global filters for homework tab as it has its own logic
+                    {['attendance', 'live', 'grading', 'leaves', 'student-exams'].includes(activeTab) && (
                         <div className="grid grid-cols-2 gap-1 flex-1 sm:flex-none p-1 bg-white/5 rounded-xl border border-white/5">
                             <select className="bg-transparent text-[8px] font-black uppercase tracking-tighter px-2 py-1.5 outline-none cursor-pointer border-r border-white/10" value={selectedGradeId} onChange={e => setSelectedGradeId(e.target.value)}>
                                 <option value="" className="bg-[#050508]">All Grades</option>
@@ -134,8 +133,8 @@ const TeacherDashboard: React.FC = () => {
                             {activeTab === 'attendance' && <AttendanceModule gradeId={selectedGradeId} divisionId={selectedDivisionId} refreshTrigger={refreshTrigger} />}
                             {activeTab === 'live' && <LiveManagementModule division={selectedDivision} />}
                             {activeTab === 'homework' && <HomeworkManagementModule teacherId={user?.id || ''} refreshTrigger={refreshTrigger} />}
-                            {activeTab === 'notes' && <NotesModule gradeId={selectedGradeId} divisionId={selectedDivisionId} teacherId={user?.id || ''} refreshTrigger={refreshTrigger} />}
-                            {activeTab === 'exams' && <ExamBuilderModule gradeId={selectedGradeId} divisionId={selectedDivisionId} teacherId={user?.id || ''} refreshTrigger={refreshTrigger} />}
+                            {activeTab === 'notes' && <NotesModule teacherId={user?.id || ''} refreshTrigger={refreshTrigger} />}
+                            {activeTab === 'exams' && <ExamBuilderModule teacherId={user?.id || ''} refreshTrigger={refreshTrigger} />}
                             {activeTab === 'grading' && <CheckExamsModule refreshTrigger={refreshTrigger} />}
                             {activeTab === 'leaves' && <LeaveRequestsModule gradeId={selectedGradeId} divisionId={selectedDivisionId} refreshTrigger={refreshTrigger} />}
                             {activeTab === 'student-exams' && <StudentExamsView gradeId={selectedGradeId} divisionId={selectedDivisionId} refreshTrigger={refreshTrigger} />}
@@ -146,7 +145,6 @@ const TeacherDashboard: React.FC = () => {
                 </div>
             </main>
 
-            {/* ... (Bottom Nav unchanged) */}
             <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[100] w-full max-w-fit px-4">
                 <nav className="bg-[#0A0A0E]/90 backdrop-blur-2xl border border-white/10 p-1.5 rounded-[24px] flex items-center gap-1 shadow-2xl overflow-x-auto scrollbar-hide max-w-[95vw]">
                     {navItems.map(item => (
@@ -165,26 +163,159 @@ const TeacherDashboard: React.FC = () => {
     );
 };
 
-// ... (Other modules: Attendance, Live, etc. remain unchanged. Only Homework is updated below)
+const AttendanceModule = ({ gradeId, divisionId, refreshTrigger }: any) => {
+    const [students, setStudents] = useState<Student[]>([]);
+    const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+    const [attendance, setAttendance] = useState<Record<string, 'Present' | 'Absent' | 'Leave'>>({});
+    const [loading, setLoading] = useState(false);
+
+    const load = useCallback(async () => {
+        if (!gradeId || !divisionId) return;
+        setLoading(true);
+        const [sts, atts] = await Promise.all([
+            db.getStudents(gradeId, divisionId),
+            db.getAttendance(undefined, date)
+        ]);
+        setStudents(sts);
+        
+        const currentAtt: Record<string, any> = {};
+        const relevantAtts = atts.filter(a => sts.some(s => s.id === a.studentId));
+        
+        relevantAtts.forEach(a => {
+            currentAtt[a.studentId] = a.status;
+        });
+        
+        sts.forEach(s => {
+            if (!currentAtt[s.id]) currentAtt[s.id] = 'Present';
+        });
+
+        setAttendance(currentAtt);
+        setLoading(false);
+    }, [gradeId, divisionId, date]);
+
+    useEffect(() => { load(); }, [load, refreshTrigger]);
+
+    const mark = (studentId: string, status: 'Present' | 'Absent' | 'Leave') => {
+        setAttendance(prev => ({ ...prev, [studentId]: status }));
+    };
+
+    const save = async () => {
+        const records = Object.entries(attendance).map(([sid, status]) => ({
+            studentId: sid,
+            divisionId,
+            date,
+            status
+        }));
+        await db.markAttendance(records);
+        alert("Attendance Register Updated.");
+    };
+
+    if (!gradeId || !divisionId) return <div className="p-20 text-center text-white/20 font-black uppercase tracking-widest">Select Grade & Division</div>;
+
+    return (
+        <div className="space-y-8">
+            <div className="flex justify-between items-center border-b border-white/5 pb-4">
+                <div>
+                    <h3 className="text-3xl font-light serif-font italic luxury-text-gradient">Attendance.</h3>
+                    <p className="text-[8px] font-black uppercase tracking-[0.5em] text-white/20 mt-1">Daily Roll Call</p>
+                </div>
+                <div className="flex gap-4">
+                    <input type="date" value={date} onChange={e => setDate(e.target.value)} className="bg-black border border-white/10 rounded-xl px-4 py-2 text-xs text-white [color-scheme:dark]" />
+                    <button onClick={save} className="bg-white text-black px-6 py-2 rounded-xl font-black text-[9px] uppercase tracking-widest shadow-lg hover:bg-emerald-400 hover:text-black transition-all">Save Register</button>
+                </div>
+            </div>
+            
+            {loading ? <div className="py-20 text-center"><Loader2 className="animate-spin mx-auto text-white/20"/></div> : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {students.map(s => (
+                        <div key={s.id} className={`p-4 rounded-2xl border transition-all flex items-center justify-between group ${attendance[s.id] === 'Absent' ? 'bg-rose-500/10 border-rose-500/20' : attendance[s.id] === 'Leave' ? 'bg-amber-500/10 border-amber-500/20' : 'bg-white/[0.03] border-white/5'}`}>
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-xs font-black text-white/40">{s.name.charAt(0)}</div>
+                                <div><p className="text-sm font-bold text-white">{s.name}</p><p className="text-[8px] font-mono text-white/30">{s.studentCustomId}</p></div>
+                            </div>
+                            <div className="flex gap-1">
+                                <button onClick={() => mark(s.id, 'Present')} className={`p-2 rounded-lg transition-colors ${attendance[s.id] === 'Present' ? 'bg-emerald-500 text-black' : 'text-white/20 hover:bg-white/10'}`}><Check size={14}/></button>
+                                <button onClick={() => mark(s.id, 'Absent')} className={`p-2 rounded-lg transition-colors ${attendance[s.id] === 'Absent' ? 'bg-rose-500 text-white' : 'text-white/20 hover:bg-white/10'}`}><X size={14}/></button>
+                                <button onClick={() => mark(s.id, 'Leave')} className={`p-2 rounded-lg transition-colors ${attendance[s.id] === 'Leave' ? 'bg-amber-500 text-black' : 'text-white/20 hover:bg-white/10'}`}><Clock size={14}/></button>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+};
+
+const LiveManagementModule = ({ division }: { division?: Subdivision }) => {
+    const [isLive, setIsLive] = useState(false);
+    const [meetingId, setMeetingId] = useState('');
+
+    useEffect(() => {
+        if (division) {
+            setIsLive(division.isLive || false);
+            setMeetingId(division.liveMeetingId || '');
+        }
+    }, [division]);
+
+    const toggleLive = async () => {
+        if (!division) return;
+        if (!isLive && !meetingId) {
+            const generated = `CLASS-${division.gradeId}-${division.divisionName}-${Date.now()}`;
+            setMeetingId(generated);
+            await db.setLiveStatus(division.id, true, generated);
+            setIsLive(true);
+        } else if (isLive) {
+            await db.setLiveStatus(division.id, false);
+            setIsLive(false);
+            setMeetingId('');
+        } else {
+             const idToUse = meetingId || `CLASS-${division.gradeId}-${division.divisionName}-${Date.now()}`;
+             await db.setLiveStatus(division.id, true, idToUse);
+             setIsLive(true);
+        }
+    };
+
+    if (!division) return <div className="p-20 text-center text-white/20 font-black uppercase tracking-widest">Select Division to Manage Live Class</div>;
+
+    return (
+        <div className="max-w-2xl mx-auto py-20 text-center space-y-12">
+            <div className={`w-40 h-40 mx-auto rounded-full flex items-center justify-center border-[6px] transition-all shadow-[0_0_100px_rgba(0,0,0,0.5)] ${isLive ? 'border-rose-500 bg-rose-500/10 shadow-rose-500/20' : 'border-white/10 bg-white/5'}`}>
+                <Radio size={64} className={isLive ? 'text-rose-500 animate-pulse' : 'text-white/20'} />
+            </div>
+            
+            <div>
+                <h3 className="text-4xl font-light serif-font mb-4">{isLive ? 'Session Active' : 'Classroom Offline'}</h3>
+                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/30">{division.divisionName} • Grade {division.gradeId}</p>
+            </div>
+
+            {isLive && (
+                <div className="bg-white/5 p-6 rounded-2xl border border-white/10 inline-block">
+                    <p className="text-[8px] font-black uppercase tracking-widest text-white/40 mb-2">Secure Meeting Protocol</p>
+                    <p className="font-mono text-xl text-indigo-400">{meetingId}</p>
+                </div>
+            )}
+
+            <button onClick={toggleLive} className={`px-12 py-5 rounded-[24px] font-black text-xs uppercase tracking-[0.4em] transition-all shadow-2xl active:scale-95 ${isLive ? 'bg-rose-500 text-white hover:bg-rose-600' : 'bg-emerald-500 text-white hover:bg-emerald-600'}`}>
+                {isLive ? 'Terminate Feed' : 'Go Live Now'}
+            </button>
+        </div>
+    );
+};
 
 const HomeworkManagementModule = ({ teacherId, refreshTrigger }: any) => {
+    // ... Same robust implementation from previous turn ...
     const [list, setList] = useState<Homework[]>([]);
     const [submissions, setSubmissions] = useState<HomeworkSubmission[]>([]);
-    
-    // UI Logic States
     const [targetScope, setTargetScope] = useState<'Global' | 'Grade' | 'Division' | 'Individual'>('Global');
     const [selGrade, setSelGrade] = useState('');
     const [selDiv, setSelDiv] = useState('');
     const [selStudent, setSelStudent] = useState('');
     
-    // Data Loading States
     const [grades, setGrades] = useState<Grade[]>([]);
     const [subdivisions, setSubdivisions] = useState<Subdivision[]>([]);
     const [students, setStudents] = useState<Student[]>([]);
-    
     const [form, setForm] = useState({ subject: '', task: '', dueDate: '' });
 
-    // Initial Load
     const load = useCallback(() => { 
         db.getAllHomework().then(setList);
         db.getAllHomeworkSubmissions().then(setSubmissions);
@@ -193,10 +324,8 @@ const HomeworkManagementModule = ({ teacherId, refreshTrigger }: any) => {
 
     useEffect(() => { load(); }, [load, refreshTrigger]);
 
-    // Dynamic Data Fetching based on scope selection
     useEffect(() => {
         if (targetScope === 'Global') return;
-        
         if (selGrade) {
             db.getSubdivisions(selGrade).then(setSubdivisions);
             if (targetScope === 'Individual') {
@@ -207,11 +336,9 @@ const HomeworkManagementModule = ({ teacherId, refreshTrigger }: any) => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        
-        // Validation based on scope
-        if (targetScope === 'Grade' && !selGrade) return alert("Please select a specific Grade.");
-        if (targetScope === 'Division' && (!selGrade || !selDiv)) return alert("Please select both Grade and Division.");
-        if (targetScope === 'Individual' && !selStudent) return alert("Please select a specific Student.");
+        if (targetScope === 'Grade' && !selGrade) return alert("Select a Grade.");
+        if (targetScope === 'Division' && (!selGrade || !selDiv)) return alert("Select Grade & Division.");
+        if (targetScope === 'Individual' && !selStudent) return alert("Select a Student.");
 
         await db.addHomework({ 
             targetType: targetScope, 
@@ -221,11 +348,10 @@ const HomeworkManagementModule = ({ teacherId, refreshTrigger }: any) => {
             assignedBy: teacherId,
             ...form 
         });
-        
         setForm({ subject:'', task:'', dueDate:'' });
         setSelGrade(''); setSelDiv(''); setSelStudent(''); setTargetScope('Global');
         load();
-        alert("Homework Protocol Deployed Successfully.");
+        alert("Homework Protocol Deployed.");
     };
 
     return (
@@ -233,77 +359,33 @@ const HomeworkManagementModule = ({ teacherId, refreshTrigger }: any) => {
             <div className="space-y-8">
                 <div className="bg-white/5 p-8 rounded-[40px] border border-white/10 shadow-2xl h-fit">
                     <h3 className="text-2xl font-light serif-font italic mb-8">Deploy Homework.</h3>
-                    
                     <form onSubmit={handleSubmit} className="space-y-6">
-                        {/* Scope Selection */}
                         <div className="space-y-2">
                             <label className="text-[8px] font-black uppercase text-white/30 ml-1 tracking-widest">Target Scope</label>
                             <div className="grid grid-cols-4 gap-2 bg-black rounded-xl p-1 border border-white/10">
                                 {['Global', 'Grade', 'Division', 'Individual'].map(scope => (
-                                    <button 
-                                        type="button" 
-                                        key={scope} 
-                                        onClick={() => { setTargetScope(scope as any); setSelGrade(''); setSelDiv(''); setSelStudent(''); }}
-                                        className={`py-2 rounded-lg text-[8px] font-black uppercase tracking-wider transition-all ${targetScope === scope ? 'bg-indigo-600 text-white shadow-lg' : 'text-white/40 hover:text-white'}`}
-                                    >
-                                        {scope === 'Individual' ? 'Student' : scope}
-                                    </button>
+                                    <button type="button" key={scope} onClick={() => { setTargetScope(scope as any); setSelGrade(''); setSelDiv(''); setSelStudent(''); }} className={`py-2 rounded-lg text-[8px] font-black uppercase tracking-wider transition-all ${targetScope === scope ? 'bg-indigo-600 text-white shadow-lg' : 'text-white/40 hover:text-white'}`}>{scope === 'Individual' ? 'Student' : scope}</button>
                                 ))}
                             </div>
                         </div>
-
-                        {/* Dynamic Dropdowns */}
                         <div className="grid grid-cols-2 gap-4">
                             {(targetScope !== 'Global') && (
-                                <div className="space-y-1">
-                                    <label className="text-[8px] font-black uppercase text-white/30 ml-1">Grade</label>
-                                    <select className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-xs text-white" value={selGrade} onChange={e => setSelGrade(e.target.value)}>
-                                        <option value="">Select Grade</option>
-                                        {grades.map(g => <option key={g.id} value={g.id}>{g.gradeName}</option>)}
-                                    </select>
-                                </div>
+                                <div className="space-y-1"><label className="text-[8px] font-black uppercase text-white/30 ml-1">Grade</label><select className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-xs text-white" value={selGrade} onChange={e => setSelGrade(e.target.value)}><option value="">Select Grade</option>{grades.map(g => <option key={g.id} value={g.id}>{g.gradeName}</option>)}</select></div>
                             )}
-                            
                             {(targetScope === 'Division' || (targetScope === 'Individual' && selGrade)) && (
-                                <div className="space-y-1">
-                                    <label className="text-[8px] font-black uppercase text-white/30 ml-1">Division</label>
-                                    <select className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-xs text-white" value={selDiv} onChange={e => setSelDiv(e.target.value)}>
-                                        <option value="">Select Div</option>
-                                        {subdivisions.map(s => <option key={s.id} value={s.id}>{s.divisionName}</option>)}
-                                    </select>
-                                </div>
+                                <div className="space-y-1"><label className="text-[8px] font-black uppercase text-white/30 ml-1">Division</label><select className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-xs text-white" value={selDiv} onChange={e => setSelDiv(e.target.value)}><option value="">Select Div</option>{subdivisions.map(s => <option key={s.id} value={s.id}>{s.divisionName}</option>)}</select></div>
                             )}
                         </div>
-
                         {targetScope === 'Individual' && selGrade && (
-                            <div className="space-y-1">
-                                <label className="text-[8px] font-black uppercase text-white/30 ml-1">Student</label>
-                                <select className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-xs text-white" value={selStudent} onChange={e => setSelStudent(e.target.value)}>
-                                    <option value="">Select Cadet</option>
-                                    {students.map(s => <option key={s.id} value={s.id}>{s.name} ({s.studentCustomId})</option>)}
-                                </select>
-                            </div>
+                            <div className="space-y-1"><label className="text-[8px] font-black uppercase text-white/30 ml-1">Student</label><select className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-xs text-white" value={selStudent} onChange={e => setSelStudent(e.target.value)}><option value="">Select Cadet</option>{students.map(s => <option key={s.id} value={s.id}>{s.name} ({s.studentCustomId})</option>)}</select></div>
                         )}
-
-                        <input required className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-xs text-white outline-none focus:border-indigo-500 placeholder:text-white/20" value={form.subject} onChange={e=>setForm({...form, subject:e.target.value})} placeholder="Subject Domain" />
-                        <textarea required className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-xs text-white h-24 resize-none outline-none focus:border-indigo-500 placeholder:text-white/20" value={form.task} onChange={e=>setForm({...form, task:e.target.value})} placeholder="Mission Objectives & Details..." />
-                        
-                        <div className="space-y-1">
-                            <label className="text-[8px] font-black uppercase text-white/30 ml-1 tracking-widest">Deadline</label>
-                            <input 
-                                required 
-                                type="date" 
-                                className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-xs text-white [color-scheme:dark] block outline-none focus:border-indigo-500 transition-all" 
-                                value={form.dueDate} 
-                                onChange={e=>setForm({...form, dueDate:e.target.value})} 
-                            />
-                        </div>
-                        
-                        <button type="submit" className="w-full bg-indigo-600 text-white py-4 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-xl active:scale-[0.98] transition-all">Authorize Deployment</button>
+                        <input required className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-xs text-white outline-none focus:border-indigo-500" value={form.subject} onChange={e=>setForm({...form, subject:e.target.value})} placeholder="Subject Domain" />
+                        <textarea required className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-xs text-white h-24 resize-none outline-none focus:border-indigo-500" value={form.task} onChange={e=>setForm({...form, task:e.target.value})} placeholder="Mission Objectives..." />
+                        <div className="space-y-1"><label className="text-[8px] font-black uppercase text-white/30 ml-1 tracking-widest">Deadline</label><input required type="date" className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-xs text-white [color-scheme:dark]" value={form.dueDate} onChange={e=>setForm({...form, dueDate:e.target.value})} /></div>
+                        <button type="submit" className="w-full bg-indigo-600 text-white py-4 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-xl active:scale-[0.98]">Authorize Deployment</button>
                     </form>
                 </div>
             </div>
-
             <div className="space-y-8">
                 <div className="space-y-4">
                     <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-white/20 ml-2">Active Log</h4>
@@ -311,250 +393,69 @@ const HomeworkManagementModule = ({ teacherId, refreshTrigger }: any) => {
                         <div key={hw.id} className="bg-white/[0.02] p-6 rounded-[32px] border border-white/5 flex justify-between items-start group hover:bg-white/[0.04] transition-all shadow-lg">
                             <div className="flex-1 overflow-hidden">
                                 <div className="flex flex-wrap items-center gap-2 mb-2">
-                                    <span className={`text-[7px] font-black uppercase px-2 py-0.5 rounded border ${
-                                        hw.targetType === 'Global' ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' : 
-                                        hw.targetType === 'Individual' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' : 
-                                        'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                                    }`}>
-                                        {hw.targetType === 'Global' ? 'GLOBAL' : 
-                                         hw.targetType === 'Grade' ? `GRADE ${grades.find(g=>g.id===hw.gradeId)?.gradeName || ''}` : 
-                                         hw.targetType === 'Division' ? `DIV ${subdivisions.find(s=>s.id===hw.subdivisionId)?.divisionName || hw.subdivisionId}` : 
-                                         'PERSONAL'}
-                                    </span>
+                                    <span className={`text-[7px] font-black uppercase px-2 py-0.5 rounded border ${hw.targetType === 'Global' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : hw.targetType === 'Individual' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' : 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20'}`}>{hw.targetType}</span>
                                     <span className="text-white/40 text-[8px] font-black uppercase tracking-widest">{hw.subject}</span>
                                 </div>
                                 <p className="text-base font-serif italic text-white/80 leading-snug truncate">"{hw.task}"</p>
-                                <div className="mt-4 flex items-center gap-2 text-white/20">
-                                    <Clock size={10} />
-                                    <p className="text-[8px] font-black uppercase tracking-widest">Due: {hw.dueDate}</p>
-                                </div>
+                                <div className="mt-4 flex items-center gap-2 text-white/20"><Clock size={10} /><p className="text-[8px] font-black uppercase tracking-widest">Due: {hw.dueDate}</p></div>
                             </div>
-                            <button onClick={async (e)=>{e.stopPropagation(); if(confirm('Delete Assignment?')){await db.deleteHomework(hw.id); load();}}} className="p-2 text-white/5 hover:text-rose-500 transition-all opacity-0 group-hover:opacity-100"><Trash2 size={16}/></button>
+                            <button onClick={async (e)=>{e.stopPropagation(); if(confirm('Delete?')){await db.deleteHomework(hw.id); load();}}} className="p-2 text-white/5 hover:text-rose-500 transition-all opacity-0 group-hover:opacity-100"><Trash2 size={16}/></button>
                         </div>
                     ))}
-                    {list.length === 0 && <div className="py-20 text-center text-white/5 uppercase font-black text-[10px] tracking-widest border-2 border-dashed border-white/5 rounded-[32px]">No Assignments Active</div>}
-                </div>
-
-                <div className="bg-white/[0.02] border border-white/5 rounded-[32px] p-6">
-                    <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-white/20 mb-4">Recent Submissions</h4>
-                    <div className="space-y-2 max-h-60 overflow-y-auto scrollbar-hide">
-                        {submissions.slice(0, 10).map(sub => (
-                            <div key={sub.id} className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/5">
-                                <div className="truncate max-w-[70%]">
-                                    <p className="text-[9px] font-bold text-white/80">Student ID: {sub.studentId.slice(0,8)}...</p>
-                                    <p className="text-[8px] text-white/40 truncate">{sub.submissionText}</p>
-                                </div>
-                                <span className={`text-[8px] font-black uppercase px-2 py-1 rounded ${sub.status === 'Reviewed' ? 'text-emerald-400 bg-emerald-500/10' : 'text-amber-400 bg-amber-500/10'}`}>{sub.status}</span>
-                            </div>
-                        ))}
-                        {submissions.length === 0 && <p className="text-center text-[8px] text-white/20 py-4 font-bold uppercase tracking-widest">No Incoming Data</p>}
-                    </div>
+                    {list.length === 0 && <div className="py-20 text-center text-white/5 uppercase font-black text-[10px] tracking-widest border-2 border-dashed border-white/5 rounded-[32px]">No Active Assignments</div>}
                 </div>
             </div>
         </div>
     );
 };
 
-// ... (Other modules: NotesModule, ExamBuilderModule, etc. remain unchanged. Ensure you keep the full file intact when pasting)
-const AttendanceModule = ({ gradeId, divisionId, refreshTrigger }: any) => {
-    // ... (Keep existing code)
-    const [view, setView] = useState<'calendar' | 'marking'>('calendar');
-    const [selectedDate, setSelectedDate] = useState(new Date());
-    const [students, setStudents] = useState<Student[]>([]);
-    const [attendanceMap, setAttendanceMap] = useState<Record<string, 'Present' | 'Absent' | 'Leave'>>({});
-    const [currentMonth, setCurrentMonth] = useState(new Date());
-
-    const loadData = useCallback(async () => {
-        // Fetch students based on filters (or all if filters empty)
-        const [st, records] = await Promise.all([
-            db.getStudents(gradeId || undefined, divisionId || undefined),
-            db.getAttendance(undefined, selectedDate.toISOString().split('T')[0])
-        ]);
-        setStudents(st);
-        
-        const map: any = {};
-        st.forEach(s => {
-            const existing = records.find(r => r.studentId === s.id);
-            map[s.id] = existing?.status || 'Present';
-        });
-        setAttendanceMap(map);
-    }, [gradeId, divisionId, selectedDate]);
-
-    useEffect(() => { loadData(); }, [loadData, refreshTrigger]);
-
-    const saveAttendance = async () => {
-        const payload = students.map(s => ({
-            studentId: s.id,
-            divisionId: s.subdivisionId, 
-            date: selectedDate.toISOString().split('T')[0],
-            status: attendanceMap[s.id]
-        }));
-        await db.markAttendance(payload);
-        alert('Attendance Registry Synchronized.');
-        setView('calendar');
-    };
-
-    // Calendar Generation Logic
-    const year = currentMonth.getFullYear();
-    const month = currentMonth.getMonth();
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const startDay = new Date(year, month, 1).getDay();
-
-    return (
-        <div className="space-y-8">
-            <div className="flex flex-col md:flex-row md:items-end md:justify-between border-b border-white/5 pb-4 gap-4">
-                <div>
-                    <h2 className="text-3xl md:text-5xl font-light serif-font italic luxury-text-gradient tracking-tighter">Attendance.</h2>
-                    <p className="text-[8px] font-black uppercase tracking-[0.5em] text-white/20 mt-1">Personnel Presence Protocol</p>
-                </div>
-                {view === 'marking' && (
-                    <button onClick={() => setView('calendar')} className="bg-white/5 border border-white/10 px-6 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-white/10 transition-all">
-                        <ChevronLeft size={14}/> Back to Calendar
-                    </button>
-                )}
-            </div>
-
-            {view === 'calendar' ? (
-                <div className="flex justify-center">
-                    <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-white/[0.02] border border-white/5 rounded-[32px] p-6 shadow-2xl w-full max-w-sm">
-                        <div className="flex justify-between items-center mb-6">
-                            <h3 className="text-lg font-bold italic serif-font">
-                                {currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}
-                            </h3>
-                            <div className="flex gap-1">
-                                <button onClick={() => setCurrentMonth(new Date(year, month - 1, 1))} className="p-1.5 bg-white/5 rounded-lg hover:bg-white/10"><ChevronLeft size={14}/></button>
-                                <button onClick={() => setCurrentMonth(new Date(year, month + 1, 1))} className="p-1.5 bg-white/5 rounded-lg hover:bg-white/10"><ChevronRight size={14}/></button>
-                            </div>
-                        </div>
-                        <div className="grid grid-cols-7 gap-2">
-                            {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(d => (
-                                <div key={d} className="text-center text-[8px] font-black text-white/20 uppercase py-1">{d}</div>
-                            ))}
-                            {Array.from({ length: startDay }).map((_, i) => <div key={`e-${i}`} />)}
-                            {Array.from({ length: daysInMonth }).map((_, i) => {
-                                const d = i + 1;
-                                const isToday = new Date().toDateString() === new Date(year, month, d).toDateString();
-                                return (
-                                    <button 
-                                        key={d} 
-                                        onClick={() => { setSelectedDate(new Date(year, month, d)); setView('marking'); }}
-                                        className={`aspect-square rounded-xl flex items-center justify-center text-xs font-bold transition-all border ${isToday ? 'bg-indigo-600 border-indigo-400 text-white shadow-lg' : 'bg-white/5 border-white/10 text-white/40 hover:bg-white/10 hover:text-white'}`}
-                                    >
-                                        {d}
-                                    </button>
-                                );
-                            })}
-                        </div>
-                        {!gradeId && (
-                            <div className="mt-6 text-center">
-                                <p className="text-[9px] font-black uppercase tracking-widest text-indigo-400 bg-indigo-500/10 px-3 py-1.5 rounded-full inline-block border border-indigo-500/20">
-                                    Global Mode Active
-                                </p>
-                            </div>
-                        )}
-                    </motion.div>
-                </div>
-            ) : (
-                <div className="space-y-6">
-                    <div className="bg-indigo-600/10 border border-indigo-500/20 p-6 rounded-[32px] flex flex-col md:flex-row justify-between items-center gap-4">
-                        <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 bg-indigo-600/20 rounded-2xl flex items-center justify-center text-indigo-400 font-bold italic shadow-inner border border-indigo-500/10">#</div>
-                            <div>
-                                <p className="text-[8px] font-black uppercase text-white/30 tracking-widest">Marking Registry For</p>
-                                <h4 className="text-xl font-bold italic serif-font">{selectedDate.toDateString()}</h4>
-                            </div>
-                        </div>
-                        <button onClick={saveAttendance} className="w-full md:w-auto bg-white text-black px-12 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-indigo-500 hover:text-white transition-all shadow-xl active:scale-95">Confirm Registry Sync</button>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {students.map(s => (
-                            <div key={s.id} className="bg-white/[0.02] p-5 rounded-[28px] border border-white/5 flex items-center justify-between group hover:bg-white/[0.04] hover:border-white/20 transition-all shadow-lg">
-                                <div className="flex items-center gap-4 overflow-hidden">
-                                    <div className="w-12 h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-xs font-black text-white/20 shrink-0 overflow-hidden shadow-inner">
-                                        {s.imageUrl ? <img src={s.imageUrl} className="w-full h-full object-cover" /> : s.name.charAt(0)}
-                                    </div>
-                                    <div className="overflow-hidden">
-                                        <h4 className="text-sm font-bold text-white truncate group-hover:text-indigo-400 transition-colors">{s.name}</h4>
-                                        <p className="text-[8px] font-black text-white/20 uppercase tracking-tighter">{s.studentCustomId}</p>
-                                    </div>
-                                </div>
-                                <select 
-                                    value={attendanceMap[s.id]} 
-                                    onChange={e => setAttendanceMap({...attendanceMap, [s.id]: e.target.value as any})}
-                                    className={`px-3 py-2 rounded-xl text-[8px] font-black uppercase tracking-widest outline-none border transition-all cursor-pointer ${
-                                        attendanceMap[s.id] === 'Present' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 shadow-emerald-500/5' :
-                                        attendanceMap[s.id] === 'Absent' ? 'bg-rose-500/10 text-rose-400 border-rose-500/20 shadow-rose-500/5' :
-                                        'bg-amber-500/10 text-amber-400 border-amber-500/20 shadow-amber-500/5'
-                                    }`}
-                                >
-                                    <option value="Present" className="bg-[#0A0A0E]">Present</option>
-                                    <option value="Absent" className="bg-[#0A0A0E]">Absent</option>
-                                    <option value="Leave" className="bg-[#0A0A0E]">Leave</option>
-                                </select>
-                            </div>
-                        ))}
-                        {students.length === 0 && (
-                            <div className="col-span-full py-10 text-center text-white/20 font-black uppercase text-[10px] tracking-widest">
-                                No students found for selected criteria.
-                            </div>
-                        )}
-                    </div>
-                </div>
-            )}
-        </div>
-    );
-};
-
-const LiveManagementModule = ({ division }: { division?: Subdivision }) => {
-    const [link, setLink] = useState('');
-    if (!division) return <div className="py-20 text-center opacity-20 font-black uppercase tracking-widest">Select a Specific Division to Manage Live Class</div>;
-
-    const saveLink = async () => {
-        if (!link) return alert("Please enter a valid Meet link.");
-        await db.setLiveStatus(division.id, true, link);
-        alert("Broadcast Link Secured.");
-    };
-
-    return (
-        <div className="max-w-xl mx-auto py-10 space-y-12 text-center">
-            <div className={`w-32 h-32 md:w-48 md:h-48 rounded-full border-2 mx-auto flex items-center justify-center transition-all duration-1000 ${division.isLive ? 'bg-indigo-600/10 border-indigo-500 shadow-[0_0_50px_rgba(79,70,229,0.3)] animate-pulse' : 'bg-white/5 border-white/10'}`}>
-                <Radio size={division.isLive ? 64 : 40} className={division.isLive ? 'text-white' : 'text-white/10'} />
-            </div>
-            <div className="space-y-4">
-                <h3 className="text-4xl md:text-6xl font-light serif-font italic luxury-text-gradient tracking-tighter">Live Classes.</h3>
-                <p className="text-[10px] font-black uppercase text-white/20 tracking-[0.4em]">Google Meet Relay System</p>
-                <div className="bg-white/5 p-6 rounded-[32px] border border-white/10 space-y-4 shadow-2xl">
-                    <div className="space-y-1 text-left">
-                        <label className="text-[8px] font-black uppercase text-white/30 ml-2 tracking-widest">Portal Destination Link</label>
-                        <input value={link} onChange={e => setLink(e.target.value)} placeholder="https://meet.google.com/..." className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-xs text-white outline-none focus:border-indigo-500" />
-                    </div>
-                    <div className="flex flex-col gap-3 pt-2">
-                        <button onClick={saveLink} className="w-full bg-white text-black py-4 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-indigo-500 hover:text-white transition-all">Authorize Broadcast</button>
-                        {division.isLive && (
-                            <button onClick={() => db.setLiveStatus(division.id, false)} className="text-rose-500/50 hover:text-rose-500 text-[8px] font-black uppercase tracking-widest flex items-center justify-center gap-2"><X size={12}/> Close Gateway</button>
-                        )}
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-};
-
-const NotesModule = ({ gradeId, divisionId, teacherId, refreshTrigger }: any) => {
-    // ... (Keep existing code)
+const NotesModule = ({ teacherId, refreshTrigger }: any) => {
     const [notes, setNotes] = useState<StudyNote[]>([]);
     const [isAdding, setIsAdding] = useState(false);
-    const [form, setForm] = useState<any>({ subject: '', title: '', content: '', targetType: 'Grade', targetStudentId: '' });
+    
+    // Scoping Logic for Notes
+    const [targetScope, setTargetScope] = useState<'Global' | 'Grade' | 'Division' | 'Individual'>('Global');
+    const [selGrade, setSelGrade] = useState('');
+    const [selDiv, setSelDiv] = useState('');
+    const [selStudent, setSelStudent] = useState('');
+    const [grades, setGrades] = useState<Grade[]>([]);
+    const [subdivisions, setSubdivisions] = useState<Subdivision[]>([]);
     const [students, setStudents] = useState<Student[]>([]);
+
+    const [form, setForm] = useState({ subject: '', title: '', content: '' });
     
     const load = useCallback(() => { 
-        // Fetch notes with broader scope
-        db.getNotes(gradeId || undefined, undefined).then(setNotes); 
-        db.getStudents(gradeId || undefined, divisionId || undefined).then(setStudents);
-    }, [gradeId, divisionId]);
+        db.getNotes().then(setNotes); 
+        db.getGrades().then(setGrades);
+    }, []);
 
     useEffect(() => { load(); }, [load, refreshTrigger]);
+
+    // Dynamic filtering for students
+    useEffect(() => {
+        if (targetScope === 'Global') return;
+        if (selGrade) {
+            db.getSubdivisions(selGrade).then(setSubdivisions);
+            if (targetScope === 'Individual') db.getStudents(selGrade, selDiv || undefined).then(setStudents);
+        }
+    }, [targetScope, selGrade, selDiv]);
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        await db.addNote({
+            targetType: targetScope,
+            gradeId: selGrade,
+            divisionId: selDiv,
+            targetStudentId: selStudent,
+            teacherId,
+            ...form
+        });
+        setForm({ subject: '', title: '', content: '' });
+        setSelGrade(''); setSelDiv(''); setSelStudent(''); setTargetScope('Global');
+        setIsAdding(false);
+        load();
+        alert("Study Note Archived.");
+    };
 
     return (
         <div className="space-y-8">
@@ -566,16 +467,15 @@ const NotesModule = ({ gradeId, divisionId, teacherId, refreshTrigger }: any) =>
                 {notes.map(n => (
                     <div key={n.id} className="bg-white/[0.03] p-6 rounded-[40px] border border-white/5 flex flex-col group relative hover:border-indigo-500/20 transition-all shadow-xl h-64">
                         <div className="flex justify-between items-center mb-4">
-                            <span className="text-emerald-400 text-[8px] font-black uppercase tracking-widest">{n.subject} • {n.targetType}</span>
+                            <span className={`text-[7px] font-black uppercase px-2 py-0.5 rounded border ${n.targetType === 'Global' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20'}`}>{n.targetType || 'Grade'}</span>
                             <button onClick={async (e)=>{e.stopPropagation(); if(confirm('Purge Note?')){await db.deleteNote(n.id); load();}}} className="text-white/5 hover:text-rose-500 transition-all opacity-0 group-hover:opacity-100"><Trash2 size={14}/></button>
                         </div>
+                        <span className="text-emerald-400 text-[8px] font-black uppercase tracking-widest mb-2 block">{n.subject}</span>
                         <h4 className="text-xl font-bold mb-3 text-white/90 truncate italic">{n.title}</h4>
                         <p className="text-[10px] text-white/30 line-clamp-4 leading-relaxed font-medium flex-1">{n.content}</p>
                         <div className="mt-4 pt-4 border-t border-white/5 flex items-center justify-between">
                             <span className="text-[7px] font-black uppercase text-white/10">{n.createdAt?.split('T')[0]}</span>
-                            <div className="flex gap-2">
-                                <Database size={12} className="text-white/10" />
-                            </div>
+                            <div className="flex gap-2"><Database size={12} className="text-white/10" /></div>
                         </div>
                     </div>
                 ))}
@@ -587,28 +487,29 @@ const NotesModule = ({ gradeId, divisionId, teacherId, refreshTrigger }: any) =>
                         <div className="bg-[#0A0A0E] border border-white/10 rounded-[48px] w-full max-w-md p-10 relative shadow-2xl">
                             <button onClick={()=>setIsAdding(false)} className="absolute top-8 right-8 text-white/20 hover:text-white transition-colors"><X size={24}/></button>
                             <h3 className="text-3xl font-light serif-font mb-8 text-center italic luxury-text-gradient tracking-tight">Intel Input.</h3>
-                            <form onSubmit={async (e)=>{e.preventDefault(); await db.addNote({gradeId: gradeId || 'Global', divisionId: divisionId || 'Global', teacherId, ...form}); setIsAdding(false); load();}} className="space-y-4">
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-1">
-                                        <label className="text-[8px] font-black uppercase text-white/30 ml-1">Target Scope</label>
-                                        <select className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-2 text-xs text-white" value={form.targetType} onChange={e=>setForm({...form, targetType:e.target.value as any})}>
-                                            <option value="Grade">Entire Grade</option>
-                                            <option value="Individual">Individual</option>
-                                        </select>
+                            <form onSubmit={handleSubmit} className="space-y-4">
+                                <div className="space-y-2">
+                                    <label className="text-[8px] font-black uppercase text-white/30 ml-1 tracking-widest">Scope</label>
+                                    <div className="grid grid-cols-4 gap-2 bg-black rounded-xl p-1 border border-white/10">
+                                        {['Global', 'Grade', 'Division', 'Individual'].map(scope => (
+                                            <button type="button" key={scope} onClick={() => { setTargetScope(scope as any); setSelGrade(''); setSelDiv(''); setSelStudent(''); }} className={`py-2 rounded-lg text-[8px] font-black uppercase tracking-wider transition-all ${targetScope === scope ? 'bg-emerald-600 text-white shadow-lg' : 'text-white/40 hover:text-white'}`}>{scope === 'Individual' ? 'Student' : scope}</button>
+                                        ))}
                                     </div>
-                                    {form.targetType === 'Individual' && (
-                                        <div className="space-y-1">
-                                            <label className="text-[8px] font-black uppercase text-white/30 ml-1">Student</label>
-                                            <select className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-2 text-xs text-white" value={form.targetStudentId} onChange={e=>setForm({...form, targetStudentId:e.target.value})}>
-                                                <option value="">Select Cadet</option>
-                                                {students.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                                            </select>
-                                        </div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    {(targetScope !== 'Global') && (
+                                        <select className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-2 text-xs text-white" value={selGrade} onChange={e=>setSelGrade(e.target.value)}><option value="">Select Grade</option>{grades.map(g=><option key={g.id} value={g.id}>{g.gradeName}</option>)}</select>
+                                    )}
+                                    {(targetScope === 'Division' || (targetScope === 'Individual' && selGrade)) && (
+                                        <select className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-2 text-xs text-white" value={selDiv} onChange={e=>setSelDiv(e.target.value)}><option value="">Select Div</option>{subdivisions.map(s=><option key={s.id} value={s.id}>{s.divisionName}</option>)}</select>
                                     )}
                                 </div>
-                                <input required placeholder="Subject Domain" className="w-full bg-white/5 border border-white/10 rounded-xl px-5 py-3 text-xs text-white outline-none focus:border-indigo-500" onChange={e=>setForm({...form, subject:e.target.value})} />
-                                <input required placeholder="Document Title" className="w-full bg-white/5 border border-white/10 rounded-xl px-5 py-3 text-xs text-white outline-none focus:border-indigo-500" onChange={e=>setForm({...form, title:e.target.value})} />
-                                <textarea required placeholder="Intel Intel Summary..." className="w-full bg-white/5 border border-white/10 rounded-xl px-5 py-3 text-xs text-white h-32 resize-none outline-none focus:border-indigo-500" onChange={e=>setForm({...form, content:e.target.value})} />
+                                {targetScope === 'Individual' && selGrade && (
+                                    <select className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-2 text-xs text-white" value={selStudent} onChange={e=>setSelStudent(e.target.value)}><option value="">Select Cadet</option>{students.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select>
+                                )}
+                                <input required placeholder="Subject Domain" className="w-full bg-white/5 border border-white/10 rounded-xl px-5 py-3 text-xs text-white outline-none focus:border-indigo-500" value={form.subject} onChange={e=>setForm({...form, subject:e.target.value})} />
+                                <input required placeholder="Document Title" className="w-full bg-white/5 border border-white/10 rounded-xl px-5 py-3 text-xs text-white outline-none focus:border-indigo-500" value={form.title} onChange={e=>setForm({...form, title:e.target.value})} />
+                                <textarea required placeholder="Intel Intel Summary..." className="w-full bg-white/5 border border-white/10 rounded-xl px-5 py-3 text-xs text-white h-24 resize-none outline-none focus:border-indigo-500" value={form.content} onChange={e=>setForm({...form, content:e.target.value})} />
                                 <button type="submit" className="w-full bg-white text-black py-4 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-xl hover:bg-emerald-500 hover:text-white transition-all">Authorize Archival</button>
                             </form>
                         </div>
@@ -619,24 +520,39 @@ const NotesModule = ({ gradeId, divisionId, teacherId, refreshTrigger }: any) =>
     );
 };
 
-// ... (Rest of the modules: ExamBuilder, CheckExams, LeaveRequests, StudentExamsView, DoubtSolve, CoreSettings remain unchanged. Paste them all below)
-const ExamBuilderModule = ({ gradeId, divisionId, teacherId, refreshTrigger }: any) => {
-    // ... (Existing code)
+const ExamBuilderModule = ({ teacherId, refreshTrigger }: any) => {
+    // ... (Existing code with added Scope Selector Logic)
     const [exams, setExams] = useState<Exam[]>([]);
     const [isCreating, setIsCreating] = useState(false);
+    
+    // Scope Logic
+    const [targetScope, setTargetScope] = useState<'Global' | 'Grade' | 'Division' | 'Individual'>('Global');
+    const [selGrade, setSelGrade] = useState('');
+    const [selDiv, setSelDiv] = useState('');
+    const [selStudent, setSelStudent] = useState('');
+    const [grades, setGrades] = useState<Grade[]>([]);
+    const [subdivisions, setSubdivisions] = useState<Subdivision[]>([]);
     const [students, setStudents] = useState<Student[]>([]);
+
     const [form, setForm] = useState<any>({ 
         title: '', subject: '', duration: 30, examDate: '', startTime: '', 
-        totalMarks: 0, questions: [], reopenable: false, 
-        targetType: 'Division', targetStudentId: '' 
+        totalMarks: 0, questions: [], reopenable: false 
     });
 
     const load = useCallback(() => {
-        db.getExams(gradeId || undefined).then(setExams);
-        db.getStudents(gradeId || undefined, divisionId || undefined).then(setStudents);
-    }, [gradeId, divisionId]);
+        db.getExams().then(setExams);
+        db.getGrades().then(setGrades);
+    }, []);
 
     useEffect(() => { load(); }, [load, refreshTrigger]);
+
+    useEffect(() => {
+        if (targetScope === 'Global') return;
+        if (selGrade) {
+            db.getSubdivisions(selGrade).then(setSubdivisions);
+            if (targetScope === 'Individual') db.getStudents(selGrade, selDiv || undefined).then(setStudents);
+        }
+    }, [targetScope, selGrade, selDiv]);
 
     const addQuestion = (type: 'mcq' | 'short' | 'paragraph') => {
         const newQ: Question = {
@@ -651,13 +567,25 @@ const ExamBuilderModule = ({ gradeId, divisionId, teacherId, refreshTrigger }: a
 
     const validateAndSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        // Validation Scope
+        if (targetScope === 'Grade' && !selGrade) return alert("Select a Grade.");
+        if (targetScope === 'Division' && (!selGrade || !selDiv)) return alert("Select Grade & Division.");
+        if (targetScope === 'Individual' && !selStudent) return alert("Select a Student.");
+
         const currentSum = (form.questions as any[]).reduce((a: number, b: any) => a + (parseInt(b.marks) || 0), 0);
-        if (currentSum !== parseInt(form.totalMarks)) {
-            return alert(`Inconsistent Marks: Question total (${currentSum}) must match Exam total (${form.totalMarks}).`);
-        }
-        await db.addExam({ gradeId: gradeId || 'Global', subdivisionId: divisionId || 'Global', ...form, createdBy: teacherId });
+        if (currentSum !== parseInt(form.totalMarks)) return alert(`Inconsistent Marks. Questions total: ${currentSum}`);
+        
+        await db.addExam({ 
+            targetType: targetScope,
+            gradeId: selGrade, 
+            subdivisionId: selDiv, 
+            targetStudentId: selStudent,
+            ...form, 
+            createdBy: teacherId 
+        });
         setIsCreating(false);
-        setForm({ title: '', subject: '', duration: 30, examDate: '', startTime: '', totalMarks: 0, questions: [], reopenable: false, targetType: 'Division', targetStudentId: '' });
+        setForm({ title: '', subject: '', duration: 30, examDate: '', startTime: '', totalMarks: 0, questions: [], reopenable: false });
+        setSelGrade(''); setSelDiv(''); setSelStudent(''); setTargetScope('Global');
         load();
         alert("Assessment Module Finalized.");
     };
@@ -672,7 +600,7 @@ const ExamBuilderModule = ({ gradeId, divisionId, teacherId, refreshTrigger }: a
                 {exams.map(e => (
                     <div key={e.id} className="bg-white/[0.03] p-6 rounded-[40px] border border-white/5 flex flex-col group relative shadow-xl hover:border-rose-500/20 transition-all">
                         <div className="flex justify-between items-start mb-4">
-                            <span className="text-rose-400 text-[8px] font-black uppercase tracking-widest">{e.subject} • {e.targetType}</span>
+                            <span className={`text-[7px] font-black uppercase px-2 py-0.5 rounded border ${e.targetType === 'Global' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border-rose-500/20'}`}>{e.targetType}</span>
                             <button onClick={async (exEv)=>{exEv.stopPropagation(); if(confirm('Purge Exam?')){await db.deleteExam(e.id); load();}}} className="text-white/5 hover:text-rose-500 transition-all opacity-0 group-hover:opacity-100"><Trash2 size={14}/></button>
                         </div>
                         <h4 className="text-xl font-bold mb-4 text-white/90 italic truncate">{e.title}</h4>
@@ -694,21 +622,24 @@ const ExamBuilderModule = ({ gradeId, divisionId, teacherId, refreshTrigger }: a
                             <h3 className="text-3xl font-light serif-font mb-10 text-center italic luxury-text-gradient tracking-tighter">Exam Builder.</h3>
                             
                             <form onSubmit={validateAndSubmit} className="space-y-6">
-                                <div className="space-y-1">
-                                    <label className="text-[8px] font-black uppercase text-white/30 ml-2">Contextual Parameters</label>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <select className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-xs text-white outline-none focus:border-indigo-500" value={form.targetType} onChange={e=>setForm({...form, targetType:e.target.value as any})}>
-                                            <option value="Division">Specific Division</option>
-                                            <option value="Grade">Entire Grade</option>
-                                            <option value="Individual">Individual Student</option>
-                                        </select>
-                                        {form.targetType === 'Individual' && (
-                                            <select className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-xs text-white outline-none focus:border-indigo-500" value={form.targetStudentId} onChange={e=>setForm({...form, targetStudentId:e.target.value})}>
-                                                <option value="">Select Target Cadet</option>
-                                                {students.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                                            </select>
+                                <div className="space-y-2">
+                                    <label className="text-[8px] font-black uppercase text-white/30 ml-2 tracking-widest">Context Scope</label>
+                                    <div className="grid grid-cols-4 gap-2 bg-black rounded-xl p-1 border border-white/10">
+                                        {['Global', 'Grade', 'Division', 'Individual'].map(scope => (
+                                            <button type="button" key={scope} onClick={() => { setTargetScope(scope as any); setSelGrade(''); setSelDiv(''); setSelStudent(''); }} className={`py-2 rounded-lg text-[8px] font-black uppercase tracking-wider transition-all ${targetScope === scope ? 'bg-rose-600 text-white shadow-lg' : 'text-white/40 hover:text-white'}`}>{scope === 'Individual' ? 'Student' : scope}</button>
+                                        ))}
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4 mt-4">
+                                        {(targetScope !== 'Global') && (
+                                            <select className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-xs text-white outline-none focus:border-indigo-500" value={selGrade} onChange={e=>setSelGrade(e.target.value)}><option value="">Select Grade</option>{grades.map(g=><option key={g.id} value={g.id}>{g.gradeName}</option>)}</select>
+                                        )}
+                                        {(targetScope === 'Division' || (targetScope === 'Individual' && selGrade)) && (
+                                            <select className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-xs text-white outline-none focus:border-indigo-500" value={selDiv} onChange={e=>setSelDiv(e.target.value)}><option value="">Select Div</option>{subdivisions.map(s=><option key={s.id} value={s.id}>{s.divisionName}</option>)}</select>
                                         )}
                                     </div>
+                                    {targetScope === 'Individual' && selGrade && (
+                                        <select className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-xs text-white outline-none focus:border-indigo-500 mt-2" value={selStudent} onChange={e=>setSelStudent(e.target.value)}><option value="">Select Cadet</option>{students.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select>
+                                    )}
                                 </div>
 
                                 <div className="space-y-1">
@@ -1060,14 +991,4 @@ const CoreSettings = ({ user }: { user: User }) => {
                 </div>
                 <h3 className="text-3xl font-light serif-font mb-10 luxury-text-gradient italic">Encryption Keys.</h3>
                 <form onSubmit={update} className="space-y-4">
-                    <input required type="password" placeholder="CURRENT KEY" value={form.current} onChange={e=>setForm({...form, current:e.target.value})} className="w-full bg-black border border-white/10 rounded-2xl px-6 py-5 text-[10px] text-white font-mono tracking-[0.4em] text-center outline-none focus:border-indigo-500 uppercase transition-all" />
-                    <input required type="password" placeholder="NEW ENCRYPTION" value={form.new} onChange={e=>setForm({...form, new:e.target.value})} className="w-full bg-black border border-white/10 rounded-2xl px-6 py-5 text-[10px] text-white font-mono tracking-[0.4em] text-center outline-none focus:border-indigo-500 uppercase transition-all" />
-                    <input required type="password" placeholder="VERIFY PROTOCOL" value={form.confirm} onChange={e=>setForm({...form, confirm:e.target.value})} className="w-full bg-black border border-white/10 rounded-2xl px-6 py-5 text-[10px] text-white font-mono tracking-[0.4em] text-center outline-none focus:border-indigo-500 uppercase transition-all" />
-                    <button disabled={loading} className="w-full py-5 bg-white text-black font-black text-[11px] uppercase tracking-[0.6em] rounded-2xl hover:shadow-[0_0_50px_rgba(255,255,255,0.2)] transition-all mt-8 active:scale-95 disabled:opacity-50">Authorize Key Re-indexing</button>
-                </form>
-            </div>
-        </div>
-    );
-};
-
-export default TeacherDashboard;
+                    <input required type="password" placeholder="CURRENT KEY" value={form.current} onChange={e=>setForm({...form, current:e.target.value})} className="w-full bg-black border border-white/10 rounded-2xl px-6 py-5 text-[10px] text-white font-mono tracking-[0.4em] text

@@ -1,5 +1,4 @@
 
-
 export interface Grade {
   id: string;
   gradeName: string;
@@ -140,7 +139,7 @@ export interface Exam {
     title: string;
     gradeId: string;
     subdivisionId: string;
-    targetType: 'Grade' | 'Division' | 'Individual';
+    targetType: 'Grade' | 'Division' | 'Individual' | 'Global';
     targetStudentId?: string;
     subject: string;
     examDate: string;
@@ -232,7 +231,7 @@ export interface StudyNote {
   id: string;
   gradeId: string;
   divisionId: string;
-  targetType: 'Grade' | 'Individual';
+  targetType: 'Grade' | 'Division' | 'Individual' | 'Global';
   targetStudentId?: string;
   subject: string;
   title: string;
