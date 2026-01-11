@@ -8,7 +8,7 @@ import {
     Clock, Settings, Lock, Power, LayoutDashboard, FileText, 
     Check, ShoppingBag, CreditCard, Send, Upload, Camera, 
     Database, ChevronLeft, ChevronRight, Flame, Sparkles, 
-    Target, AlertTriangle, ArrowRight 
+    Target, AlertTriangle, ArrowRight, RefreshCw 
 } from 'lucide-react';
 import { motion, AnimatePresence, Variants } from 'framer-motion';
 
@@ -238,9 +238,16 @@ const HomeworkModule = ({ student, refreshTrigger }: { student: Student, refresh
     const [missions, setMissions] = useState<Homework[]>([]);
     const [isSubmitting, setIsSubmitting] = useState<string | null>(null);
     const [form, setForm] = useState({ text: '', image: '' });
+    const [isRefreshing, setIsRefreshing] = useState(false);
 
-    const load = useCallback(() => {
-        db.getHomeworkForStudent(student.gradeId, student.subdivisionId, student.id).then(setMissions);
+    const load = useCallback(async () => {
+        setIsRefreshing(true);
+        try {
+            const data = await db.getHomeworkForStudent(student.gradeId, student.subdivisionId, student.id);
+            setMissions(data);
+        } finally {
+            setIsRefreshing(false);
+        }
     }, [student.gradeId, student.subdivisionId, student.id]);
 
     useEffect(() => { load(); }, [load, refreshTrigger]);
@@ -264,9 +271,18 @@ const HomeworkModule = ({ student, refreshTrigger }: { student: Student, refresh
 
     return (
         <div className="space-y-8">
-            <div className="pb-4 border-b border-white/5">
-                <h2 className="text-3xl md:text-5xl font-light serif-font italic luxury-text-gradient tracking-tighter">Homework.</h2>
-                <p className="text-[8px] font-black uppercase tracking-[0.5em] text-white/20 mt-1">Tactical Assignments Log</p>
+            <div className="pb-4 border-b border-white/5 flex items-end justify-between">
+                <div>
+                    <h2 className="text-3xl md:text-5xl font-light serif-font italic luxury-text-gradient tracking-tighter">Homework.</h2>
+                    <p className="text-[8px] font-black uppercase tracking-[0.5em] text-white/20 mt-1">Tactical Assignments Log</p>
+                </div>
+                <button 
+                    onClick={load} 
+                    className={`p-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-all ${isRefreshing ? 'animate-spin' : ''}`}
+                    title="Force Refresh"
+                >
+                    <RefreshCw size={16} />
+                </button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {missions.map(hw => (
