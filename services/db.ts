@@ -9,7 +9,6 @@ const mapStudent = (s: any): Student => ({
     name: s.name,
     mobile: s.mobile,
     parentName: s.parent_name,
-    // Fix: Removed 'grade_id' which is not part of the Student interface
     gradeId: s.grade_id,
     subdivisionId: s.subdivision_id,
     joiningDate: s.joining_date,
@@ -305,7 +304,6 @@ class DatabaseService {
       const cleanName = (data.name || '').trim().replace(/\s+/g, '');
       const cleanMobile = (data.mobile || '').trim().replace(/\s+/g, '');
       const namePart = cleanName.length >= 3 ? cleanName.substring(0, 3) : cleanName.padEnd(3, 'X');
-      // Use last 4 digits of mobile for ID to improve uniqueness and avoid collisions
       const mobilePart = cleanMobile.length >= 4 ? cleanMobile.slice(-4) : cleanMobile.padEnd(4, '0');
       const customId = (namePart + mobilePart).toUpperCase();
       const password = cleanMobile;
@@ -476,10 +474,11 @@ class DatabaseService {
   }
 
   async getHomeworkForStudent(gradeId: string, subdivisionId: string, studentId: string): Promise<Homework[]> {
-       // FIX: Added single quotes around string IDs inside the PostgREST OR filter to prevent syntax errors
+       // Corrected: Added single quotes around string IDs in the OR filter to ensure Supabase PostgREST processes them correctly.
+       // Added check for 'Global' gradeId so students see "All Grades" homework.
        const { data } = await supabase.from('homework')
         .select('*')
-        .or(`and(target_type.eq.Grade,grade_id.eq.${gradeId}),and(target_type.eq.Division,subdivision_id.eq.${subdivisionId}),and(target_type.eq.Individual,target_student_id.eq.${studentId})`);
+        .or(`and(target_type.eq.Grade,grade_id.eq.'${gradeId}'),and(target_type.eq.Grade,grade_id.eq.'Global'),and(target_type.eq.Division,subdivision_id.eq.'${subdivisionId}'),and(target_type.eq.Individual,target_student_id.eq.'${studentId}')`);
 
        return (data || []).map(h => ({
           id: h.id, 
@@ -573,10 +572,11 @@ class DatabaseService {
   }
 
   async getExamsForStudent(gradeId: string, subdivisionId: string, studentId: string): Promise<Exam[]> {
-      // FIX: Added single quotes around string IDs inside the PostgREST OR filter
+      // Corrected: Added single quotes around string IDs in the OR filter.
+      // Added support for 'Global' gradeId so students see "All Grades" exams.
       const { data } = await supabase.from('exams')
         .select('*')
-        .or(`and(target_type.eq.Grade,grade_id.eq.${gradeId}),and(target_type.eq.Division,subdivision_id.eq.${subdivisionId}),and(target_type.eq.Individual,target_student_id.eq.${studentId})`);
+        .or(`and(target_type.eq.Grade,grade_id.eq.'${gradeId}'),and(target_type.eq.Grade,grade_id.eq.'Global'),and(target_type.eq.Division,subdivision_id.eq.'${subdivisionId}'),and(target_type.eq.Individual,target_student_id.eq.'${studentId}')`);
         
       return (data || []).map(e => ({
           id: e.id, 
@@ -766,9 +766,10 @@ class DatabaseService {
   async getNotes(gradeId?: string, divisionId?: string, studentId?: string): Promise<StudyNote[]> {
     let query = supabase.from('study_notes').select('*');
     
-    // FIX: Added single quotes around string IDs inside the PostgREST OR filter
+    // Corrected: Added single quotes around string IDs in the OR filter.
+    // Added support for 'Global' gradeId so students see "All Grades" notes.
     if (studentId && gradeId) {
-        query = query.or(`and(target_type.eq.Grade,grade_id.eq.${gradeId}),and(target_type.eq.Individual,target_student_id.eq.${studentId})`);
+        query = query.or(`and(target_type.eq.Grade,grade_id.eq.'${gradeId}'),and(target_type.eq.Grade,grade_id.eq.'Global'),and(target_type.eq.Individual,target_student_id.eq.'${studentId}')`);
     } else {
         if (gradeId) query = query.eq('grade_id', gradeId);
         if (divisionId) query = query.eq('division_id', divisionId);

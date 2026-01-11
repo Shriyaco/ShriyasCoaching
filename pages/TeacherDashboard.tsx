@@ -36,7 +36,6 @@ const TeacherDashboard: React.FC = () => {
     const refreshGrades = useCallback(async () => {
         const g = await db.getGrades();
         setGrades(g);
-        // Fixed: Removed auto-selection logic that forced the first grade, causing the "All Grades" glitch.
     }, []);
 
     useEffect(() => {
@@ -348,7 +347,8 @@ const HomeworkManagementModule = ({ gradeId, divisionId, teacherId, refreshTrigg
     const load = useCallback(() => { 
         db.getAllHomework().then(all => {
             if (gradeId) {
-                setList(all.filter(h => h.gradeId === gradeId));
+                // If a specific grade is selected, show homework for that grade OR global
+                setList(all.filter(h => h.gradeId === gradeId || h.gradeId === 'Global'));
             } else {
                 setList(all);
             }
@@ -361,6 +361,7 @@ const HomeworkManagementModule = ({ gradeId, divisionId, teacherId, refreshTrigg
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        // If no specific grade is selected, it defaults to 'Global' targeting
         await db.addHomework({ gradeId: gradeId || 'Global', subdivisionId: divisionId || 'Global', ...form, assignedBy: teacherId });
         setForm({ ...form, subject:'', task:'', dueDate:'', targetStudentId:'' });
         load();
@@ -496,7 +497,7 @@ const NotesModule = ({ gradeId, divisionId, teacherId, refreshTrigger }: any) =>
                         <div className="bg-[#0A0A0E] border border-white/10 rounded-[48px] w-full max-w-md p-10 relative shadow-2xl">
                             <button onClick={()=>setIsAdding(false)} className="absolute top-8 right-8 text-white/20 hover:text-white transition-colors"><X size={24}/></button>
                             <h3 className="text-3xl font-light serif-font mb-8 text-center italic luxury-text-gradient tracking-tight">Intel Input.</h3>
-                            <form onSubmit={async (e)=>{e.preventDefault(); await db.addNote({gradeId, divisionId, teacherId, ...form}); setIsAdding(false); load();}} className="space-y-4">
+                            <form onSubmit={async (e)=>{e.preventDefault(); await db.addNote({gradeId: gradeId || 'Global', divisionId: divisionId || 'Global', teacherId, ...form}); setIsAdding(false); load();}} className="space-y-4">
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-1">
                                         <label className="text-[8px] font-black uppercase text-white/30 ml-1">Target Scope</label>
