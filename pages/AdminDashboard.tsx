@@ -192,7 +192,7 @@ export default function AdminDashboard() {
                 {activeTab === 'shop' && <OrdersModule orders={orders} onNotify={showNotification} refresh={refreshData} />}
                 {activeTab === 'broadcast' && <BroadcastModule grades={grades} subdivisions={subdivisions} students={students} onNotify={showNotification} />}
                 {activeTab === 'students' && <StudentsModule grades={grades} subdivisions={subdivisions} students={students} onNotify={showNotification} refresh={refreshData} />}
-                {activeTab === 'teachers' && <TeachersModule teachers={teachers} onNotify={showNotification} refresh={refreshData} />}
+                {activeTab === 'teachers' && <TeachersModule teachers={teachers} grades={grades} subdivisions={subdivisions} onNotify={showNotification} refresh={refreshData} />}
                 {activeTab === 'grades' && <GradesModule grades={grades} subdivisions={subdivisions} onNotify={showNotification} refresh={refreshData} />}
                 {activeTab === 'fees' && <FeesModule fees={fees} onNotify={showNotification} refresh={refreshData} />}
                 {activeTab === 'notices' && <NoticesModule notices={notices} onNotify={showNotification} refresh={refreshData} />}
@@ -961,20 +961,22 @@ const StudentsModule = ({ students, grades, subdivisions, onNotify, refresh }: a
     );
 };
 
-const TeachersModule = ({ teachers, onNotify, refresh }: any) => {
+const TeachersModule = ({ teachers, onNotify, refresh, grades, subdivisions }: any) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingTeacher, setEditingTeacher] = useState<Teacher | null>(null);
-    const [form, setForm] = useState({ name: '', mobile: '', specialization: '' });
+    const [form, setForm] = useState({ name: '', mobile: '', specialization: '', gradeId: '', subdivisionId: '' });
 
     useEffect(() => {
         if (editingTeacher) {
             setForm({
                 name: editingTeacher.name,
                 mobile: editingTeacher.mobile,
-                specialization: editingTeacher.specialization
+                specialization: editingTeacher.specialization,
+                gradeId: editingTeacher.gradeId || '',
+                subdivisionId: editingTeacher.subdivisionId || ''
             });
         } else {
-            setForm({ name: '', mobile: '', specialization: '' });
+            setForm({ name: '', mobile: '', specialization: '', gradeId: '', subdivisionId: '' });
         }
     }, [editingTeacher]);
 
@@ -990,7 +992,9 @@ const TeachersModule = ({ teachers, onNotify, refresh }: any) => {
             }
             setIsModalOpen(false);
             refresh();
-        } catch (err) { alert("Failed to save teacher."); }
+        } catch (err: any) { 
+            alert(`Failed to save teacher. ${err.message || 'Check for duplicate mobile number or network issues.'}`); 
+        }
     };
 
     return (
@@ -1003,7 +1007,7 @@ const TeachersModule = ({ teachers, onNotify, refresh }: any) => {
                 <div className="overflow-x-auto">
                     <table className="w-full text-left min-w-[800px]">
                         <thead className="bg-slate-50 text-[10px] uppercase font-black tracking-widest text-slate-400 border-b border-slate-100">
-                            <tr><th className="p-4">Faculty Member</th><th className="p-4">Mobile</th><th className="p-4">Specialization</th><th className="p-4 text-center">Actions</th></tr>
+                            <tr><th className="p-4">Faculty Member</th><th className="p-4">Class</th><th className="p-4">Mobile</th><th className="p-4">Specialization</th><th className="p-4 text-center">Actions</th></tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 text-sm">
                             {teachers.map((t: Teacher) => (
@@ -1011,6 +1015,10 @@ const TeachersModule = ({ teachers, onNotify, refresh }: any) => {
                                     <td className="p-4">
                                         <p className="font-bold text-slate-800">{t.name}</p>
                                         <p className="text-[10px] font-mono text-slate-400 uppercase tracking-tighter">{t.teacherCustomId}</p>
+                                    </td>
+                                    <td className="p-4 text-slate-500 text-xs">
+                                        {t.gradeId ? `Grade ${grades.find((g:any)=>g.id===t.gradeId)?.gradeName || t.gradeId}` : 'N/A'} 
+                                        {t.subdivisionId && ` - ${subdivisions.find((s:any)=>s.id===t.subdivisionId)?.divisionName || t.subdivisionId}`}
                                     </td>
                                     <td className="p-4 text-slate-500 font-mono">{t.mobile}</td>
                                     <td className="p-4"><span className="px-3 py-1 bg-indigo-50 text-indigo-600 rounded-lg text-[10px] font-black uppercase">{t.specialization}</span></td>
@@ -1043,6 +1051,21 @@ const TeachersModule = ({ teachers, onNotify, refresh }: any) => {
                                 <div className="space-y-1"><label className="text-[10px] font-black uppercase text-slate-400 ml-1">Mobile No</label><input required className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 font-bold text-slate-900 font-mono" value={form.mobile} onChange={e => setForm({...form, mobile: e.target.value})} /></div>
                                 <div className="space-y-1"><label className="text-[10px] font-black uppercase text-slate-400 ml-1">Specialization</label><input required className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 font-bold text-slate-900" value={form.specialization} onChange={e => setForm({...form, specialization: e.target.value})} placeholder="e.g. Mathematics" /></div>
                                 
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-1"><label className="text-[10px] font-black uppercase text-slate-400 ml-1">Grade (Optional)</label>
+                                        <select className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-4 outline-none font-bold text-slate-900 text-xs" value={form.gradeId} onChange={e => setForm({...form, gradeId: e.target.value, subdivisionId: ''})}>
+                                            <option value="">None</option>
+                                            {grades.map((g: any) => <option key={g.id} value={g.id}>{g.gradeName}</option>)}
+                                        </select>
+                                    </div>
+                                    <div className="space-y-1"><label className="text-[10px] font-black uppercase text-slate-400 ml-1">Division</label>
+                                        <select className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-4 outline-none font-bold text-slate-900 text-xs" value={form.subdivisionId} onChange={e => setForm({...form, subdivisionId: e.target.value})}>
+                                            <option value="">None</option>
+                                            {subdivisions.filter((sd: any) => sd.gradeId === form.gradeId).map((sd: any) => <option key={sd.id} value={sd.id}>{sd.divisionName}</option>)}
+                                        </select>
+                                    </div>
+                                </div>
+
                                 <button type="submit" className="w-full bg-indigo-600 text-white py-5 rounded-[24px] font-black text-xl hover:shadow-2xl transition-all flex items-center justify-center gap-3">
                                     <Save size={24}/> {editingTeacher ? 'Apply Updates' : 'Confirm Registration'}
                                 </button>

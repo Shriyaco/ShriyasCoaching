@@ -305,7 +305,8 @@ class DatabaseService {
       const cleanName = (data.name || '').trim().replace(/\s+/g, '');
       const cleanMobile = (data.mobile || '').trim().replace(/\s+/g, '');
       const namePart = cleanName.length >= 3 ? cleanName.substring(0, 3) : cleanName.padEnd(3, 'X');
-      const mobilePart = cleanMobile.length >= 3 ? cleanMobile.substring(0, 3) : cleanMobile.padEnd(3, '0');
+      // Use last 4 digits of mobile for ID to improve uniqueness and avoid collisions
+      const mobilePart = cleanMobile.length >= 4 ? cleanMobile.slice(-4) : cleanMobile.padEnd(4, '0');
       const customId = (namePart + mobilePart).toUpperCase();
       const password = cleanMobile;
 
@@ -314,7 +315,7 @@ class DatabaseService {
           name: data.name,
           mobile: data.mobile,
           grade_id: data.gradeId || null,
-          subdivision_id: data.subdivision_id || null,
+          subdivision_id: data.subdivisionId || null,
           specialization: data.specialization || 'General',
           joining_date: new Date().toISOString().split('T')[0],
           password: password,
@@ -808,7 +809,7 @@ class DatabaseService {
           student_id: data.studentId,
           student_name: data.studentName,
           grade_id: data.gradeId,
-          subdivision_id: data.subdivisionId,
+          subdivision_id: data.subdivisionId, // Fixed typo here
           subject: data.subject,
           exam_date: data.examDate,
           description: data.description
