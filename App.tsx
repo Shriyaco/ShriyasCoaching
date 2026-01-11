@@ -6,6 +6,8 @@ import WhatsAppSupport from './components/WhatsAppSupport';
 import CustomCursor from './components/CustomCursor';
 import PublicHome from './pages/PublicHome';
 import AdminDashboard from './pages/AdminDashboard';
+import StudentDashboard from './pages/StudentDashboard';
+import TeacherDashboard from './pages/TeacherDashboard';
 import Login from './pages/Login';
 import PayFees from './pages/PayFees';
 import ContactUs from './pages/ContactUs';
@@ -123,6 +125,8 @@ export default function App() {
               <Route path="/icse" element={<ICSEBoard />} />
               <Route path="/state-board" element={<StateBoard />} />
               <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/student" element={<StudentDashboard />} />
+              <Route path="/teacher" element={<TeacherDashboard />} />
               <Route path="/pratikmanage" element={<SuperAdminDashboard />} />
               <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
               <Route path="/privacy" element={<PrivacyPolicy />} />

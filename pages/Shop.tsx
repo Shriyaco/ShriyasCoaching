@@ -139,8 +139,10 @@ const Shop: React.FC = () => {
             
             const s = await db.getSettings();
             setSettings(s);
-            const firstKey = Object.keys(s.gateways).find(k => s.gateways[k].enabled);
-            if (firstKey) setSelectedGatewayKey(firstKey);
+            if (s && s.gateways) {
+                const firstKey = Object.keys(s.gateways).find(k => s.gateways[k].enabled);
+                if (firstKey) setSelectedGatewayKey(firstKey);
+            }
 
         } catch (err) {
             console.error(err);
@@ -172,9 +174,9 @@ const Shop: React.FC = () => {
         setTimeout(() => setCopied(false), 2000);
     };
 
-    const currentGateway = settings && selectedGatewayKey ? settings.gateways[selectedGatewayKey] : null;
+    const currentGateway = (settings && selectedGatewayKey) ? settings.gateways[selectedGatewayKey] : null;
 
-    // --- DYNAMIC QR GENERATION FOR SHOP (FIXED) ---
+    // --- DYNAMIC QR GENERATION FOR SHOP ---
     const getDynamicQR = () => {
         // Specific UPI Identity for tejanishriya64-3@oksbi
         const upiID = "tejanishriya64-3@oksbi";
@@ -519,7 +521,7 @@ const Shop: React.FC = () => {
 
                             <div className="w-full md:w-3/5 p-12 bg-black flex flex-col">
                                 <div className="mb-10 flex gap-4 overflow-x-auto scrollbar-hide">
-                                    {Object.entries(settings.gateways).filter(([_, c]: [string, GatewayConfig]) => c.enabled).map(([k, c]: [string, GatewayConfig]) => (
+                                    {settings && settings.gateways && Object.entries(settings.gateways).filter(([_, c]: [string, GatewayConfig]) => c.enabled).map(([k, c]: [string, GatewayConfig]) => (
                                         <button 
                                             key={k} 
                                             onClick={() => setSelectedGatewayKey(k)} 

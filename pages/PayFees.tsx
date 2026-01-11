@@ -64,8 +64,10 @@ export default function PayFees() {
             const me = results[1] as Student | undefined;
 
             setSettings(s);
-            const firstKey = Object.keys(s.gateways).find(k => s.gateways[k].enabled);
-            if (firstKey) setSelectedGatewayKey(firstKey);
+            if (s && s.gateways) {
+                const firstKey = Object.keys(s.gateways).find(k => s.gateways[k].enabled);
+                if (firstKey) setSelectedGatewayKey(firstKey);
+            }
 
             if (me) {
                 setIdentifiedStudent(me);
@@ -142,7 +144,7 @@ export default function PayFees() {
         </div>
     );
 
-    const currentGateway = selectedGatewayKey ? settings.gateways[selectedGatewayKey] : null;
+    const currentGateway = (settings && selectedGatewayKey) ? settings.gateways[selectedGatewayKey] : null;
 
     return (
         <div className="min-h-screen bg-[#050505] text-white selection:bg-premium-accent selection:text-black overflow-x-hidden pt-32 transition-colors duration-300">
@@ -238,7 +240,7 @@ export default function PayFees() {
                                         <p className="text-[9px] text-premium-accent font-black uppercase mb-4 tracking-[0.4em]">Verified Academic Entity</p>
                                         <h3 className="text-4xl font-bold text-white serif-font italic leading-tight mb-6">{activeStudentName}</h3>
                                         
-                                        <div className="flex flex-wrap gap-3">
+                                        <div className="flex wrap gap-3">
                                             <span className="bg-white/5 border border-white/10 px-4 py-2 rounded-full text-[9px] font-black uppercase tracking-widest text-white/50">Sector: Grade {identifiedStudent?.gradeId}</span>
                                             <span className="bg-white/5 border border-white/10 px-4 py-2 rounded-full text-[9px] font-black uppercase tracking-widest text-white/50">Hash ID: {identifiedStudent?.studentCustomId}</span>
                                         </div>
@@ -304,7 +306,7 @@ export default function PayFees() {
                             <div className="p-12 flex-1 flex flex-col relative z-10">
                                 {/* Gateway Switcher */}
                                 <div className="mb-12 flex gap-4 overflow-x-auto scrollbar-hide pb-2">
-                                    {Object.entries(settings.gateways)
+                                    {settings && settings.gateways && Object.entries(settings.gateways)
                                         .filter(([_, conf]: [string, GatewayConfig]) => conf.enabled)
                                         .map(([key, conf]: [string, GatewayConfig]) => (
                                         <button
@@ -420,4 +422,3 @@ export default function PayFees() {
         </div>
     );
 }
-

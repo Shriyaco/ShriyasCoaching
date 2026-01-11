@@ -37,11 +37,14 @@ const Login: React.FC = () => {
     
     try {
         const user = await db.login(username, password);
-        if (user && user.role === 'admin') {
+        if (user) {
           sessionStorage.setItem('sc_user', JSON.stringify(user));
-          navigate('/admin');
+          if (user.role === 'admin') navigate('/admin');
+          else if (user.role === 'teacher') navigate('/teacher');
+          else if (user.role === 'student') navigate('/student');
+          else navigate('/');
         } else {
-          setError('Access Denied. Invalid Admin Credentials.');
+          setError('Access Denied. Invalid Credentials.');
         }
     } catch (err) {
         setError('Network connection error.');
@@ -61,28 +64,28 @@ const Login: React.FC = () => {
             </Canvas>
         </div>
         <div className="absolute bottom-12 left-12 right-12 bg-white/60 dark:bg-black/60 backdrop-blur-md p-6 rounded-2xl border border-slate-200 dark:border-white/10 shadow-lg z-10 text-center">
-            <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2 font-[Poppins]">Admin Terminal</h2>
-            <p className="text-slate-600 dark:text-slate-400 leading-relaxed text-sm">System administration and infrastructure control.</p>
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2 font-[Poppins]">Institutional Gateway</h2>
+            <p className="text-slate-600 dark:text-slate-400 leading-relaxed text-sm">Authenticated access for Faculty, Students, and Administrators.</p>
         </div>
       </div>
 
       <div className="w-full lg:w-1/2 flex items-center justify-center p-6 relative bg-white dark:bg-[#020617]">
           <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="w-full max-w-md relative z-10">
               <div className="text-center mb-10">
-                  <h1 className="text-4xl font-black text-slate-900 dark:text-white font-[Poppins] tracking-tight">System Core</h1>
-                  <p className="text-slate-500 mt-2 text-sm">Enter access keys for portal administration</p>
+                  <h1 className="text-4xl font-black text-slate-900 dark:text-white font-[Poppins] tracking-tight">Portal Entry</h1>
+                  <p className="text-slate-500 mt-2 text-sm">Enter registered credentials to proceed</p>
               </div>
               <div className="bg-white/80 dark:bg-slate-900/60 backdrop-blur-xl rounded-3xl shadow-xl border border-slate-200 dark:border-white/10 p-8">
                   <form onSubmit={handleLogin} className="space-y-6">
                       <div className="space-y-2">
-                          <label className="text-xs font-bold text-slate-500 dark:text-slate-400 ml-1 uppercase tracking-wide">Identity</label>
+                          <label className="text-xs font-bold text-slate-500 dark:text-slate-400 ml-1 uppercase tracking-wide">Identity / Mobile</label>
                           <div className={`flex items-center bg-slate-50 dark:bg-slate-950/50 border-2 rounded-xl px-4 py-3 transition-all ${focused === 'user' ? 'border-blue-500 dark:border-indigo-500' : 'border-slate-200 dark:border-slate-800'}`}>
                               <UserIcon size={20} className={focused === 'user' ? 'text-blue-500' : 'text-slate-400'} />
-                              <input type="text" placeholder="Admin Username" className="w-full bg-transparent outline-none text-slate-800 dark:text-white font-medium pl-3" value={username} onChange={(e) => setUsername(e.target.value)} onFocus={() => setFocused('user')} onBlur={() => setFocused(null)} />
+                              <input type="text" placeholder="Username or Mobile" className="w-full bg-transparent outline-none text-slate-800 dark:text-white font-medium pl-3" value={username} onChange={(e) => setUsername(e.target.value)} onFocus={() => setFocused('user')} onBlur={() => setFocused(null)} />
                           </div>
                       </div>
                       <div className="space-y-2">
-                          <label className="text-xs font-bold text-slate-500 dark:text-slate-400 ml-1 uppercase tracking-wide">Key</label>
+                          <label className="text-xs font-bold text-slate-500 dark:text-slate-400 ml-1 uppercase tracking-wide">Secure Key</label>
                           <div className={`flex items-center bg-slate-50 dark:bg-slate-950/50 border-2 rounded-xl px-4 py-3 transition-all ${focused === 'pass' ? 'border-blue-500 dark:border-indigo-500' : 'border-slate-200 dark:border-slate-800'}`}>
                               <Lock size={20} className={focused === 'pass' ? 'text-blue-500' : 'text-slate-400'} />
                               <input type="password" placeholder="••••••••" className="w-full bg-transparent outline-none text-slate-800 dark:text-white font-medium pl-3" value={password} onChange={(e) => setPassword(e.target.value)} onFocus={() => setFocused('pass')} onBlur={() => setFocused(null)} />
@@ -94,7 +97,7 @@ const Login: React.FC = () => {
                           )}
                       </AnimatePresence>
                       <button type="submit" disabled={loading} className="w-full bg-blue-600 dark:bg-indigo-600 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-blue-700 active:scale-98 transition-all flex items-center justify-center gap-2">
-                          {loading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <>Initialize Access <ArrowRight size={20} /></>}
+                          {loading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <>Authorize Entry <ArrowRight size={20} /></>}
                       </button>
                   </form>
               </div>

@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { db } from '../services/db';
-import { TabView, Grade, Subdivision, FeeSubmission, SystemSettings, Enquiry, Product, Order, Notice } from '../types';
+import { TabView, Grade, Division, FeeSubmission, SystemSettings, Enquiry, Product, Order, Notice } from '../types';
 import { Settings, LogOut, Search, CreditCard, Layers, Power, X, Trash2, TrendingUp, DollarSign, Menu, Check, MessageCircle, ShoppingBag, Send, Megaphone, Bell, Package, FileText } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -12,7 +12,7 @@ export default function AdminDashboard() {
   
   // Data State
   const [grades, setGrades] = useState<Grade[]>([]);
-  const [subdivisions, setSubdivisions] = useState<Subdivision[]>([]);
+  const [divisions, setDivisions] = useState<Division[]>([]);
   const [fees, setFees] = useState<FeeSubmission[]>([]);
   const [enquiries, setEnquiries] = useState<Enquiry[]>([]);
   const [settings, setSettings] = useState<SystemSettings | null>(null);
@@ -29,7 +29,7 @@ export default function AdminDashboard() {
     try {
         const results = await Promise.allSettled([
             db.getGrades(),
-            db.getSubdivisions(),
+            db.getDivisions(),
             db.getFeeSubmissions(),
             db.getSettings(),
             db.getEnquiries(),
@@ -41,7 +41,7 @@ export default function AdminDashboard() {
         const [g, sd, f, settingsRes, enq, p, o, n] = results;
 
         if (g.status === 'fulfilled') setGrades(g.value);
-        if (sd.status === 'fulfilled') setSubdivisions(sd.value);
+        if (sd.status === 'fulfilled') setDivisions(sd.value);
         if (f.status === 'fulfilled') setFees(f.value);
         if (settingsRes.status === 'fulfilled') setSettings(settingsRes.value);
         if (enq.status === 'fulfilled') setEnquiries(enq.value);
@@ -66,7 +66,7 @@ export default function AdminDashboard() {
     
     const channels = [
         db.subscribe('grades', refreshData),
-        db.subscribe('subdivisions', refreshData),
+        db.subscribe('divisions', refreshData),
         db.subscribe('fee_submissions', refreshData),
         db.subscribe('shop_orders', refreshData),
         db.subscribe('products', refreshData),
@@ -124,7 +124,7 @@ export default function AdminDashboard() {
             <AnimatePresence mode="wait">
               <motion.div key={activeTab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
                 {activeTab === 'dashboard' && <p className="text-slate-400 uppercase font-black tracking-widest text-xs">Analytics layer active.</p>}
-                {activeTab === 'grades' && <GradesModule grades={grades} subdivisions={subdivisions} onNotify={showNotification} refresh={refreshData} />}
+                {activeTab === 'grades' && <GradesModule grades={grades} divisions={divisions} onNotify={showNotification} refresh={refreshData} />}
                 {activeTab === 'fees' && <FeesModule fees={fees} onNotify={showNotification} refresh={refreshData} />}
                 {activeTab === 'notices' && <NoticesModule notices={notices} onNotify={showNotification} refresh={refreshData} />}
                 {activeTab === 'settings' && settings && <SettingsModule settings={settings} onNotify={showNotification} refresh={refreshData} />}
@@ -137,7 +137,7 @@ export default function AdminDashboard() {
   );
 }
 
-const GradesModule = ({ grades, subdivisions, onNotify, refresh }: any) => {
+const GradesModule = ({ grades, divisions, onNotify, refresh }: any) => {
     const [name, setName] = useState('');
     const [subs, setSubs] = useState('');
     const handleAdd = async (e: any) => {
