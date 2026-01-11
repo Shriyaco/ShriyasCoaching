@@ -67,7 +67,6 @@ const TeacherDashboard: React.FC = () => {
                 const subs = await db.getSubdivisions(selectedGradeId);
                 setAvailableSubdivisions(subs);
                 
-                // CRITICAL FIX: Properly reset/select subdivision when grade changes
                 if (subs.length > 0) {
                     const currentStillValid = subs.find(s => s.id === selectedDivisionId);
                     if (!selectedDivisionId || !currentStillValid) {
@@ -102,7 +101,6 @@ const TeacherDashboard: React.FC = () => {
         <div className="min-h-screen bg-[#020204] text-white flex flex-col font-sans selection:bg-indigo-500/30 overflow-x-hidden">
             <SpatialBackground />
             
-            {/* --- TOP BAR --- */}
             <header className="relative z-50 px-4 md:px-8 py-3 flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-white/5 bg-black/40 backdrop-blur-xl shrink-0">
                 <div className="flex items-center w-full sm:w-auto justify-between sm:justify-start gap-4">
                     <img src="https://advedasolutions.in/sc.png" alt="Logo" className="h-6 md:h-8 w-auto invert opacity-80 cursor-pointer" onClick={() => navigate('/')} />
@@ -125,7 +123,6 @@ const TeacherDashboard: React.FC = () => {
                 </div>
             </header>
 
-            {/* --- MAIN STAGE --- */}
             <main className="flex-1 px-4 md:px-12 py-6 relative z-10 overflow-y-auto scrollbar-hide">
                 <div className="max-w-6xl mx-auto w-full">
                     <AnimatePresence mode="wait">
@@ -145,7 +142,6 @@ const TeacherDashboard: React.FC = () => {
                 </div>
             </main>
 
-            {/* --- BOTTOM DOCK --- */}
             <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[100] w-full max-w-fit px-4">
                 <nav className="bg-[#0A0A0E]/90 backdrop-blur-2xl border border-white/10 p-1.5 rounded-[24px] flex items-center gap-1 shadow-2xl overflow-x-auto scrollbar-hide max-w-[95vw]">
                     {navItems.map(item => (
@@ -164,7 +160,6 @@ const TeacherDashboard: React.FC = () => {
     );
 };
 
-// --- MODULE: ATTENDANCE ---
 const AttendanceModule = ({ gradeId, divisionId, refreshTrigger }: any) => {
     const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
     const [students, setStudents] = useState<Student[]>([]);
@@ -196,7 +191,7 @@ const AttendanceModule = ({ gradeId, divisionId, refreshTrigger }: any) => {
                     <p className="text-[8px] font-black uppercase tracking-[0.5em] text-white/20 mt-1">Personnel Presence Protocol</p>
                 </div>
                 <div className="flex gap-2 bg-white/5 p-2 rounded-2xl border border-white/5">
-                    <input type="date" value={date} onChange={e => setDate(e.target.value)} className="bg-black border border-white/10 rounded-xl px-3 py-2 text-[10px] font-black outline-none text-white focus:border-indigo-500" />
+                    <input type="date" value={date} onChange={e => setDate(e.target.value)} className="bg-black border border-white/10 rounded-xl px-3 py-2 text-[10px] font-black outline-none text-white focus:border-indigo-500 [color-scheme:dark]" />
                     <button onClick={save} className="bg-white text-black px-6 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-indigo-400 transition-all">Sync All</button>
                 </div>
             </div>
@@ -222,7 +217,6 @@ const AttendanceModule = ({ gradeId, divisionId, refreshTrigger }: any) => {
     );
 };
 
-// --- MODULE: LIVE CLASSES ---
 const LiveManagementModule = ({ division }: { division?: Subdivision }) => {
     const [link, setLink] = useState('');
     if (!division) return <div className="py-20 text-center opacity-20 font-black uppercase tracking-widest">Sector Not Defined</div>;
@@ -258,7 +252,6 @@ const LiveManagementModule = ({ division }: { division?: Subdivision }) => {
     );
 };
 
-// --- MODULE: HOMEWORK ---
 const HomeworkManagementModule = ({ gradeId, divisionId, teacherId, refreshTrigger }: any) => {
     const [list, setList] = useState<Homework[]>([]);
     const [form, setForm] = useState<any>({ subject: '', task: '', dueDate: '', targetType: 'Division', targetStudentId: '' });
@@ -266,7 +259,7 @@ const HomeworkManagementModule = ({ gradeId, divisionId, teacherId, refreshTrigg
     
     const load = useCallback(() => { 
         if(gradeId && divisionId) {
-            db.getHomeworkForStudent(gradeId, divisionId).then(setList); 
+            db.getHomeworkForStudent(gradeId, divisionId, 'all').then(setList); 
             db.getStudents(gradeId, divisionId).then(setStudents);
         }
     }, [gradeId, divisionId]);
@@ -307,7 +300,10 @@ const HomeworkManagementModule = ({ gradeId, divisionId, teacherId, refreshTrigg
                     </div>
                     <input required className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-xs text-white" value={form.subject} onChange={e=>setForm({...form, subject:e.target.value})} placeholder="Subject" />
                     <textarea required className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-xs text-white h-24 resize-none" value={form.task} onChange={e=>setForm({...form, task:e.target.value})} placeholder="Mission Objectives..." />
-                    <input required type="date" className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-xs text-white" value={form.dueDate} onChange={e=>setForm({...form, dueDate:e.target.value})} />
+                    <div className="space-y-1">
+                        <label className="text-[8px] font-black uppercase text-white/30 ml-1">Target Due Date</label>
+                        <input required type="date" className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-xs text-white [color-scheme:dark]" value={form.dueDate} onChange={e=>setForm({...form, dueDate:e.target.value})} />
+                    </div>
                     <button className="w-full bg-indigo-600 text-white py-4 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-xl">Deploy Homework</button>
                 </form>
             </div>
@@ -319,7 +315,7 @@ const HomeworkManagementModule = ({ gradeId, divisionId, teacherId, refreshTrigg
                             <p className="text-base font-serif italic text-white/80 leading-snug truncate">"{hw.task}"</p>
                             <p className="text-[8px] font-black uppercase text-white/20 mt-4">Due: {hw.dueDate}</p>
                         </div>
-                        <button onClick={async ()=>{if(confirm('Purge Homework?')){await db.deleteHomework(hw.id); load();}}} className="p-2 text-white/10 hover:text-rose-500 transition-all opacity-0 group-hover:opacity-100"><Trash2 size={16}/></button>
+                        <button onClick={async (e)=>{e.stopPropagation(); if(confirm('Purge Homework?')){await db.deleteHomework(hw.id); load();}}} className="p-2 text-white/10 hover:text-rose-500 transition-all opacity-0 group-hover:opacity-100"><Trash2 size={16}/></button>
                     </div>
                 ))}
             </div>
@@ -327,7 +323,6 @@ const HomeworkManagementModule = ({ gradeId, divisionId, teacherId, refreshTrigg
     );
 };
 
-// --- MODULE: NOTES ---
 const NotesModule = ({ gradeId, divisionId, teacherId, refreshTrigger }: any) => {
     const [notes, setNotes] = useState<StudyNote[]>([]);
     const [isAdding, setIsAdding] = useState(false);
@@ -335,9 +330,10 @@ const NotesModule = ({ gradeId, divisionId, teacherId, refreshTrigger }: any) =>
     const [students, setStudents] = useState<Student[]>([]);
     
     const load = useCallback(() => { 
-        if(gradeId && divisionId) {
-            db.getNotes(gradeId, divisionId).then(setNotes); 
-            db.getStudents(gradeId, divisionId).then(setStudents);
+        if(gradeId) {
+            // Use the studentId filter as undefined to get all notes for the grade (teacher view)
+            db.getNotes(gradeId).then(setNotes); 
+            if(divisionId) db.getStudents(gradeId, divisionId).then(setStudents);
         }
     }, [gradeId, divisionId]);
 
@@ -352,16 +348,16 @@ const NotesModule = ({ gradeId, divisionId, teacherId, refreshTrigger }: any) =>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {notes.map(n => (
                     <div key={n.id} className="bg-white/[0.03] p-6 rounded-[40px] border border-white/5 flex flex-col group relative hover:border-indigo-500/20 transition-all shadow-xl">
-                        <span className="text-emerald-400 text-[8px] font-black uppercase mb-4 tracking-widest">{n.subject}</span>
+                        <span className="text-emerald-400 text-[8px] font-black uppercase mb-4 tracking-widest">{n.subject} • {n.targetType}</span>
                         <h4 className="text-xl font-bold mb-3 text-white/90 truncate italic">{n.title}</h4>
                         <p className="text-[10px] text-white/30 line-clamp-2 leading-relaxed mb-6 font-medium">{n.content}</p>
-                        <button onClick={async ()=>{if(confirm('Purge Note?')){await db.deleteNote(n.id); load();}}} className="absolute top-6 right-6 text-white/5 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all"><Trash2 size={14}/></button>
+                        <button onClick={async (e)=>{e.stopPropagation(); if(confirm('Purge Note?')){await db.deleteNote(n.id); load();}}} className="absolute top-6 right-6 text-white/5 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all"><Trash2 size={14}/></button>
                     </div>
                 ))}
             </div>
             <AnimatePresence>
                 {isAdding && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4">
+                    <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/90 p-4 backdrop-blur-md">
                         <div className="bg-[#0A0A0E] border border-white/10 rounded-[48px] w-full max-w-md p-10 relative shadow-2xl">
                             <button onClick={()=>setIsAdding(false)} className="absolute top-8 right-8 text-white/20 hover:text-white"><X size={24}/></button>
                             <h3 className="text-3xl font-light serif-font mb-8 text-center italic luxury-text-gradient">Notes Input.</h3>
@@ -370,7 +366,7 @@ const NotesModule = ({ gradeId, divisionId, teacherId, refreshTrigger }: any) =>
                                     <div className="space-y-1">
                                         <label className="text-[8px] font-black uppercase text-white/30 ml-1">Target</label>
                                         <select className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-2 text-xs text-white" value={form.targetType} onChange={e=>setForm({...form, targetType:e.target.value as any})}>
-                                            <option value="Grade">Grade</option>
+                                            <option value="Grade">Grade-wide</option>
                                             <option value="Individual">Individual</option>
                                         </select>
                                     </div>
@@ -397,16 +393,23 @@ const NotesModule = ({ gradeId, divisionId, teacherId, refreshTrigger }: any) =>
     );
 };
 
-// --- MODULE: CONDUCT EXAM ---
 const ExamBuilderModule = ({ gradeId, divisionId, teacherId, refreshTrigger }: any) => {
     const [exams, setExams] = useState<Exam[]>([]);
     const [isCreating, setIsCreating] = useState(false);
+    const [students, setStudents] = useState<Student[]>([]);
     const [form, setForm] = useState<any>({ 
         title: '', subject: '', duration: 30, examDate: '', startTime: '', 
-        totalMarks: 0, questions: [], reopenable: false 
+        totalMarks: 0, questions: [], reopenable: false, 
+        targetType: 'Division', targetStudentId: '' 
     });
 
-    const load = useCallback(() => db.getExams(gradeId).then(setExams), [gradeId]);
+    const load = useCallback(() => {
+        if(gradeId) {
+            db.getExams(gradeId).then(setExams);
+            if(divisionId) db.getStudents(gradeId, divisionId).then(setStudents);
+        }
+    }, [gradeId, divisionId]);
+
     useEffect(() => { load(); }, [load, refreshTrigger]);
 
     const addQuestion = (type: 'mcq' | 'short' | 'paragraph') => {
@@ -428,7 +431,7 @@ const ExamBuilderModule = ({ gradeId, divisionId, teacherId, refreshTrigger }: a
         }
         await db.addExam({ gradeId, subdivisionId: divisionId, ...form, createdBy: teacherId });
         setIsCreating(false);
-        setForm({ title: '', subject: '', duration: 30, examDate: '', startTime: '', totalMarks: 0, questions: [], reopenable: false });
+        setForm({ title: '', subject: '', duration: 30, examDate: '', startTime: '', totalMarks: 0, questions: [], reopenable: false, targetType: 'Division', targetStudentId: '' });
         load();
         alert("Exam Protocol Finalized.");
     };
@@ -442,14 +445,14 @@ const ExamBuilderModule = ({ gradeId, divisionId, teacherId, refreshTrigger }: a
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {exams.map(e => (
                     <div key={e.id} className="bg-white/[0.03] p-6 rounded-[40px] border border-white/5 flex flex-col group relative shadow-xl hover:border-rose-500/20 transition-all">
-                        <span className="text-rose-400 text-[8px] font-black uppercase mb-4 tracking-widest">{e.subject}</span>
+                        <span className="text-rose-400 text-[8px] font-black uppercase mb-4 tracking-widest">{e.subject} • {e.targetType}</span>
                         <h4 className="text-xl font-bold mb-4 text-white/90 italic truncate">{e.title}</h4>
                         <div className="text-[8px] font-bold text-white/30 space-y-2 mt-auto">
                             <p className="flex items-center gap-2"><Calendar size={10}/> {e.examDate}</p>
                             <p className="flex items-center gap-2"><Clock size={10}/> {e.startTime} ({e.duration} min)</p>
                             <p className="flex items-center gap-2"><Award size={10}/> {e.totalMarks} Marks Total</p>
                         </div>
-                        <button onClick={async ()=>{if(confirm('Purge Exam?')){await db.deleteExam(e.id); load();}}} className="absolute top-6 right-6 text-white/5 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all"><Trash2 size={14}/></button>
+                        <button onClick={async (e)=>{e.stopPropagation(); if(confirm('Purge Exam?')){await db.deleteExam(e.id); load();}}} className="absolute top-6 right-6 text-white/5 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all"><Trash2 size={14}/></button>
                     </div>
                 ))}
             </div>
@@ -462,6 +465,23 @@ const ExamBuilderModule = ({ gradeId, divisionId, teacherId, refreshTrigger }: a
                             <h3 className="text-3xl font-light serif-font mb-10 text-center italic luxury-text-gradient tracking-tighter">Exam Builder.</h3>
                             
                             <form onSubmit={validateAndSubmit} className="space-y-6">
+                                <div className="space-y-1">
+                                    <label className="text-[8px] font-black uppercase text-white/30 ml-2">Target & Context</label>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <select className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-xs text-white outline-none focus:border-indigo-500" value={form.targetType} onChange={e=>setForm({...form, targetType:e.target.value as any})}>
+                                            <option value="Division">Specific Division</option>
+                                            <option value="Grade">Grade-wide</option>
+                                            <option value="Individual">Individual Student</option>
+                                        </select>
+                                        {form.targetType === 'Individual' && (
+                                            <select className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-xs text-white outline-none focus:border-indigo-500" value={form.targetStudentId} onChange={e=>setForm({...form, targetStudentId:e.target.value})}>
+                                                <option value="">Select Target Cadet</option>
+                                                {students.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                                            </select>
+                                        )}
+                                    </div>
+                                </div>
+
                                 <div className="space-y-1">
                                     <label className="text-[8px] font-black uppercase text-white/30 ml-2">General Info</label>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -558,7 +578,6 @@ const ExamBuilderModule = ({ gradeId, divisionId, teacherId, refreshTrigger }: a
     );
 };
 
-// --- MODULE: CHECK EXAM ---
 const CheckExamsModule = ({ refreshTrigger }: any) => {
     const [submissions, setSubmissions] = useState<ExamSubmission[]>([]);
     const [selectedSub, setSelectedSub] = useState<ExamSubmission | null>(null);
@@ -599,7 +618,7 @@ const CheckExamsModule = ({ refreshTrigger }: any) => {
                             <div className="w-12 h-12 rounded-full bg-indigo-500/10 flex items-center justify-center font-black text-indigo-400 italic">#</div>
                             <div>
                                 <h4 className="text-lg font-bold text-white leading-tight">{s.studentName || 'Student'}</h4>
-                                <p className="text-[9px] font-black uppercase text-white/20">ID: {s.studentId.slice(0, 12)}</p>
+                                <p className="text-[9px] font-black uppercase text-white/20">Exam ID: {s.examId.slice(0, 8)}</p>
                             </div>
                         </div>
                         <p className="text-[10px] font-black uppercase text-indigo-400 mt-auto flex items-center gap-2"><ArrowRight size={10}/> View Answer Sheet</p>
@@ -630,7 +649,7 @@ const CheckExamsModule = ({ refreshTrigger }: any) => {
                                         </div>
                                         <div className="flex items-center gap-4">
                                             <label className="text-[10px] font-black uppercase text-white/20">Award Marks:</label>
-                                            <input type="number" max={q.marks} className="bg-black border border-white/10 rounded-xl px-4 py-2 text-xs w-20 text-white outline-none focus:border-emerald-500" value={marks[q.id] || 0} onChange={e=>setMarks({...marks, [q.id]: parseInt(e.target.value)||0})} />
+                                            <input type="number" max={q.marks} className="bg-black border border-white/10 rounded-xl px-4 py-2 text-xs w-20 text-white outline-none focus:border-emerald-500 font-mono" value={marks[q.id] || 0} onChange={e=>setMarks({...marks, [q.id]: parseInt(e.target.value)||0})} />
                                             <span className="text-[10px] font-black uppercase text-white/10">/ {q.marks} Pts</span>
                                         </div>
                                     </div>
@@ -652,7 +671,6 @@ const CheckExamsModule = ({ refreshTrigger }: any) => {
     );
 };
 
-// --- MODULE: LEAVE MANAGEMENT ---
 const LeaveRequestsModule = ({ gradeId, divisionId, refreshTrigger }: any) => {
     const [leaves, setLeaves] = useState<LeaveApplication[]>([]);
     const load = useCallback(() => { if(gradeId && divisionId) db.getLeaveApplications(undefined, gradeId, divisionId).then(setLeaves); }, [gradeId, divisionId]);
@@ -694,7 +712,6 @@ const LeaveRequestsModule = ({ gradeId, divisionId, refreshTrigger }: any) => {
     );
 };
 
-// --- MODULE: UPCOMING EXAMS ---
 const StudentExamsView = ({ gradeId, divisionId, refreshTrigger }: any) => {
     const [exams, setExams] = useState<StudentOwnExam[]>([]);
     useEffect(() => { if(gradeId && divisionId) db.getStudentExams(undefined, gradeId, divisionId).then(setExams); }, [gradeId, divisionId, refreshTrigger]);
@@ -725,7 +742,6 @@ const StudentExamsView = ({ gradeId, divisionId, refreshTrigger }: any) => {
     );
 };
 
-// --- MODULE: DOUBTS ---
 const DoubtSolveModule = ({ refreshTrigger }: any) => {
     const [queries, setQueries] = useState<StudentQuery[]>([]);
     const [replyText, setReplyText] = useState<Record<string, string>>({});
@@ -768,7 +784,6 @@ const DoubtSolveModule = ({ refreshTrigger }: any) => {
     );
 };
 
-// --- MODULE: SETTINGS ---
 const CoreSettings = ({ user }: { user: User }) => {
     const [form, setForm] = useState({ current: '', new: '', confirm: '' });
     const [loading, setLoading] = useState(false);

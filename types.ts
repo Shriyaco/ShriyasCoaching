@@ -139,6 +139,8 @@ export interface Exam {
     title: string;
     gradeId: string;
     subdivisionId: string;
+    targetType: 'Grade' | 'Division' | 'Individual';
+    targetStudentId?: string;
     subject: string;
     examDate: string;
     startTime: string;

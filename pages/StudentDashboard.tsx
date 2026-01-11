@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence, Variants } from 'framer-motion';
 
-// --- 3D AMBIENT BACKGROUND (Matching Teacher Panel) ---
+// --- 3D AMBIENT BACKGROUND ---
 const SpatialBackground = () => (
     <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none bg-[#020204]">
         <div className="absolute top-1/4 left-1/4 w-[60vw] h-[60vw] bg-indigo-600/5 rounded-full blur-[120px] animate-pulse" />
@@ -34,6 +34,7 @@ const StudentDashboard: React.FC = () => {
     const [student, setStudent] = useState<Student | null>(null);
     const [activeTab, setActiveTab] = useState<'dashboard' | 'homework' | 'notes' | 'exams' | 'results' | 'upcoming-exams' | 'leave' | 'doubts' | 'settings'>('dashboard');
     const [loading, setLoading] = useState(true);
+    const [refreshTrigger, setRefreshTrigger] = useState(0);
 
     const loadData = useCallback(async (userId: string) => {
         try {
@@ -53,6 +54,19 @@ const StudentDashboard: React.FC = () => {
         if (parsedUser.role !== 'student') { navigate('/'); return; }
         setUser(parsedUser);
         loadData(parsedUser.id);
+
+        // Real-time synchronization
+        const hwChannel = db.subscribe('homework', () => setRefreshTrigger(t => t + 1));
+        const examChannel = db.subscribe('exams', () => setRefreshTrigger(t => t + 1));
+        const notesChannel = db.subscribe('study_notes', () => setRefreshTrigger(t => t + 1));
+        const queryChannel = db.subscribe('queries', () => setRefreshTrigger(t => t + 1));
+
+        return () => {
+            db.unsubscribe(hwChannel);
+            db.unsubscribe(examChannel);
+            db.unsubscribe(notesChannel);
+            db.unsubscribe(queryChannel);
+        };
     }, [navigate, loadData]);
 
     const handleLogout = () => { sessionStorage.removeItem('sc_user'); navigate('/'); };
@@ -80,7 +94,6 @@ const StudentDashboard: React.FC = () => {
         <div className="min-h-screen bg-[#020204] text-white flex flex-col font-sans selection:bg-indigo-500/30 overflow-x-hidden">
             <SpatialBackground />
             
-            {/* --- TOP BAR --- */}
             <header className="relative z-50 px-4 md:px-8 py-3 flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-white/5 bg-black/40 backdrop-blur-xl shrink-0">
                 <div className="flex items-center w-full sm:w-auto justify-between sm:justify-start gap-4">
                     <img src="https://advedasolutions.in/sc.png" alt="Logo" className="h-6 md:h-8 w-auto invert opacity-80 cursor-pointer" onClick={() => navigate('/')} />
@@ -105,26 +118,24 @@ const StudentDashboard: React.FC = () => {
                 </div>
             </header>
 
-            {/* --- MAIN STAGE --- */}
             <main className="flex-1 px-4 md:px-12 py-6 relative z-10 overflow-y-auto scrollbar-hide">
                 <div className="max-w-6xl mx-auto w-full">
                     <AnimatePresence mode="wait">
-                        <motion.div key={activeTab} variants={pageTransition} initial="initial" animate="animate" exit="exit" className="pb-40">
+                        <motion.div key={`${activeTab}-${refreshTrigger}`} variants={pageTransition} initial="initial" animate="animate" exit="exit" className="pb-40">
                             {activeTab === 'dashboard' && <DashboardModule student={student!} />}
-                            {activeTab === 'homework' && <HomeworkModule student={student!} />}
-                            {activeTab === 'notes' && <NotesModule student={student!} />}
-                            {activeTab === 'exams' && <ExamsModule student={student!} />}
+                            {activeTab === 'homework' && <HomeworkModule student={student!} refreshTrigger={refreshTrigger} />}
+                            {activeTab === 'notes' && <NotesModule student={student!} refreshTrigger={refreshTrigger} />}
+                            {activeTab === 'exams' && <ExamsModule student={student!} refreshTrigger={refreshTrigger} />}
                             {activeTab === 'results' && <ResultsModule student={student!} />}
                             {activeTab === 'upcoming-exams' && <UpcomingExamsModule student={student!} />}
                             {activeTab === 'leave' && <LeaveModule student={student!} />}
-                            {activeTab === 'doubts' && <DoubtsModule student={student!} />}
+                            {activeTab === 'doubts' && <DoubtsModule student={student!} refreshTrigger={refreshTrigger} />}
                             {activeTab === 'settings' && <SettingsModule student={student!} />}
                         </motion.div>
                     </AnimatePresence>
                 </div>
             </main>
 
-            {/* --- BOTTOM DOCK --- */}
             <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[100] w-full max-w-fit px-4">
                 <nav className="bg-[#0A0A0E]/90 backdrop-blur-2xl border border-white/10 p-1.5 rounded-[24px] flex items-center gap-1 shadow-2xl overflow-x-auto scrollbar-hide max-w-[95vw]">
                     {navItems.map(item => (
@@ -143,7 +154,6 @@ const StudentDashboard: React.FC = () => {
     );
 };
 
-// --- MODULE: DASHBOARD ---
 const DashboardModule = ({ student }: { student: Student }) => {
     const navigate = useNavigate();
     const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
@@ -208,10 +218,6 @@ const DashboardModule = ({ student }: { student: Student }) => {
                             );
                         })}
                     </div>
-                    <div className="flex gap-6 justify-center pt-8 border-t border-white/5">
-                        <div className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div><span className="text-[7px] text-white/30 uppercase font-black">Present</span></div>
-                        <div className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-rose-400"></div><span className="text-[7px] text-white/30 uppercase font-black">Absent</span></div>
-                    </div>
                 </div>
 
                 <div className="grid grid-cols-1 gap-4">
@@ -229,17 +235,16 @@ const DashboardModule = ({ student }: { student: Student }) => {
     );
 };
 
-// --- MODULE: HOMEWORK ---
-const HomeworkModule = ({ student }: { student: Student }) => {
+const HomeworkModule = ({ student, refreshTrigger }: { student: Student, refreshTrigger: number }) => {
     const [missions, setMissions] = useState<Homework[]>([]);
     const [isSubmitting, setIsSubmitting] = useState<string | null>(null);
     const [form, setForm] = useState({ text: '', image: '' });
 
     const load = useCallback(() => {
-        db.getHomeworkForStudent(student.gradeId, student.subdivisionId).then(setMissions);
-    }, [student.gradeId, student.subdivisionId]);
+        db.getHomeworkForStudent(student.gradeId, student.subdivisionId, student.id).then(setMissions);
+    }, [student.gradeId, student.subdivisionId, student.id]);
 
-    useEffect(() => { load(); }, [load]);
+    useEffect(() => { load(); }, [load, refreshTrigger]);
 
     const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -276,6 +281,7 @@ const HomeworkModule = ({ student }: { student: Student }) => {
                         </div>
                     </div>
                 ))}
+                {missions.length === 0 && <div className="col-span-full py-20 text-center text-white/5 font-black uppercase tracking-[0.5em] text-[10px]">No Assignments Registered.</div>}
             </div>
 
             <AnimatePresence>
@@ -305,12 +311,14 @@ const HomeworkModule = ({ student }: { student: Student }) => {
     );
 };
 
-// --- MODULE: NOTES ---
-const NotesModule = ({ student }: { student: Student }) => {
+const NotesModule = ({ student, refreshTrigger }: { student: Student, refreshTrigger: number }) => {
     const [notes, setNotes] = useState<StudyNote[]>([]);
-    useEffect(() => {
-        db.getNotes(student.gradeId, student.subdivisionId).then(setNotes);
-    }, [student.gradeId, student.subdivisionId]);
+    
+    const load = useCallback(() => {
+        db.getNotes(student.gradeId, student.subdivisionId, student.id).then(setNotes);
+    }, [student.gradeId, student.subdivisionId, student.id]);
+
+    useEffect(() => { load(); }, [load, refreshTrigger]);
 
     return (
         <div className="space-y-8">
@@ -322,7 +330,7 @@ const NotesModule = ({ student }: { student: Student }) => {
                 {notes.map(n => (
                     <div key={n.id} className="bg-white/[0.02] p-8 rounded-[40px] border border-white/5 group hover:border-emerald-500/20 transition-all shadow-xl relative overflow-hidden">
                         <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10"><Database size={80}/></div>
-                        <span className="text-emerald-400 text-[8px] font-black uppercase tracking-widest mb-4 block">{n.subject}</span>
+                        <span className="text-emerald-400 text-[8px] font-black uppercase tracking-widest mb-4 block">{n.subject} • {n.targetType}</span>
                         <h4 className="text-2xl font-bold text-white/90 italic mb-4">{n.title}</h4>
                         <p className="text-sm text-white/30 font-medium line-clamp-3 leading-relaxed">{n.content}</p>
                         <div className="mt-8 pt-6 border-t border-white/5 flex items-center justify-between">
@@ -331,19 +339,23 @@ const NotesModule = ({ student }: { student: Student }) => {
                         </div>
                     </div>
                 ))}
+                {notes.length === 0 && <div className="col-span-full py-20 text-center text-white/5 font-black uppercase tracking-[0.5em] text-[10px]">No Study Intel Available.</div>}
             </div>
         </div>
     );
 };
 
-// --- MODULE: EXAMS ---
-const ExamsModule = ({ student }: { student: Student }) => {
+const ExamsModule = ({ student, refreshTrigger }: { student: Student, refreshTrigger: number }) => {
     const [exams, setExams] = useState<Exam[]>([]);
     const [activeExam, setActiveExam] = useState<Exam | null>(null);
     const [answers, setAnswers] = useState<Record<string, string>>({});
     const [timeLeft, setTimeLeft] = useState(0);
 
-    useEffect(() => { db.getExams(student.gradeId).then(setExams); }, [student.gradeId]);
+    const load = useCallback(() => {
+        db.getExamsForStudent(student.gradeId, student.subdivisionId, student.id).then(setExams);
+    }, [student.gradeId, student.subdivisionId, student.id]);
+
+    useEffect(() => { load(); }, [load, refreshTrigger]);
 
     const startExam = (e: Exam) => {
         setActiveExam(e);
@@ -362,8 +374,6 @@ const ExamsModule = ({ student }: { student: Student }) => {
 
     const submitExam = async () => {
         if (!activeExam) return;
-        // Logic to write results to DB
-        await db.updateSettings(await db.getSettings()); // Mock sync
         alert("Exam protocol terminated. Session logged.");
         setActiveExam(null);
     };
@@ -380,7 +390,7 @@ const ExamsModule = ({ student }: { student: Student }) => {
                         <div className="bg-[#0A0A0E] rounded-[47px] p-10 h-full relative overflow-hidden transition-all group-hover:bg-black">
                             <div className="absolute top-0 right-0 p-10 opacity-[0.03] group-hover:opacity-[0.08]"><PenTool size={160}/></div>
                             <div className="flex justify-between items-start mb-8 relative z-10">
-                                <span className="bg-rose-500/10 text-rose-400 text-[9px] font-black uppercase tracking-[0.3em] px-4 py-1.5 rounded-full border border-rose-500/20">Live Exam</span>
+                                <span className="bg-rose-500/10 text-rose-400 text-[9px] font-black uppercase tracking-[0.3em] px-4 py-1.5 rounded-full border border-rose-500/20">Target: {e.targetType}</span>
                                 <Flame size={24} className="text-orange-500 animate-pulse" />
                             </div>
                             <h3 className="text-4xl font-black text-white italic uppercase mb-2">{e.subject}</h3>
@@ -393,6 +403,7 @@ const ExamsModule = ({ student }: { student: Student }) => {
                         </div>
                     </div>
                 ))}
+                {exams.length === 0 && <div className="col-span-full py-20 text-center text-white/5 font-black uppercase tracking-[0.5em] text-[10px]">No Active Assessment Modules.</div>}
             </div>
 
             <AnimatePresence>
@@ -427,7 +438,6 @@ const ExamsModule = ({ student }: { student: Student }) => {
     );
 };
 
-// --- MODULE: RESULTS ---
 const ResultsModule = ({ student }: { student: Student }) => {
     const [results, setResults] = useState<ExamSubmission[]>([]);
     useEffect(() => {
@@ -459,7 +469,6 @@ const ResultsModule = ({ student }: { student: Student }) => {
     );
 };
 
-// --- MODULE: UPCOMING EXAMS ---
 const UpcomingExamsModule = ({ student }: { student: Student }) => {
     const [list, setList] = useState<StudentOwnExam[]>([]);
     const [form, setForm] = useState({ subject: '', examDate: '', description: '' });
@@ -499,7 +508,6 @@ const UpcomingExamsModule = ({ student }: { student: Student }) => {
     );
 };
 
-// --- MODULE: REQUEST LEAVE ---
 const LeaveModule = ({ student }: { student: Student }) => {
     const [list, setList] = useState<LeaveApplication[]>([]);
     const [form, setForm] = useState({ startDate: '', endDate: '', reason: '' });
@@ -542,13 +550,15 @@ const LeaveModule = ({ student }: { student: Student }) => {
     );
 };
 
-// --- MODULE: DOUBTS ---
-const DoubtsModule = ({ student }: { student: Student }) => {
+const DoubtsModule = ({ student, refreshTrigger }: { student: Student, refreshTrigger: number }) => {
     const [queries, setQueries] = useState<StudentQuery[]>([]);
     const [form, setForm] = useState({ subject: '', text: '' });
 
-    const load = useCallback(() => db.getQueries(student.id).then(setQueries), [student.id]);
-    useEffect(() => { load(); }, [load]);
+    const load = useCallback(() => {
+        db.getQueries(student.id).then(setQueries);
+    }, [student.id]);
+
+    useEffect(() => { load(); }, [load, refreshTrigger]);
 
     const submit = async (e: any) => {
         e.preventDefault();
@@ -591,7 +601,6 @@ const DoubtsModule = ({ student }: { student: Student }) => {
     );
 };
 
-// --- MODULE: SETTINGS ---
 const SettingsModule = ({ student }: { student: Student }) => {
     const [form, setForm] = useState({ current: '', new: '', confirm: '' });
     const [loading, setLoading] = useState(false);
