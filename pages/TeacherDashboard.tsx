@@ -36,9 +36,8 @@ const TeacherDashboard: React.FC = () => {
     const refreshGrades = useCallback(async () => {
         const g = await db.getGrades();
         setGrades(g);
-        // Default to 'All' or first grade if preferred, but here we allow empty for "All"
-        if(g.length > 0 && !selectedGradeId) setSelectedGradeId(g[0].id);
-    }, [selectedGradeId]);
+        // Fixed: Removed auto-selection logic that forced the first grade, causing the "All Grades" glitch.
+    }, []);
 
     useEffect(() => {
         const storedUser = sessionStorage.getItem('sc_user');
@@ -180,8 +179,6 @@ const AttendanceModule = ({ gradeId, divisionId, refreshTrigger }: any) => {
         
         const map: any = {};
         st.forEach(s => {
-            // Find existing record for this specific student and date
-            // Note: DB returns all attendance for that date, so we find by studentId
             const existing = records.find(r => r.studentId === s.id);
             map[s.id] = existing?.status || 'Present';
         });
@@ -193,7 +190,7 @@ const AttendanceModule = ({ gradeId, divisionId, refreshTrigger }: any) => {
     const saveAttendance = async () => {
         const payload = students.map(s => ({
             studentId: s.id,
-            divisionId: s.subdivisionId, // Use student's actual division
+            divisionId: s.subdivisionId, 
             date: selectedDate.toISOString().split('T')[0],
             status: attendanceMap[s.id]
         }));
@@ -349,9 +346,7 @@ const HomeworkManagementModule = ({ gradeId, divisionId, teacherId, refreshTrigg
     const [students, setStudents] = useState<Student[]>([]);
     
     const load = useCallback(() => { 
-        // Fetch all homework initially, then filter if needed (or just show all created)
         db.getAllHomework().then(all => {
-            // Optional: Filter by gradeId if selected, otherwise show all
             if (gradeId) {
                 setList(all.filter(h => h.gradeId === gradeId));
             } else {
@@ -359,7 +354,6 @@ const HomeworkManagementModule = ({ gradeId, divisionId, teacherId, refreshTrigg
             }
         });
         db.getAllHomeworkSubmissions().then(setSubmissions);
-        // Only fetch students for dropdown if grade/div is selected, otherwise fetch all
         db.getStudents(gradeId || undefined, divisionId || undefined).then(setStudents);
     }, [gradeId, divisionId]);
 
@@ -367,8 +361,6 @@ const HomeworkManagementModule = ({ gradeId, divisionId, teacherId, refreshTrigg
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        // If "All Grades" is selected (gradeId is empty), we might force user to pick context or assume a default. 
-        // For now, we use the selected gradeId or empty string.
         await db.addHomework({ gradeId: gradeId || 'Global', subdivisionId: divisionId || 'Global', ...form, assignedBy: teacherId });
         setForm({ ...form, subject:'', task:'', dueDate:'', targetStudentId:'' });
         load();
@@ -508,7 +500,7 @@ const NotesModule = ({ gradeId, divisionId, teacherId, refreshTrigger }: any) =>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-1">
                                         <label className="text-[8px] font-black uppercase text-white/30 ml-1">Target Scope</label>
-                                        <select className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-xs text-white" value={form.targetType} onChange={e=>setForm({...form, targetType:e.target.value as any})}>
+                                        <select className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-2 text-xs text-white" value={form.targetType} onChange={e=>setForm({...form, targetType:e.target.value as any})}>
                                             <option value="Grade">Entire Grade</option>
                                             <option value="Individual">Individual</option>
                                         </select>
@@ -516,7 +508,7 @@ const NotesModule = ({ gradeId, divisionId, teacherId, refreshTrigger }: any) =>
                                     {form.targetType === 'Individual' && (
                                         <div className="space-y-1">
                                             <label className="text-[8px] font-black uppercase text-white/30 ml-1">Student</label>
-                                            <select className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-xs text-white" value={form.targetStudentId} onChange={e=>setForm({...form, targetStudentId:e.target.value})}>
+                                            <select className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-2 text-xs text-white" value={form.targetStudentId} onChange={e=>setForm({...form, targetStudentId:e.target.value})}>
                                                 <option value="">Select Cadet</option>
                                                 {students.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                                             </select>
@@ -683,7 +675,7 @@ const ExamBuilderModule = ({ gradeId, divisionId, teacherId, refreshTrigger }: a
                                                         <span className="text-[7px] font-black uppercase text-indigo-400 tracking-widest bg-indigo-400/5 px-2 py-1 rounded-lg border border-indigo-400/10">{q.type}</span>
                                                     </div>
                                                     <div className="flex items-center gap-2">
-                                                        <label className="text-[8px] font-black uppercase text-white/20">Weight:</label>
+                                                        <label className="text-[8px] font-black uppercase text-white/20">Marks:</label>
                                                         <input type="number" className="w-16 bg-black border border-white/10 rounded-xl px-3 py-1.5 text-xs text-center text-white outline-none focus:border-indigo-500 font-mono" value={q.marks} onChange={e=>{const qs=[...form.questions]; qs[idx].marks=e.target.value; setForm({...form, questions:qs})}} />
                                                     </div>
                                                 </div>
@@ -824,8 +816,14 @@ const CheckExamsModule = ({ refreshTrigger }: any) => {
 
 const LeaveRequestsModule = ({ gradeId, divisionId, refreshTrigger }: any) => {
     const [leaves, setLeaves] = useState<LeaveApplication[]>([]);
-    const load = useCallback(() => { if(gradeId && divisionId) db.getLeaveApplications(undefined, gradeId, divisionId).then(setLeaves); }, [gradeId, divisionId]);
+    
+    // Fixed: Now allows fetching without strict filtering to support "All Grades"
+    const load = useCallback(() => { 
+        db.getLeaveApplications(undefined, gradeId || undefined, divisionId || undefined).then(setLeaves); 
+    }, [gradeId, divisionId]);
+
     useEffect(() => { load(); }, [load, refreshTrigger]);
+    
     const handleAction = async (id: string, status: 'Approved' | 'Rejected') => { 
         await db.updateLeaveStatus(id, status); 
         load(); 
@@ -866,7 +864,12 @@ const LeaveRequestsModule = ({ gradeId, divisionId, refreshTrigger }: any) => {
 
 const StudentExamsView = ({ gradeId, divisionId, refreshTrigger }: any) => {
     const [exams, setExams] = useState<StudentOwnExam[]>([]);
-    useEffect(() => { if(gradeId && divisionId) db.getStudentExams(undefined, gradeId, divisionId).then(setExams); }, [gradeId, divisionId, refreshTrigger]);
+    
+    // Fixed: Now allows fetching without strict filtering to support "All Grades"
+    useEffect(() => { 
+        db.getStudentExams(undefined, gradeId || undefined, divisionId || undefined).then(setExams); 
+    }, [gradeId, divisionId, refreshTrigger]);
+
     return (
         <div className="space-y-8">
             <div className="pb-4 border-b border-white/5">
