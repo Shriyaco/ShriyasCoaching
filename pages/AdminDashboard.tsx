@@ -176,14 +176,24 @@ const UserManagementModule = ({ profiles, refresh }: any) => {
     const [role, setRole] = useState<any>('student');
     const [lastCreated, setLastCreated] = useState<any>(null);
     const [copyState, setCopyState] = useState(false);
+    const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
 
     const handleAdd = async (e: any) => {
         e.preventDefault();
+        setError('');
+        setLoading(true);
         try {
             const result = await db.createProfile({ fullName: name, mobile, role });
             setLastCreated(result);
-            setName(''); setMobile(''); refresh();
-        } catch (e: any) { alert(e.message || "Identity collision or mobile exists."); }
+            setName(''); 
+            setMobile(''); 
+            refresh();
+        } catch (e: any) { 
+            setError(e.message || "Registry Error: Identity collision detected.");
+        } finally {
+            setLoading(false);
+        }
     };
 
     const copyCreds = () => {
@@ -207,8 +217,19 @@ const UserManagementModule = ({ profiles, refresh }: any) => {
                             <option value="teacher">Faculty Account</option>
                             <option value="admin">System Admin</option>
                         </select>
-                        <button className="w-full bg-indigo-600 text-white py-4 rounded-xl font-bold hover:bg-indigo-500 transition-colors uppercase tracking-widest text-[10px]">Commit Identity</button>
+                        <button disabled={loading} className="w-full bg-indigo-600 text-white py-4 rounded-xl font-bold hover:bg-indigo-500 transition-colors uppercase tracking-widest text-[10px] disabled:opacity-50">
+                            {loading ? 'Processing Registry...' : 'Commit Identity'}
+                        </button>
                     </form>
+
+                    <AnimatePresence>
+                        {error && (
+                            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-6 p-4 bg-rose-500/10 border border-rose-500/20 rounded-xl flex items-start gap-3">
+                                <AlertCircle size={16} className="text-rose-500 shrink-0 mt-0.5" />
+                                <p className="text-[10px] text-rose-500 font-bold leading-relaxed">{error}</p>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
                 </div>
 
                 <AnimatePresence>

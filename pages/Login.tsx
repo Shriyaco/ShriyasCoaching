@@ -3,7 +3,7 @@
 import React, { useState, useRef, Suspense, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../services/db';
-import { ArrowRight, User as UserIcon, Lock, AlertCircle, X } from 'lucide-react';
+import { ArrowRight, User as UserIcon, Lock, AlertCircle, X, ShieldCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Float, Environment, ContactShadows, Sphere, Box, Cylinder, Torus, Cone, Icosahedron } from '@react-three/drei';
@@ -32,6 +32,8 @@ const Login: React.FC = () => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!username || !password) return;
+    
     setLoading(true);
     setError('');
     
@@ -44,10 +46,17 @@ const Login: React.FC = () => {
           else if (user.role === 'student') navigate('/student');
           else navigate('/');
         } else {
-          setError('Access Denied. Invalid Credentials.');
+          setError('Profile mapping failed. Contact Support.');
         }
-    } catch (err) {
-        setError('Network connection error.');
+    } catch (err: any) {
+        // Report specific Supabase Auth errors (like "Email not confirmed")
+        if (err.message?.includes('Email not confirmed')) {
+            setError('Account Pending: Admin must disable email confirmation.');
+        } else if (err.message?.includes('Invalid login credentials')) {
+            setError('Access Denied. Check Username & Password.');
+        } else {
+            setError(err.message || 'Transmission error. Try again.');
+        }
     } finally {
         setLoading(false);
     }
@@ -65,39 +74,43 @@ const Login: React.FC = () => {
         </div>
         <div className="absolute bottom-12 left-12 right-12 bg-white/60 dark:bg-black/60 backdrop-blur-md p-6 rounded-2xl border border-slate-200 dark:border-white/10 shadow-lg z-10 text-center">
             <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2 font-[Poppins]">Institutional Gateway</h2>
-            <p className="text-slate-600 dark:text-slate-400 leading-relaxed text-sm">Authenticated access for Faculty, Students, and Administrators.</p>
+            <p className="text-slate-600 dark:text-slate-400 leading-relaxed text-sm uppercase tracking-widest font-black opacity-40">Identity Verification Layer Active</p>
         </div>
       </div>
 
       <div className="w-full lg:w-1/2 flex items-center justify-center p-6 relative bg-white dark:bg-[#020617]">
           <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="w-full max-w-md relative z-10">
               <div className="text-center mb-10">
+                  <div className="w-16 h-16 bg-blue-600/10 dark:bg-indigo-600/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                      <ShieldCheck size={32} className="text-blue-600 dark:text-indigo-400" />
+                  </div>
                   <h1 className="text-4xl font-black text-slate-900 dark:text-white font-[Poppins] tracking-tight">Portal Entry</h1>
-                  <p className="text-slate-500 mt-2 text-sm">Enter registered credentials to proceed</p>
+                  <p className="text-slate-500 mt-2 text-sm">Enter registered legacy credentials</p>
               </div>
-              <div className="bg-white/80 dark:bg-slate-900/60 backdrop-blur-xl rounded-3xl shadow-xl border border-slate-200 dark:border-white/10 p-8">
+              
+              <div className="bg-white/80 dark:bg-slate-900/60 backdrop-blur-xl rounded-[40px] shadow-xl border border-slate-200 dark:border-white/10 p-10">
                   <form onSubmit={handleLogin} className="space-y-6">
                       <div className="space-y-2">
-                          <label className="text-xs font-bold text-slate-500 dark:text-slate-400 ml-1 uppercase tracking-wide">Identity / Mobile</label>
-                          <div className={`flex items-center bg-slate-50 dark:bg-slate-950/50 border-2 rounded-xl px-4 py-3 transition-all ${focused === 'user' ? 'border-blue-500 dark:border-indigo-500' : 'border-slate-200 dark:border-slate-800'}`}>
+                          <label className="text-[10px] font-black text-slate-500 dark:text-slate-400 ml-1 uppercase tracking-[0.2em]">Identity / Mobile</label>
+                          <div className={`flex items-center bg-slate-50 dark:bg-slate-950/50 border-2 rounded-2xl px-4 py-4 transition-all ${focused === 'user' ? 'border-blue-500 dark:border-indigo-500' : 'border-slate-200 dark:border-slate-800'}`}>
                               <UserIcon size={20} className={focused === 'user' ? 'text-blue-500' : 'text-slate-400'} />
-                              <input type="text" placeholder="Username or Mobile" className="w-full bg-transparent outline-none text-slate-800 dark:text-white font-medium pl-3" value={username} onChange={(e) => setUsername(e.target.value)} onFocus={() => setFocused('user')} onBlur={() => setFocused(null)} />
+                              <input required type="text" placeholder="Legacy ID (e.g. Rah987)" className="w-full bg-transparent outline-none text-slate-800 dark:text-white font-medium pl-3 text-sm" value={username} onChange={(e) => setUsername(e.target.value)} onFocus={() => setFocused('user')} onBlur={() => setFocused(null)} />
                           </div>
                       </div>
                       <div className="space-y-2">
-                          <label className="text-xs font-bold text-slate-500 dark:text-slate-400 ml-1 uppercase tracking-wide">Secure Key</label>
-                          <div className={`flex items-center bg-slate-50 dark:bg-slate-950/50 border-2 rounded-xl px-4 py-3 transition-all ${focused === 'pass' ? 'border-blue-500 dark:border-indigo-500' : 'border-slate-200 dark:border-slate-800'}`}>
+                          <label className="text-[10px] font-black text-slate-500 dark:text-slate-400 ml-1 uppercase tracking-[0.2em]">Secure Key</label>
+                          <div className={`flex items-center bg-slate-50 dark:bg-slate-950/50 border-2 rounded-2xl px-4 py-4 transition-all ${focused === 'pass' ? 'border-blue-500 dark:border-indigo-500' : 'border-slate-200 dark:border-slate-800'}`}>
                               <Lock size={20} className={focused === 'pass' ? 'text-blue-500' : 'text-slate-400'} />
-                              <input type="password" placeholder="••••••••" className="w-full bg-transparent outline-none text-slate-800 dark:text-white font-medium pl-3" value={password} onChange={(e) => setPassword(e.target.value)} onFocus={() => setFocused('pass')} onBlur={() => setFocused(null)} />
+                              <input required type="password" placeholder="••••••••" className="w-full bg-transparent outline-none text-slate-800 dark:text-white font-medium pl-3 text-sm" value={password} onChange={(e) => setPassword(e.target.value)} onFocus={() => setFocused('pass')} onBlur={() => setFocused(null)} />
                           </div>
                       </div>
                       <AnimatePresence>
                           {error && (
-                              <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 text-sm p-3 rounded-lg flex items-center gap-2 border border-red-200 dark:border-red-500/20"><AlertCircle size={16} /> {error}</motion.div>
+                              <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 text-[10px] font-bold uppercase tracking-widest p-4 rounded-xl flex items-center gap-3 border border-rose-200 dark:border-rose-500/20 shadow-sm"><AlertCircle size={16} /> {error}</motion.div>
                           )}
                       </AnimatePresence>
-                      <button type="submit" disabled={loading} className="w-full bg-blue-600 dark:bg-indigo-600 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-blue-700 active:scale-98 transition-all flex items-center justify-center gap-2">
-                          {loading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <>Authorize Entry <ArrowRight size={20} /></>}
+                      <button type="submit" disabled={loading} className="w-full bg-blue-600 dark:bg-indigo-600 text-white font-black py-5 rounded-2xl shadow-lg hover:bg-blue-700 dark:hover:bg-indigo-500 active:scale-95 transition-all flex items-center justify-center gap-4 uppercase tracking-[0.3em] text-xs">
+                          {loading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <>Authorize Entry <ArrowRight size={18} /></>}
                       </button>
                   </form>
               </div>

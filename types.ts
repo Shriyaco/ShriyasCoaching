@@ -2,35 +2,14 @@
 export type UserRole = 'admin' | 'teacher' | 'student';
 export type AttendanceStatus = 'Present' | 'Absent' | 'Leave';
 export type TargetType = 'Academy' | 'Grade' | 'Individual';
-export type QuestionType = 'mcq' | 'short' | 'long';
 export type RequestStatus = 'Pending' | 'Approved' | 'Rejected';
 export type DoubtStatus = 'Open' | 'Resolved';
 
-// User interface for authentication and sessions
 export interface User {
   id: string;
   username: string;
   role: UserRole;
   mobile?: string;
-}
-
-export interface Notice {
-  id: string;
-  title: string;
-  content: string;
-  important: boolean;
-  createdAt: string;
-}
-
-export interface Grade {
-  id: string;
-  gradeName: string;
-}
-
-export interface Division {
-  id: string;
-  gradeId: string;
-  divisionName: string;
 }
 
 export interface Profile {
@@ -50,26 +29,17 @@ export interface StudentProfile {
   gradeId: string;
   divisionId: string;
   mobile: string;
-  monthlyFees?: string;
   studentCustomId?: string;
 }
 
-// Alias Student to StudentProfile as used in PayFees
-export interface Student extends StudentProfile {}
-
-export interface TeacherAssignment {
-  id: string;
-  teacherId: string;
-  gradeId: string;
-  subject: string;
+// Added Student interface
+export interface Student extends StudentProfile {
+  monthlyFees?: string;
 }
 
-export interface AttendanceRecord {
+export interface Grade {
   id: string;
-  studentId: string;
-  date: string;
-  status: AttendanceStatus;
-  markedBy: string;
+  gradeName: string;
 }
 
 export interface Homework {
@@ -79,12 +49,23 @@ export interface Homework {
   topic: string;
   description: string;
   dueDate: string;
-  attachmentUrl?: string;
   targetType: 'Grade' | 'Individual';
   targetGradeId?: string;
   targetStudentId?: string;
   deletedAt?: string;
-  academyId?: string;
+}
+
+export interface HomeworkSubmission {
+  id: string;
+  homeworkId: string;
+  studentId: string;
+  studentName: string;
+  content: string;
+  attachmentUrl?: string;
+  submittedAt: string;
+  status: 'Submitted' | 'Graded';
+  remarks?: string;
+  grade?: string;
 }
 
 export interface Exam {
@@ -92,18 +73,57 @@ export interface Exam {
   teacherId: string;
   title: string;
   subject: string;
-  targetType: TargetType;
-  targetId: string;
+  gradeId: string;
   startTime: string;
   endTime: string;
   durationMinutes: number;
   totalMarks: number;
-  negativeMarkingFactor: number;
   isPublished: boolean;
-  deletedAt?: string;
-  academyId?: string;
+  questions: any[];
 }
 
+export interface ExamResult {
+  id: string;
+  examId: string;
+  studentId: string;
+  marksObtained: number;
+  totalMarks: number;
+  remarks?: string;
+  submittedAt: string;
+}
+
+export interface Doubt {
+  id: string;
+  studentId: string;
+  studentName: string;
+  subject: string;
+  question: string;
+  answer?: string;
+  status: DoubtStatus;
+  createdAt: string;
+}
+
+export interface LeaveRequest {
+  id: string;
+  studentId: string;
+  studentName: string;
+  reason: string;
+  startDate: string;
+  endDate: string;
+  status: RequestStatus;
+  createdAt: string;
+}
+
+// Added Notice interface
+export interface Notice {
+  id: string;
+  title: string;
+  content: string;
+  important: boolean;
+  createdAt: string;
+}
+
+// Added Enquiry interface
 export interface Enquiry {
   id: string;
   studentName: string;
@@ -112,56 +132,21 @@ export interface Enquiry {
   grade: string;
   board: string;
   mobile: string;
-  createdAt: string;
-  schoolName?: string;
-  hasCoaching?: boolean;
-  coachingName?: string;
-  shiftingReason?: string;
-  expectations?: string;
-  reason?: string;
-}
-
-export interface FeeSubmission {
-  id: string;
-  student_id: string;
-  student_name: string;
-  amount: string;
-  status: RequestStatus;
-  transaction_ref: string;
-  payment_method: string;
-  created_at: string;
-}
-
-export interface Doubt {
-  id: string;
-  studentId: string;
-  subject: string;
-  question: string;
-  status: DoubtStatus;
-  answer?: string;
-  createdAt: string;
-}
-
-export interface LeaveApplication {
-  id: string;
-  studentId: string;
+  schoolName: string;
+  hasCoaching: boolean;
   reason: string;
-  startDate: string;
-  endDate: string;
-  status: RequestStatus;
+  createdAt: string;
 }
 
-export interface GatewayConfig {
-  name: string;
-  enabled: boolean;
+// Added TeacherAssignment interface
+export interface TeacherAssignment {
+  id: string;
+  teacherId: string;
+  gradeId: string;
+  subject: string;
 }
 
-export interface SystemSettings {
-  id?: string;
-  googleSiteKey?: string;
-  gateways: Record<string, GatewayConfig>;
-}
-
+// Added Product interface
 export interface Product {
   id: string;
   name: string;
@@ -169,9 +154,10 @@ export interface Product {
   basePrice: string;
   imageUrl: string;
   category: string;
-  stockStatus: string;
+  stockStatus: 'In Stock' | 'Sold Out';
 }
 
+// Added Order interface
 export interface Order {
   id: string;
   studentId: string;
@@ -191,4 +177,30 @@ export interface Order {
   createdAt: string;
 }
 
-export type TabView = 'dashboard' | 'notices' | 'grades' | 'fees' | 'settings' | 'enquiries' | 'shop' | 'products' | 'broadcast' | 'users' | 'mapping' | 'homework' | 'exams' | 'notes' | 'doubts' | 'attendance';
+// Added FeeSubmission interface
+export interface FeeSubmission {
+  id: string;
+  studentId: string;
+  student_name: string;
+  amount: string;
+  status: RequestStatus;
+  transaction_ref: string;
+  paymentMethod: string;
+  createdAt: string;
+}
+
+// Added GatewayConfig interface
+export interface GatewayConfig {
+  name: string;
+  enabled: boolean;
+}
+
+// Added SystemSettings interface
+export interface SystemSettings {
+  gateways: Record<string, GatewayConfig>;
+}
+
+export type TabView = 
+  | 'dashboard' | 'attendance' | 'homework' | 'exams' 
+  | 'doubts' | 'leave' | 'external' | 'settings' 
+  | 'users' | 'mapping' | 'grades' | 'products' | 'broadcast' | 'enquiries' | 'fees';
