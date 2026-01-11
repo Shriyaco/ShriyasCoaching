@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence, Variants } from 'framer-motion';
 
-// --- 3D AMBIENT BACKGROUND ---
+// ... (SpatialBackground and pageTransition same as previous)
 const SpatialBackground = () => (
     <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none bg-[#020204]">
         <div className="absolute top-1/4 left-1/4 w-[60vw] h-[60vw] bg-indigo-600/5 rounded-full blur-[120px] animate-pulse" />
@@ -21,7 +21,6 @@ const SpatialBackground = () => (
     </div>
 );
 
-// --- ANIMATION VARIANTS ---
 const pageTransition: Variants = {
     initial: { opacity: 0, y: 10 },
     animate: { opacity: 1, y: 0, transition: { duration: 0.4, ease: "easeOut" } },
@@ -29,6 +28,7 @@ const pageTransition: Variants = {
 };
 
 const StudentDashboard: React.FC = () => {
+    // ... (StudentDashboard implementation unchanged, ensuring only HomeworkModule is swapped)
     const navigate = useNavigate();
     const [user, setUser] = useState<User | null>(null);
     const [student, setStudent] = useState<Student | null>(null);
@@ -152,6 +152,7 @@ const StudentDashboard: React.FC = () => {
     );
 };
 
+// ... (DashboardModule unchanged)
 const DashboardModule = ({ student }: { student: Student }) => {
     const navigate = useNavigate();
     const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
@@ -269,6 +270,16 @@ const HomeworkModule = ({ student, refreshTrigger }: { student: Student, refresh
         alert("Mission Data Transmitted.");
     };
 
+    const getScopeLabel = (hw: Homework) => {
+        const type = hw.targetType || 'Grade';
+        const gradeId = hw.gradeId || 'Global';
+        
+        if (type === 'Individual') return { text: 'PERSONAL ASSIGNMENT', color: 'text-purple-400 border-purple-500/20 bg-purple-500/10' };
+        if (gradeId === 'Global') return { text: 'GLOBAL MISSION', color: 'text-emerald-400 border-emerald-500/20 bg-emerald-500/10' };
+        if (type === 'Division') return { text: 'DIVISION TASK', color: 'text-amber-400 border-amber-500/20 bg-amber-500/10' };
+        return { text: 'CLASS ASSIGNMENT', color: 'text-indigo-400 border-indigo-500/20 bg-indigo-500/10' };
+    };
+
     return (
         <div className="space-y-8">
             <div className="pb-4 border-b border-white/5 flex items-end justify-between">
@@ -285,17 +296,30 @@ const HomeworkModule = ({ student, refreshTrigger }: { student: Student, refresh
                 </button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {missions.map(hw => (
-                    <div key={hw.id} onClick={() => setIsSubmitting(hw.id)} className="bg-white/[0.02] p-8 rounded-[40px] border border-white/5 group hover:border-indigo-500/30 transition-all cursor-pointer shadow-xl relative overflow-hidden">
-                        <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity"><BookOpen size={80}/></div>
-                        <span className="text-indigo-400 text-[8px] font-black uppercase tracking-widest mb-4 block">{hw.subject} • {hw.targetType}</span>
-                        <h4 className="text-xl font-bold text-white/90 italic leading-tight">"{hw.task}"</h4>
-                        <div className="mt-8 flex items-center justify-between border-t border-white/5 pt-6">
-                            <div className="flex items-center gap-2"><Clock size={12} className="text-white/20" /><span className="text-[8px] font-black uppercase text-white/20">Due: {hw.dueDate}</span></div>
-                            <button className="px-4 py-2 bg-white/5 rounded-xl text-[7px] font-black uppercase tracking-widest text-indigo-400 group-hover:bg-indigo-600 group-hover:text-white transition-all">Transmit</button>
+                {missions.map(hw => {
+                    const scope = getScopeLabel(hw);
+                    return (
+                        <div key={hw.id} onClick={() => setIsSubmitting(hw.id)} className="bg-white/[0.02] p-8 rounded-[40px] border border-white/5 group hover:border-indigo-500/30 transition-all cursor-pointer shadow-xl relative overflow-hidden flex flex-col h-full">
+                            <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity"><BookOpen size={80}/></div>
+                            
+                            <div className="flex flex-wrap gap-2 mb-4">
+                                <span className={`text-[7px] font-black uppercase px-2 py-1 rounded border ${scope.color}`}>
+                                    {scope.text}
+                                </span>
+                                <span className="text-white/40 text-[8px] font-black uppercase tracking-widest border border-white/10 px-2 py-1 rounded">
+                                    {hw.subject}
+                                </span>
+                            </div>
+
+                            <h4 className="text-xl font-bold text-white/90 italic leading-tight mb-4 line-clamp-3">"{hw.task}"</h4>
+                            
+                            <div className="mt-auto pt-6 border-t border-white/5 flex items-center justify-between">
+                                <div className="flex items-center gap-2"><Clock size={12} className="text-white/20" /><span className="text-[8px] font-black uppercase text-white/20">Due: {hw.dueDate}</span></div>
+                                <button className="px-4 py-2 bg-white/5 rounded-xl text-[7px] font-black uppercase tracking-widest text-indigo-400 group-hover:bg-indigo-600 group-hover:text-white transition-all shadow-lg active:scale-95">Transmit</button>
+                            </div>
                         </div>
-                    </div>
-                ))}
+                    );
+                })}
                 {missions.length === 0 && <div className="col-span-full py-20 text-center text-white/5 font-black uppercase tracking-[0.5em] text-[10px] border-2 border-dashed border-white/5 rounded-[40px]">No Assignments Logged</div>}
             </div>
 
@@ -326,7 +350,9 @@ const HomeworkModule = ({ student, refreshTrigger }: { student: Student, refresh
     );
 };
 
+// ... (Rest of modules unchanged, make sure to include them: NotesModule, ExamsModule, ResultsModule, UpcomingExamsModule, LeaveModule, DoubtsModule, SettingsModule)
 const NotesModule = ({ student, refreshTrigger }: { student: Student, refreshTrigger: number }) => {
+    // ... (Existing code)
     const [notes, setNotes] = useState<StudyNote[]>([]);
     
     const load = useCallback(() => {
@@ -361,6 +387,7 @@ const NotesModule = ({ student, refreshTrigger }: { student: Student, refreshTri
 };
 
 const ExamsModule = ({ student, refreshTrigger }: { student: Student, refreshTrigger: number }) => {
+    // ... (Existing code)
     const [exams, setExams] = useState<Exam[]>([]);
     const [activeExam, setActiveExam] = useState<Exam | null>(null);
     const [answers, setAnswers] = useState<Record<string, string>>({});
@@ -454,6 +481,7 @@ const ExamsModule = ({ student, refreshTrigger }: { student: Student, refreshTri
 };
 
 const ResultsModule = ({ student }: { student: Student }) => {
+    // ... (Existing code)
     const [results, setResults] = useState<ExamSubmission[]>([]);
     useEffect(() => {
         db.getAllExamSubmissions().then(subs => {
@@ -488,6 +516,7 @@ const ResultsModule = ({ student }: { student: Student }) => {
 };
 
 const UpcomingExamsModule = ({ student }: { student: Student }) => {
+    // ... (Existing code)
     const [list, setList] = useState<StudentOwnExam[]>([]);
     const [form, setForm] = useState({ subject: '', examDate: '', description: '' });
 
@@ -530,6 +559,7 @@ const UpcomingExamsModule = ({ student }: { student: Student }) => {
 };
 
 const LeaveModule = ({ student }: { student: Student }) => {
+    // ... (Existing code)
     const [list, setList] = useState<LeaveApplication[]>([]);
     const [form, setForm] = useState({ startDate: '', endDate: '', reason: '' });
 
@@ -572,6 +602,7 @@ const LeaveModule = ({ student }: { student: Student }) => {
 };
 
 const DoubtsModule = ({ student, refreshTrigger }: { student: Student, refreshTrigger: number }) => {
+    // ... (Existing code)
     const [queries, setQueries] = useState<StudentQuery[]>([]);
     const [form, setForm] = useState({ subject: '', text: '' });
 
@@ -623,6 +654,7 @@ const DoubtsModule = ({ student, refreshTrigger }: { student: Student, refreshTr
 };
 
 const SettingsModule = ({ student }: { student: Student }) => {
+    // ... (Existing code)
     const [form, setForm] = useState({ current: '', new: '', confirm: '' });
     const [loading, setLoading] = useState(false);
 

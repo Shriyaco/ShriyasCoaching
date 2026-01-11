@@ -3,6 +3,7 @@ import { supabase } from './supabase';
 import { RealtimeChannel } from '@supabase/supabase-js';
 import { Student, Grade, Subdivision, Notice, User, Teacher, TimetableEntry, FeeSubmission, SystemSettings, GatewayConfig, AttendanceRecord, Homework, Exam, ExamResult, HomeworkSubmission, ExamSubmission, StudentQuery, Enquiry, Product, Order, StudyNote, StudentNotification, LeaveApplication, StudentOwnExam } from '../types';
 
+// ... (Previous mapping functions remain unchanged)
 const mapStudent = (s: any): Student => ({
     id: s.id,
     studentCustomId: s.student_custom_id,
@@ -114,7 +115,7 @@ const mapStudentExam = (e: any): StudentOwnExam => ({
 });
 
 class DatabaseService {
-  
+  // ... (Login, PageContent, Auth methods unchanged)
   async login(username: string, password: string): Promise<User | null> {
     if (username === 'Admin' && password === 'Reset@852') {
       return { id: 'admin1', username: 'Shriya Admin', role: 'admin', status: 'Active' };
@@ -178,6 +179,7 @@ class DatabaseService {
       supabase.removeChannel(channel);
   }
 
+  // ... (Grade, Student, Teacher CRUD unchanged)
   async getGrades(): Promise<Grade[]> {
       const { data } = await supabase.from('grades').select('*');
       return (data || []).map(g => ({ id: g.id, gradeName: g.grade_name, hasSubdivision: g.has_subdivision }));
@@ -473,8 +475,9 @@ class DatabaseService {
       await supabase.from('system_settings').update({ google_site_key: s.googleSiteKey, payment_config: s.gateways }).eq('id', 1);
   }
 
+  // --- HOMEWORK MODULE (REDEVELOPED) ---
+
   async getHomeworkForStudent(gradeId: string, subdivisionId: string, studentId: string): Promise<Homework[]> {
-       // ROBUST CLIENT-SIDE FILTERING REPLACEMENT (IMPROVED)
        const { data, error } = await supabase.from('homework').select('*');
        
        if (error || !data) {
@@ -482,36 +485,37 @@ class DatabaseService {
            return [];
        }
 
+       // Normalize inputs for safety
        const norm = (id: any) => String(id || '').trim();
        const sGrade = norm(gradeId);
        const sDiv = norm(subdivisionId);
        const sId = norm(studentId);
 
        const filtered = data.filter(h => {
-           // Default to 'Division' if target_type is missing/null to handle legacy data safely
-           const type = h.target_type || 'Division'; 
+           // Default scope if not set (Legacy support)
+           const scope = h.target_type || 'Grade';
+           
            const hGrade = norm(h.grade_id);
            const hDiv = norm(h.subdivision_id);
            const hStudent = norm(h.target_student_id);
 
-           // 1. Individual Target (Highest Priority)
-           if (type === 'Individual') {
-               return hStudent === sId;
+           // 1. GLOBAL: If it's explicitly marked as Global Scope (or legacy All Grades)
+           if (scope === 'Global' || hGrade === 'Global') return true;
+
+           // 2. INDIVIDUAL: Must match student ID exactly
+           if (scope === 'Individual') return hStudent === sId;
+
+           // 3. GRADE-WISE: Must match the Grade. (Ignore Division)
+           if (scope === 'Grade') {
+               return hGrade === sGrade; 
            }
 
-           // 2. Grade Check
-           // Must match student's grade OR be 'Global' (All Grades)
-           const gradeMatches = hGrade === 'Global' || hGrade === sGrade;
-           if (!gradeMatches) return false;
-
-           // 3. Division Check
-           // If type is 'Grade', we assume it applies to the whole grade (ignore division)
-           if (type === 'Grade') return true;
-
-           // If type is 'Division' (default), we check division
-           // Matches if division is 'Global' (All Divs) OR matches student's division
-           if (type === 'Division') {
-               return hDiv === 'Global' || hDiv === sDiv;
+           // 4. DIVISION-WISE: Must match Grade AND Division
+           if (scope === 'Division') {
+               // Must match grade first (unless grade is global, which shouldn't happen in div-scope but just in case)
+               const gradeMatches = hGrade === 'Global' || hGrade === sGrade;
+               const divMatches = hDiv === 'Global' || hDiv === sDiv;
+               return gradeMatches && divMatches;
            }
 
            return false;
@@ -521,7 +525,7 @@ class DatabaseService {
           id: h.id, 
           gradeId: h.grade_id, 
           subdivisionId: h.subdivision_id, 
-          targetType: h.target_type || 'Division',
+          targetType: h.target_type || 'Grade',
           targetStudentId: h.target_student_id,
           subject: h.subject, 
           task: h.task, 
@@ -536,7 +540,7 @@ class DatabaseService {
           id: h.id, 
           gradeId: h.grade_id, 
           subdivisionId: h.subdivision_id, 
-          targetType: h.target_type || 'Division',
+          targetType: h.target_type || 'Grade',
           targetStudentId: h.target_student_id,
           subject: h.subject, 
           task: h.task, 
@@ -546,9 +550,25 @@ class DatabaseService {
   }
 
   async addHomework(data: Omit<Homework, 'id'>) {
+      // Logic to ensure 'Global' is saved for "All" selections
+      // If Scope is Global, force grade_id and subdivision_id to 'Global'
+      let finalGradeId = data.gradeId;
+      let finalDivId = data.subdivisionId;
+
+      if (data.targetType === 'Global') {
+          finalGradeId = 'Global';
+          finalDivId = 'Global';
+      } else if (data.targetType === 'Grade') {
+          finalDivId = 'Global'; // All divisions in this grade
+      }
+
+      // Fallback for empty strings
+      if (!finalGradeId) finalGradeId = 'Global';
+      if (!finalDivId) finalDivId = 'Global';
+
       await supabase.from('homework').insert({
-          grade_id: data.gradeId, 
-          subdivision_id: data.subdivisionId, 
+          grade_id: finalGradeId, 
+          subdivision_id: finalDivId, 
           target_type: data.targetType,
           target_student_id: data.targetStudentId,
           subject: data.subject, 
@@ -586,6 +606,8 @@ class DatabaseService {
       await supabase.from('homework_submissions').update({ status }).eq('id', id);
   }
 
+  // ... (Exams, Queries, Enquiry, Product, Order, Notes, Leaves unchanged below, 
+  // ensure you copy the full file if you replace it, or just these methods)
   async getExams(gradeId?: string): Promise<Exam[]> {
       let query = supabase.from('exams').select('*');
       if (gradeId) query = query.eq('grade_id', gradeId);
@@ -609,9 +631,7 @@ class DatabaseService {
   }
 
   async getExamsForStudent(gradeId: string, subdivisionId: string, studentId: string): Promise<Exam[]> {
-      // ROBUST CLIENT-SIDE FILTERING REPLACEMENT FOR EXAMS (IMPROVED)
       const { data, error } = await supabase.from('exams').select('*');
-      
       if (error || !data) return [];
 
       const norm = (id: any) => String(id || '').trim();
@@ -620,14 +640,13 @@ class DatabaseService {
       const sId = norm(studentId);
 
       const filtered = data.filter(e => {
-           const type = e.target_type || 'Division'; // Fail-safe default
+           const type = e.target_type || 'Division'; 
            const eGrade = norm(e.grade_id);
            const eDiv = norm(e.subdivision_id);
            const eStudent = norm(e.target_student_id);
 
            if (type === 'Individual') return eStudent === sId;
            
-           // Grade Match
            const gradeMatches = eGrade === 'Global' || eGrade === sGrade;
            if (!gradeMatches) return false;
 
@@ -826,7 +845,6 @@ class DatabaseService {
   }
 
   async getNotes(gradeId?: string, divisionId?: string, studentId?: string): Promise<StudyNote[]> {
-    // ROBUST CLIENT-SIDE FILTERING FOR NOTES (IMPROVED)
     const { data, error } = await supabase.from('study_notes').select('*');
     if (error || !data) return [];
 
@@ -834,32 +852,27 @@ class DatabaseService {
 
     let filtered = data;
     
-    // If specific student request (Student Panel)
     if (studentId && gradeId) {
         const sGrade = norm(gradeId);
         const sDiv = norm(divisionId);
         const sId = norm(studentId);
 
         filtered = data.filter(n => {
-            const type = n.target_type || 'Grade'; // Default to Grade if missing
+            const type = n.target_type || 'Grade';
             const nGrade = norm(n.grade_id);
             const nDiv = norm(n.division_id);
             const nStudent = norm(n.target_student_id);
             
-            // Individual
             if (type === 'Individual') return nStudent === sId;
             
-            // Grade Check (Global or Match)
             const gradeMatch = nGrade === 'Global' || nGrade === sGrade;
             
-            // Division Check (Global or Match or Empty)
-            // Allow empty division in notes to mean global within grade implicitly
+            // Allow empty division or Global
             const divMatch = nDiv === 'Global' || nDiv === '' || nDiv === sDiv;
 
             return gradeMatch && divMatch;
         });
     } else {
-        // Teacher view logic (Show what they created/relevant to their selection)
         if (gradeId) filtered = filtered.filter(n => norm(n.grade_id) === norm(gradeId) || norm(n.grade_id) === 'Global');
         if (divisionId) filtered = filtered.filter(n => norm(n.division_id) === norm(divisionId) || norm(n.division_id) === 'Global');
     }

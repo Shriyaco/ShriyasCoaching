@@ -1,12 +1,13 @@
 
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../services/db';
 import { Subdivision, Student, User, Grade, Homework, Exam, StudentQuery, AttendanceRecord, StudyNote, HomeworkSubmission, StudentOwnExam, LeaveApplication, Question, ExamSubmission } from '../types';
-import { LogOut, Calendar as CalendarIcon, BookOpen, PenTool, Plus, Trash2, Award, ClipboardCheck, X, MessageSquare, Clock, Settings, Lock, Radio, Power, ChevronRight, LayoutDashboard, FileText, UserCheck, Menu, Loader2, Check, ExternalLink, Sparkles, AlertCircle, Send, Upload, Camera, Database, ShieldCheck, ChevronDown, Rocket, Waves, Globe, ListChecks, HelpCircle, Eye, ArrowRight, ChevronLeft } from 'lucide-react';
+import { LogOut, Calendar as CalendarIcon, BookOpen, PenTool, Plus, Trash2, Award, ClipboardCheck, X, MessageSquare, Clock, Settings, Lock, Radio, Power, ChevronRight, LayoutDashboard, FileText, UserCheck, Menu, Loader2, Check, ExternalLink, Sparkles, AlertCircle, Send, Upload, Camera, Database, ShieldCheck, ChevronDown, Rocket, Waves, Globe, ListChecks, HelpCircle, Eye, ArrowRight, ChevronLeft, Users, User as UserIcon, Layers } from 'lucide-react';
 import { motion, AnimatePresence, Variants } from 'framer-motion';
 
-// --- 3D AMBIENT BACKGROUND ---
+// ... (SpatialBackground and pageTransition constants remain the same)
 const SpatialBackground = () => (
     <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none bg-[#020204]">
         <div className="absolute top-1/4 left-1/4 w-[60vw] h-[60vw] bg-indigo-600/5 rounded-full blur-[120px] animate-pulse" />
@@ -15,7 +16,6 @@ const SpatialBackground = () => (
     </div>
 );
 
-// --- ANIMATION VARIANTS ---
 const pageTransition: Variants = {
     initial: { opacity: 0, y: 10 },
     animate: { opacity: 1, y: 0, transition: { duration: 0.4, ease: "easeOut" } },
@@ -23,6 +23,7 @@ const pageTransition: Variants = {
 };
 
 const TeacherDashboard: React.FC = () => {
+    // ... (Main dashboard state and layout remain the same, ensuring only the Homework Module is replaced below)
     const navigate = useNavigate();
     const [user, setUser] = useState<User | null>(null);
     const [activeTab, setActiveTab] = useState<'attendance' | 'live' | 'homework' | 'notes' | 'exams' | 'grading' | 'leaves' | 'student-exams' | 'queries' | 'settings'>('attendance');
@@ -110,16 +111,18 @@ const TeacherDashboard: React.FC = () => {
                 </div>
 
                 <div className="flex items-center gap-2 w-full sm:w-auto">
-                    <div className="grid grid-cols-2 gap-1 flex-1 sm:flex-none p-1 bg-white/5 rounded-xl border border-white/5">
-                        <select className="bg-transparent text-[8px] font-black uppercase tracking-tighter px-2 py-1.5 outline-none cursor-pointer border-r border-white/10" value={selectedGradeId} onChange={e => setSelectedGradeId(e.target.value)}>
-                            <option value="" className="bg-[#050508]">All Grades</option>
-                            {grades.map(g => <option key={g.id} value={g.id} className="bg-[#050508]">Grade {g.gradeName}</option>)}
-                        </select>
-                        <select className="bg-transparent text-[8px] font-black uppercase tracking-tighter px-2 py-1.5 outline-none cursor-pointer" value={selectedDivisionId} onChange={e => setSelectedDivisionId(e.target.value)}>
-                            <option value="" className="bg-[#050508]">All Divs</option>
-                            {availableSubdivisions.map(s => <option key={s.id} value={s.id} className="bg-[#050508]">Div {s.divisionName}</option>)}
-                        </select>
-                    </div>
+                    {activeTab !== 'homework' && ( // Hide global filters for homework tab as it has its own logic
+                        <div className="grid grid-cols-2 gap-1 flex-1 sm:flex-none p-1 bg-white/5 rounded-xl border border-white/5">
+                            <select className="bg-transparent text-[8px] font-black uppercase tracking-tighter px-2 py-1.5 outline-none cursor-pointer border-r border-white/10" value={selectedGradeId} onChange={e => setSelectedGradeId(e.target.value)}>
+                                <option value="" className="bg-[#050508]">All Grades</option>
+                                {grades.map(g => <option key={g.id} value={g.id} className="bg-[#050508]">Grade {g.gradeName}</option>)}
+                            </select>
+                            <select className="bg-transparent text-[8px] font-black uppercase tracking-tighter px-2 py-1.5 outline-none cursor-pointer" value={selectedDivisionId} onChange={e => setSelectedDivisionId(e.target.value)}>
+                                <option value="" className="bg-[#050508]">All Divs</option>
+                                {availableSubdivisions.map(s => <option key={s.id} value={s.id} className="bg-[#050508]">Div {s.divisionName}</option>)}
+                            </select>
+                        </div>
+                    )}
                     <button onClick={handleLogout} className="p-2 bg-rose-500/10 rounded-xl text-rose-500 border border-rose-500/20 active:scale-95 transition-all"><Power size={12}/></button>
                 </div>
             </header>
@@ -130,7 +133,7 @@ const TeacherDashboard: React.FC = () => {
                         <motion.div key={`${activeTab}-${refreshTrigger}`} variants={pageTransition} initial="initial" animate="animate" exit="exit" className="pb-40">
                             {activeTab === 'attendance' && <AttendanceModule gradeId={selectedGradeId} divisionId={selectedDivisionId} refreshTrigger={refreshTrigger} />}
                             {activeTab === 'live' && <LiveManagementModule division={selectedDivision} />}
-                            {activeTab === 'homework' && <HomeworkManagementModule gradeId={selectedGradeId} divisionId={selectedDivisionId} teacherId={user?.id || ''} refreshTrigger={refreshTrigger} />}
+                            {activeTab === 'homework' && <HomeworkManagementModule teacherId={user?.id || ''} refreshTrigger={refreshTrigger} />}
                             {activeTab === 'notes' && <NotesModule gradeId={selectedGradeId} divisionId={selectedDivisionId} teacherId={user?.id || ''} refreshTrigger={refreshTrigger} />}
                             {activeTab === 'exams' && <ExamBuilderModule gradeId={selectedGradeId} divisionId={selectedDivisionId} teacherId={user?.id || ''} refreshTrigger={refreshTrigger} />}
                             {activeTab === 'grading' && <CheckExamsModule refreshTrigger={refreshTrigger} />}
@@ -143,6 +146,7 @@ const TeacherDashboard: React.FC = () => {
                 </div>
             </main>
 
+            {/* ... (Bottom Nav unchanged) */}
             <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[100] w-full max-w-fit px-4">
                 <nav className="bg-[#0A0A0E]/90 backdrop-blur-2xl border border-white/10 p-1.5 rounded-[24px] flex items-center gap-1 shadow-2xl overflow-x-auto scrollbar-hide max-w-[95vw]">
                     {navItems.map(item => (
@@ -161,7 +165,199 @@ const TeacherDashboard: React.FC = () => {
     );
 };
 
+// ... (Other modules: Attendance, Live, etc. remain unchanged. Only Homework is updated below)
+
+const HomeworkManagementModule = ({ teacherId, refreshTrigger }: any) => {
+    const [list, setList] = useState<Homework[]>([]);
+    const [submissions, setSubmissions] = useState<HomeworkSubmission[]>([]);
+    
+    // UI Logic States
+    const [targetScope, setTargetScope] = useState<'Global' | 'Grade' | 'Division' | 'Individual'>('Global');
+    const [selGrade, setSelGrade] = useState('');
+    const [selDiv, setSelDiv] = useState('');
+    const [selStudent, setSelStudent] = useState('');
+    
+    // Data Loading States
+    const [grades, setGrades] = useState<Grade[]>([]);
+    const [subdivisions, setSubdivisions] = useState<Subdivision[]>([]);
+    const [students, setStudents] = useState<Student[]>([]);
+    
+    const [form, setForm] = useState({ subject: '', task: '', dueDate: '' });
+
+    // Initial Load
+    const load = useCallback(() => { 
+        db.getAllHomework().then(setList);
+        db.getAllHomeworkSubmissions().then(setSubmissions);
+        db.getGrades().then(setGrades);
+    }, []);
+
+    useEffect(() => { load(); }, [load, refreshTrigger]);
+
+    // Dynamic Data Fetching based on scope selection
+    useEffect(() => {
+        if (targetScope === 'Global') return;
+        
+        if (selGrade) {
+            db.getSubdivisions(selGrade).then(setSubdivisions);
+            if (targetScope === 'Individual') {
+                db.getStudents(selGrade, selDiv || undefined).then(setStudents);
+            }
+        }
+    }, [targetScope, selGrade, selDiv]);
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        
+        // Validation based on scope
+        if (targetScope === 'Grade' && !selGrade) return alert("Please select a specific Grade.");
+        if (targetScope === 'Division' && (!selGrade || !selDiv)) return alert("Please select both Grade and Division.");
+        if (targetScope === 'Individual' && !selStudent) return alert("Please select a specific Student.");
+
+        await db.addHomework({ 
+            targetType: targetScope, 
+            gradeId: selGrade, 
+            subdivisionId: selDiv, 
+            targetStudentId: selStudent,
+            assignedBy: teacherId,
+            ...form 
+        });
+        
+        setForm({ subject:'', task:'', dueDate:'' });
+        setSelGrade(''); setSelDiv(''); setSelStudent(''); setTargetScope('Global');
+        load();
+        alert("Homework Protocol Deployed Successfully.");
+    };
+
+    return (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="space-y-8">
+                <div className="bg-white/5 p-8 rounded-[40px] border border-white/10 shadow-2xl h-fit">
+                    <h3 className="text-2xl font-light serif-font italic mb-8">Deploy Homework.</h3>
+                    
+                    <form onSubmit={handleSubmit} className="space-y-6">
+                        {/* Scope Selection */}
+                        <div className="space-y-2">
+                            <label className="text-[8px] font-black uppercase text-white/30 ml-1 tracking-widest">Target Scope</label>
+                            <div className="grid grid-cols-4 gap-2 bg-black rounded-xl p-1 border border-white/10">
+                                {['Global', 'Grade', 'Division', 'Individual'].map(scope => (
+                                    <button 
+                                        type="button" 
+                                        key={scope} 
+                                        onClick={() => { setTargetScope(scope as any); setSelGrade(''); setSelDiv(''); setSelStudent(''); }}
+                                        className={`py-2 rounded-lg text-[8px] font-black uppercase tracking-wider transition-all ${targetScope === scope ? 'bg-indigo-600 text-white shadow-lg' : 'text-white/40 hover:text-white'}`}
+                                    >
+                                        {scope === 'Individual' ? 'Student' : scope}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Dynamic Dropdowns */}
+                        <div className="grid grid-cols-2 gap-4">
+                            {(targetScope !== 'Global') && (
+                                <div className="space-y-1">
+                                    <label className="text-[8px] font-black uppercase text-white/30 ml-1">Grade</label>
+                                    <select className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-xs text-white" value={selGrade} onChange={e => setSelGrade(e.target.value)}>
+                                        <option value="">Select Grade</option>
+                                        {grades.map(g => <option key={g.id} value={g.id}>{g.gradeName}</option>)}
+                                    </select>
+                                </div>
+                            )}
+                            
+                            {(targetScope === 'Division' || (targetScope === 'Individual' && selGrade)) && (
+                                <div className="space-y-1">
+                                    <label className="text-[8px] font-black uppercase text-white/30 ml-1">Division</label>
+                                    <select className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-xs text-white" value={selDiv} onChange={e => setSelDiv(e.target.value)}>
+                                        <option value="">Select Div</option>
+                                        {subdivisions.map(s => <option key={s.id} value={s.id}>{s.divisionName}</option>)}
+                                    </select>
+                                </div>
+                            )}
+                        </div>
+
+                        {targetScope === 'Individual' && selGrade && (
+                            <div className="space-y-1">
+                                <label className="text-[8px] font-black uppercase text-white/30 ml-1">Student</label>
+                                <select className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-xs text-white" value={selStudent} onChange={e => setSelStudent(e.target.value)}>
+                                    <option value="">Select Cadet</option>
+                                    {students.map(s => <option key={s.id} value={s.id}>{s.name} ({s.studentCustomId})</option>)}
+                                </select>
+                            </div>
+                        )}
+
+                        <input required className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-xs text-white outline-none focus:border-indigo-500 placeholder:text-white/20" value={form.subject} onChange={e=>setForm({...form, subject:e.target.value})} placeholder="Subject Domain" />
+                        <textarea required className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-xs text-white h-24 resize-none outline-none focus:border-indigo-500 placeholder:text-white/20" value={form.task} onChange={e=>setForm({...form, task:e.target.value})} placeholder="Mission Objectives & Details..." />
+                        
+                        <div className="space-y-1">
+                            <label className="text-[8px] font-black uppercase text-white/30 ml-1 tracking-widest">Deadline</label>
+                            <input 
+                                required 
+                                type="date" 
+                                className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-xs text-white [color-scheme:dark] block outline-none focus:border-indigo-500 transition-all" 
+                                value={form.dueDate} 
+                                onChange={e=>setForm({...form, dueDate:e.target.value})} 
+                            />
+                        </div>
+                        
+                        <button type="submit" className="w-full bg-indigo-600 text-white py-4 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-xl active:scale-[0.98] transition-all">Authorize Deployment</button>
+                    </form>
+                </div>
+            </div>
+
+            <div className="space-y-8">
+                <div className="space-y-4">
+                    <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-white/20 ml-2">Active Log</h4>
+                    {list.map(hw => (
+                        <div key={hw.id} className="bg-white/[0.02] p-6 rounded-[32px] border border-white/5 flex justify-between items-start group hover:bg-white/[0.04] transition-all shadow-lg">
+                            <div className="flex-1 overflow-hidden">
+                                <div className="flex flex-wrap items-center gap-2 mb-2">
+                                    <span className={`text-[7px] font-black uppercase px-2 py-0.5 rounded border ${
+                                        hw.targetType === 'Global' ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' : 
+                                        hw.targetType === 'Individual' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' : 
+                                        'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                                    }`}>
+                                        {hw.targetType === 'Global' ? 'GLOBAL' : 
+                                         hw.targetType === 'Grade' ? `GRADE ${grades.find(g=>g.id===hw.gradeId)?.gradeName || ''}` : 
+                                         hw.targetType === 'Division' ? `DIV ${subdivisions.find(s=>s.id===hw.subdivisionId)?.divisionName || hw.subdivisionId}` : 
+                                         'PERSONAL'}
+                                    </span>
+                                    <span className="text-white/40 text-[8px] font-black uppercase tracking-widest">{hw.subject}</span>
+                                </div>
+                                <p className="text-base font-serif italic text-white/80 leading-snug truncate">"{hw.task}"</p>
+                                <div className="mt-4 flex items-center gap-2 text-white/20">
+                                    <Clock size={10} />
+                                    <p className="text-[8px] font-black uppercase tracking-widest">Due: {hw.dueDate}</p>
+                                </div>
+                            </div>
+                            <button onClick={async (e)=>{e.stopPropagation(); if(confirm('Delete Assignment?')){await db.deleteHomework(hw.id); load();}}} className="p-2 text-white/5 hover:text-rose-500 transition-all opacity-0 group-hover:opacity-100"><Trash2 size={16}/></button>
+                        </div>
+                    ))}
+                    {list.length === 0 && <div className="py-20 text-center text-white/5 uppercase font-black text-[10px] tracking-widest border-2 border-dashed border-white/5 rounded-[32px]">No Assignments Active</div>}
+                </div>
+
+                <div className="bg-white/[0.02] border border-white/5 rounded-[32px] p-6">
+                    <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-white/20 mb-4">Recent Submissions</h4>
+                    <div className="space-y-2 max-h-60 overflow-y-auto scrollbar-hide">
+                        {submissions.slice(0, 10).map(sub => (
+                            <div key={sub.id} className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/5">
+                                <div className="truncate max-w-[70%]">
+                                    <p className="text-[9px] font-bold text-white/80">Student ID: {sub.studentId.slice(0,8)}...</p>
+                                    <p className="text-[8px] text-white/40 truncate">{sub.submissionText}</p>
+                                </div>
+                                <span className={`text-[8px] font-black uppercase px-2 py-1 rounded ${sub.status === 'Reviewed' ? 'text-emerald-400 bg-emerald-500/10' : 'text-amber-400 bg-amber-500/10'}`}>{sub.status}</span>
+                            </div>
+                        ))}
+                        {submissions.length === 0 && <p className="text-center text-[8px] text-white/20 py-4 font-bold uppercase tracking-widest">No Incoming Data</p>}
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// ... (Other modules: NotesModule, ExamBuilderModule, etc. remain unchanged. Ensure you keep the full file intact when pasting)
 const AttendanceModule = ({ gradeId, divisionId, refreshTrigger }: any) => {
+    // ... (Keep existing code)
     const [view, setView] = useState<'calendar' | 'marking'>('calendar');
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [students, setStudents] = useState<Student[]>([]);
@@ -345,121 +541,8 @@ const LiveManagementModule = ({ division }: { division?: Subdivision }) => {
     );
 };
 
-const HomeworkManagementModule = ({ gradeId, divisionId, teacherId, refreshTrigger }: any) => {
-    const [list, setList] = useState<Homework[]>([]);
-    const [submissions, setSubmissions] = useState<HomeworkSubmission[]>([]);
-    const [form, setForm] = useState<any>({ subject: '', task: '', dueDate: '', targetType: 'Division', targetStudentId: '' });
-    const [students, setStudents] = useState<Student[]>([]);
-    
-    const load = useCallback(() => { 
-        db.getAllHomework().then(all => {
-            if (gradeId) {
-                // If a specific grade is selected, show homework for that grade OR global
-                setList(all.filter(h => h.gradeId === gradeId || h.gradeId === 'Global'));
-            } else {
-                setList(all);
-            }
-        });
-        db.getAllHomeworkSubmissions().then(setSubmissions);
-        db.getStudents(gradeId || undefined, divisionId || undefined).then(setStudents);
-    }, [gradeId, divisionId]);
-
-    useEffect(() => { load(); }, [load, refreshTrigger]);
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        // If no specific grade is selected, it defaults to 'Global' targeting
-        await db.addHomework({ gradeId: gradeId || 'Global', subdivisionId: divisionId || 'Global', ...form, assignedBy: teacherId });
-        setForm({ ...form, subject:'', task:'', dueDate:'', targetStudentId:'' });
-        load();
-        alert("Homework Protocol Deployed.");
-    };
-
-    return (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div className="space-y-8">
-                <div className="bg-white/5 p-8 rounded-[40px] border border-white/10 shadow-2xl h-fit">
-                    <h3 className="text-2xl font-light serif-font italic mb-8">Homework.</h3>
-                    <form onSubmit={handleSubmit} className="space-y-6">
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-1">
-                                <label className="text-[8px] font-black uppercase text-white/30 ml-1">Scope</label>
-                                <select className="w-full bg-black border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white" value={form.targetType} onChange={e=>setForm({...form, targetType:e.target.value as any})}>
-                                    <option value="Division">Specific Division</option>
-                                    <option value="Grade">Grade-wide</option>
-                                    <option value="Individual">Individual</option>
-                                </select>
-                            </div>
-                            {form.targetType === 'Individual' && (
-                                <div className="space-y-1">
-                                    <label className="text-[8px] font-black uppercase text-white/30 ml-1">Target Cadet</label>
-                                    <select className="w-full bg-black border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white" value={form.targetStudentId} onChange={e=>setForm({...form, targetStudentId:e.target.value})}>
-                                        <option value="">Select Student</option>
-                                        {students.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                                    </select>
-                                </div>
-                            )}
-                        </div>
-                        <input required className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-xs text-white outline-none focus:border-indigo-500" value={form.subject} onChange={e=>setForm({...form, subject:e.target.value})} placeholder="Subject" />
-                        <textarea required className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-xs text-white h-24 resize-none outline-none focus:border-indigo-500" value={form.task} onChange={e=>setForm({...form, task:e.target.value})} placeholder="Mission Objectives..." />
-                        <div className="space-y-1 relative z-[20]">
-                            <label className="text-[8px] font-black uppercase text-white/30 ml-1 tracking-widest">Target Due Date</label>
-                            <input 
-                                required 
-                                type="date" 
-                                className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-xs text-white [color-scheme:dark] block outline-none focus:border-indigo-500 transition-all" 
-                                value={form.dueDate} 
-                                onChange={e=>setForm({...form, dueDate:e.target.value})} 
-                            />
-                        </div>
-                        <button type="submit" className="w-full bg-indigo-600 text-white py-4 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-xl active:scale-[0.98] transition-all">Authorize Deployment</button>
-                    </form>
-                </div>
-            </div>
-
-            <div className="space-y-8">
-                <div className="space-y-4">
-                    <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-white/20 ml-2">Active Deployments</h4>
-                    {list.map(hw => (
-                        <div key={hw.id} className="bg-white/[0.02] p-6 rounded-[32px] border border-white/5 flex justify-between items-start group hover:bg-white/[0.04] transition-all shadow-lg">
-                            <div className="flex-1 overflow-hidden">
-                                <div className="flex items-center gap-2 mb-2">
-                                    <span className="bg-indigo-500/10 text-indigo-400 text-[7px] font-black uppercase px-2 py-0.5 rounded border border-indigo-500/20">{hw.targetType}</span>
-                                    <span className="text-white/40 text-[8px] font-black uppercase tracking-widest">{hw.subject}</span>
-                                </div>
-                                <p className="text-base font-serif italic text-white/80 leading-snug truncate">"{hw.task}"</p>
-                                <div className="mt-4 flex items-center gap-2 text-white/20">
-                                    <Clock size={10} />
-                                    <p className="text-[8px] font-black uppercase tracking-widest">Deadline: {hw.dueDate}</p>
-                                </div>
-                            </div>
-                            <button onClick={async (e)=>{e.stopPropagation(); if(confirm('Purge Homework?')){await db.deleteHomework(hw.id); load();}}} className="p-2 text-white/5 hover:text-rose-500 transition-all opacity-0 group-hover:opacity-100"><Trash2 size={16}/></button>
-                        </div>
-                    ))}
-                    {list.length === 0 && <div className="py-20 text-center text-white/5 uppercase font-black text-[10px] tracking-widest border-2 border-dashed border-white/5 rounded-[32px]">Registry Dormant</div>}
-                </div>
-
-                <div className="bg-white/[0.02] border border-white/5 rounded-[32px] p-6">
-                    <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-white/20 mb-4">Recent Submissions</h4>
-                    <div className="space-y-2 max-h-60 overflow-y-auto scrollbar-hide">
-                        {submissions.slice(0, 10).map(sub => (
-                            <div key={sub.id} className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/5">
-                                <div className="truncate max-w-[70%]">
-                                    <p className="text-[9px] font-bold text-white/80">Student ID: {sub.studentId.slice(0,8)}...</p>
-                                    <p className="text-[8px] text-white/40 truncate">{sub.submissionText}</p>
-                                </div>
-                                <span className={`text-[8px] font-black uppercase px-2 py-1 rounded ${sub.status === 'Reviewed' ? 'text-emerald-400 bg-emerald-500/10' : 'text-amber-400 bg-amber-500/10'}`}>{sub.status}</span>
-                            </div>
-                        ))}
-                        {submissions.length === 0 && <p className="text-center text-[8px] text-white/20 py-4 font-bold uppercase tracking-widest">No Incoming Data</p>}
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-};
-
 const NotesModule = ({ gradeId, divisionId, teacherId, refreshTrigger }: any) => {
+    // ... (Keep existing code)
     const [notes, setNotes] = useState<StudyNote[]>([]);
     const [isAdding, setIsAdding] = useState(false);
     const [form, setForm] = useState<any>({ subject: '', title: '', content: '', targetType: 'Grade', targetStudentId: '' });
@@ -536,7 +619,9 @@ const NotesModule = ({ gradeId, divisionId, teacherId, refreshTrigger }: any) =>
     );
 };
 
+// ... (Rest of the modules: ExamBuilder, CheckExams, LeaveRequests, StudentExamsView, DoubtSolve, CoreSettings remain unchanged. Paste them all below)
 const ExamBuilderModule = ({ gradeId, divisionId, teacherId, refreshTrigger }: any) => {
+    // ... (Existing code)
     const [exams, setExams] = useState<Exam[]>([]);
     const [isCreating, setIsCreating] = useState(false);
     const [students, setStudents] = useState<Student[]>([]);
@@ -547,7 +632,6 @@ const ExamBuilderModule = ({ gradeId, divisionId, teacherId, refreshTrigger }: a
     });
 
     const load = useCallback(() => {
-        // Fetch all exams if no specific grade filtered, or specific
         db.getExams(gradeId || undefined).then(setExams);
         db.getStudents(gradeId || undefined, divisionId || undefined).then(setStudents);
     }, [gradeId, divisionId]);
@@ -724,6 +808,7 @@ const ExamBuilderModule = ({ gradeId, divisionId, teacherId, refreshTrigger }: a
 };
 
 const CheckExamsModule = ({ refreshTrigger }: any) => {
+    // ... (Existing code)
     const [submissions, setSubmissions] = useState<ExamSubmission[]>([]);
     const [selectedSub, setSelectedSub] = useState<ExamSubmission | null>(null);
     const [marks, setMarks] = useState<Record<string, number>>({});
@@ -823,6 +908,7 @@ const CheckExamsModule = ({ refreshTrigger }: any) => {
 };
 
 const LeaveRequestsModule = ({ gradeId, divisionId, refreshTrigger }: any) => {
+    // ... (Existing code)
     const [leaves, setLeaves] = useState<LeaveApplication[]>([]);
     
     // Fixed: Now allows fetching without strict filtering to support "All Grades"
@@ -871,6 +957,7 @@ const LeaveRequestsModule = ({ gradeId, divisionId, refreshTrigger }: any) => {
 };
 
 const StudentExamsView = ({ gradeId, divisionId, refreshTrigger }: any) => {
+    // ... (Existing code)
     const [exams, setExams] = useState<StudentOwnExam[]>([]);
     
     // Fixed: Now allows fetching without strict filtering to support "All Grades"
@@ -907,6 +994,7 @@ const StudentExamsView = ({ gradeId, divisionId, refreshTrigger }: any) => {
 };
 
 const DoubtSolveModule = ({ refreshTrigger }: any) => {
+    // ... (Existing code)
     const [queries, setQueries] = useState<StudentQuery[]>([]);
     const [replyText, setReplyText] = useState<Record<string, string>>({});
     const load = useCallback(() => db.getQueries().then(setQueries), []);
@@ -950,6 +1038,7 @@ const DoubtSolveModule = ({ refreshTrigger }: any) => {
 };
 
 const CoreSettings = ({ user }: { user: User }) => {
+    // ... (Existing code)
     const [form, setForm] = useState({ current: '', new: '', confirm: '' });
     const [loading, setLoading] = useState(false);
     const update = async (e: any) => {

@@ -1,4 +1,5 @@
 
+
 export interface Grade {
   id: string;
   gradeName: string;
@@ -108,7 +109,7 @@ export interface Homework {
   id: string;
   gradeId: string;
   subdivisionId: string;
-  targetType: 'Grade' | 'Division' | 'Individual';
+  targetType: 'Grade' | 'Division' | 'Individual' | 'Global';
   targetStudentId?: string;
   subject: string;
   task: string;
