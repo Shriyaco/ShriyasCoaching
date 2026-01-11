@@ -55,18 +55,16 @@ const StudentDashboard: React.FC = () => {
         setUser(parsedUser);
         loadData(parsedUser.id);
 
-        // Real-time synchronization
-        const hwChannel = db.subscribe('homework', () => setRefreshTrigger(t => t + 1));
-        const examChannel = db.subscribe('exams', () => setRefreshTrigger(t => t + 1));
-        const notesChannel = db.subscribe('study_notes', () => setRefreshTrigger(t => t + 1));
-        const queryChannel = db.subscribe('queries', () => setRefreshTrigger(t => t + 1));
+        // Standardized Real-time synchronization
+        const channels = [
+            db.subscribe('homework', () => setRefreshTrigger(t => t + 1)),
+            db.subscribe('exams', () => setRefreshTrigger(t => t + 1)),
+            db.subscribe('study_notes', () => setRefreshTrigger(t => t + 1)),
+            db.subscribe('queries', () => setRefreshTrigger(t => t + 1)),
+            db.subscribe('attendance', () => setRefreshTrigger(t => t + 1))
+        ];
 
-        return () => {
-            db.unsubscribe(hwChannel);
-            db.unsubscribe(examChannel);
-            db.unsubscribe(notesChannel);
-            db.unsubscribe(queryChannel);
-        };
+        return () => { channels.forEach(c => db.unsubscribe(c)); };
     }, [navigate, loadData]);
 
     const handleLogout = () => { sessionStorage.removeItem('sc_user'); navigate('/'); };
@@ -77,8 +75,8 @@ const StudentDashboard: React.FC = () => {
         { id: 'notes', label: 'Notes', icon: Database },
         { id: 'exams', label: 'Exam', icon: PenTool },
         { id: 'results', label: 'Result', icon: Award },
-        { id: 'upcoming-exams', label: 'Upcoming School Exam', icon: Calendar },
-        { id: 'leave', label: 'Apply Leave', icon: FileText },
+        { id: 'upcoming-exams', label: 'School Exam', icon: Calendar },
+        { id: 'leave', label: 'Leave', icon: FileText },
         { id: 'doubts', label: 'Doubts', icon: MessageSquare },
         { id: 'settings', label: 'Settings', icon: Settings }
     ];
@@ -210,6 +208,7 @@ const DashboardModule = ({ student }: { student: Student }) => {
                                 <div key={day} className={`aspect-square rounded-xl flex items-center justify-center text-xs font-bold transition-all relative ${
                                     record?.status === 'Present' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
                                     record?.status === 'Absent' ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20' :
+                                    record?.status === 'Leave' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' :
                                     isToday ? 'bg-indigo-600 text-white shadow-lg' : 'bg-white/5 text-white/30'
                                 }`}>
                                     {day}
@@ -221,12 +220,12 @@ const DashboardModule = ({ student }: { student: Student }) => {
                 </div>
 
                 <div className="grid grid-cols-1 gap-4">
-                    <div className="bg-white/[0.02] border border-white/5 p-8 rounded-[40px] flex flex-col items-center justify-center text-center gap-4 hover:border-indigo-500/20 transition-all">
-                        <div className="w-14 h-14 bg-indigo-500/10 rounded-2xl flex items-center justify-center text-indigo-400 shadow-xl"><Flame size={28} strokeWidth={2.5}/></div>
+                    <div className="bg-white/[0.02] border border-white/5 p-8 rounded-[40px] flex flex-col items-center justify-center text-center gap-4 hover:border-indigo-500/20 transition-all shadow-xl">
+                        <div className="w-14 h-14 bg-indigo-500/10 rounded-2xl flex items-center justify-center text-indigo-400 shadow-xl border border-indigo-500/5"><Flame size={28} strokeWidth={2.5}/></div>
                         <div><h4 className="text-3xl font-black text-white leading-none">98%</h4><p className="text-[8px] font-black uppercase text-white/20 tracking-[0.3em] mt-2">Persistence Level</p></div>
                     </div>
-                    <div className="bg-white/[0.02] border border-white/5 p-8 rounded-[40px] flex flex-col items-center justify-center text-center gap-4 hover:border-emerald-500/20 transition-all">
-                        <div className="w-14 h-14 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-400 shadow-xl"><Award size={28} strokeWidth={2.5}/></div>
+                    <div className="bg-white/[0.02] border border-white/5 p-8 rounded-[40px] flex flex-col items-center justify-center text-center gap-4 hover:border-emerald-500/20 transition-all shadow-xl">
+                        <div className="w-14 h-14 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-400 shadow-xl border border-emerald-500/5"><Award size={28} strokeWidth={2.5}/></div>
                         <div><h4 className="text-3xl font-black text-white leading-none">Elite</h4><p className="text-[8px] font-black uppercase text-white/20 tracking-[0.3em] mt-2">Academic Rank</p></div>
                     </div>
                 </div>
@@ -256,11 +255,11 @@ const HomeworkModule = ({ student, refreshTrigger }: { student: Student, refresh
     };
 
     const submit = async (id: string) => {
-        if (!form.text) return alert("Description required.");
+        if (!form.text) return alert("Intel Description Required.");
         await db.submitHomework(id, student.id, form.text, form.image);
         setIsSubmitting(null);
         setForm({ text: '', image: '' });
-        alert("Homework Data Transmitted.");
+        alert("Mission Data Transmitted.");
     };
 
     return (
@@ -272,37 +271,37 @@ const HomeworkModule = ({ student, refreshTrigger }: { student: Student, refresh
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {missions.map(hw => (
                     <div key={hw.id} onClick={() => setIsSubmitting(hw.id)} className="bg-white/[0.02] p-8 rounded-[40px] border border-white/5 group hover:border-indigo-500/30 transition-all cursor-pointer shadow-xl relative overflow-hidden">
-                        <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10"><BookOpen size={80}/></div>
-                        <span className="text-indigo-400 text-[8px] font-black uppercase tracking-widest mb-4 block">{hw.subject}</span>
+                        <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity"><BookOpen size={80}/></div>
+                        <span className="text-indigo-400 text-[8px] font-black uppercase tracking-widest mb-4 block">{hw.subject} • {hw.targetType}</span>
                         <h4 className="text-xl font-bold text-white/90 italic leading-tight">"{hw.task}"</h4>
                         <div className="mt-8 flex items-center justify-between border-t border-white/5 pt-6">
                             <div className="flex items-center gap-2"><Clock size={12} className="text-white/20" /><span className="text-[8px] font-black uppercase text-white/20">Due: {hw.dueDate}</span></div>
-                            <button className="px-4 py-2 bg-white/5 rounded-xl text-[7px] font-black uppercase tracking-widest text-indigo-400 group-hover:bg-indigo-600 group-hover:text-white">Transmit</button>
+                            <button className="px-4 py-2 bg-white/5 rounded-xl text-[7px] font-black uppercase tracking-widest text-indigo-400 group-hover:bg-indigo-600 group-hover:text-white transition-all">Transmit</button>
                         </div>
                     </div>
                 ))}
-                {missions.length === 0 && <div className="col-span-full py-20 text-center text-white/5 font-black uppercase tracking-[0.5em] text-[10px]">No Assignments Registered.</div>}
+                {missions.length === 0 && <div className="col-span-full py-20 text-center text-white/5 font-black uppercase tracking-[0.5em] text-[10px] border-2 border-dashed border-white/5 rounded-[40px]">No Assignments Logged</div>}
             </div>
 
             <AnimatePresence>
                 {isSubmitting && (
                     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/90 p-4 backdrop-blur-xl">
-                        <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-[#0A0A0E] border border-white/10 rounded-[48px] w-full max-w-md p-10 relative shadow-2xl">
-                            <button onClick={() => setIsSubmitting(null)} className="absolute top-8 right-8 text-white/20"><X size={24}/></button>
-                            <h3 className="text-3xl font-light serif-font italic luxury-text-gradient mb-8">Homework Submission.</h3>
-                            <textarea placeholder="Task findings and details..." className="w-full bg-black border border-white/10 rounded-2xl p-5 text-sm outline-none focus:border-indigo-500 h-32 resize-none" value={form.text} onChange={e => setForm({...form, text: e.target.value})} />
+                        <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95 }} className="bg-[#0A0A0E] border border-white/10 rounded-[48px] w-full max-w-md p-10 relative shadow-2xl">
+                            <button onClick={() => setIsSubmitting(null)} className="absolute top-8 right-8 text-white/20 hover:text-white"><X size={24}/></button>
+                            <h3 className="text-3xl font-light serif-font italic luxury-text-gradient mb-8">Submission.</h3>
+                            <textarea placeholder="Task findings and details..." className="w-full bg-black border border-white/10 rounded-2xl p-5 text-sm outline-none focus:border-indigo-500 h-32 resize-none text-white font-medium" value={form.text} onChange={e => setForm({...form, text: e.target.value})} />
                             <div className="grid grid-cols-2 gap-4 mt-4">
-                                <div className="bg-white/5 border-2 border-dashed border-white/5 rounded-2xl p-5 text-center relative hover:bg-white/10 cursor-pointer">
+                                <div className="bg-white/5 border-2 border-dashed border-white/5 rounded-2xl p-5 text-center relative hover:bg-white/10 cursor-pointer transition-all">
                                     <input type="file" accept="image/*" onChange={handleUpload} className="absolute inset-0 opacity-0 cursor-pointer" />
                                     <Upload size={20} className="mx-auto text-white/20 mb-2" /><p className="text-[8px] font-black uppercase text-white/20">Gallery</p>
                                 </div>
-                                <div className="bg-white/5 border-2 border-dashed border-white/5 rounded-2xl p-5 text-center relative hover:bg-white/10 cursor-pointer">
+                                <div className="bg-white/5 border-2 border-dashed border-white/5 rounded-2xl p-5 text-center relative hover:bg-white/10 cursor-pointer transition-all">
                                     <input type="file" accept="image/*" capture="environment" onChange={handleUpload} className="absolute inset-0 opacity-0 cursor-pointer" />
                                     <Camera size={20} className="mx-auto text-white/20 mb-2" /><p className="text-[8px] font-black uppercase text-white/20">Camera</p>
                                 </div>
                             </div>
                             {form.image && <div className="mt-4 aspect-video rounded-xl overflow-hidden border border-white/10"><img src={form.image} className="w-full h-full object-cover" /></div>}
-                            <button onClick={() => submit(isSubmitting)} className="w-full bg-white text-black py-5 rounded-2xl font-black text-xs uppercase tracking-[0.4em] mt-8 hover:bg-indigo-500 hover:text-white transition-all">Authorize Submission</button>
+                            <button onClick={() => submit(isSubmitting)} className="w-full bg-white text-black py-5 rounded-2xl font-black text-xs uppercase tracking-[0.4em] mt-8 hover:bg-indigo-500 hover:text-white transition-all shadow-xl active:scale-95">Transmit Findings</button>
                         </motion.div>
                     </div>
                 )}
@@ -328,18 +327,18 @@ const NotesModule = ({ student, refreshTrigger }: { student: Student, refreshTri
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {notes.map(n => (
-                    <div key={n.id} className="bg-white/[0.02] p-8 rounded-[40px] border border-white/5 group hover:border-emerald-500/20 transition-all shadow-xl relative overflow-hidden">
-                        <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10"><Database size={80}/></div>
+                    <div key={n.id} className="bg-white/[0.02] p-8 rounded-[40px] border border-white/5 group hover:border-emerald-500/20 transition-all shadow-xl relative overflow-hidden h-72 flex flex-col">
+                        <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity"><Database size={80}/></div>
                         <span className="text-emerald-400 text-[8px] font-black uppercase tracking-widest mb-4 block">{n.subject} • {n.targetType}</span>
-                        <h4 className="text-2xl font-bold text-white/90 italic mb-4">{n.title}</h4>
-                        <p className="text-sm text-white/30 font-medium line-clamp-3 leading-relaxed">{n.content}</p>
+                        <h4 className="text-2xl font-bold text-white/90 italic mb-4 truncate">{n.title}</h4>
+                        <p className="text-sm text-white/30 font-medium line-clamp-3 leading-relaxed flex-1">{n.content}</p>
                         <div className="mt-8 pt-6 border-t border-white/5 flex items-center justify-between">
                              <span className="text-[7px] font-black text-white/10 uppercase tracking-widest">{n.createdAt?.split('T')[0]}</span>
-                             <button className="px-5 py-2 bg-emerald-500/10 text-emerald-400 text-[8px] font-black uppercase tracking-widest rounded-xl hover:bg-emerald-500 hover:text-white transition-all">Open Note</button>
+                             <button className="px-5 py-2 bg-emerald-500/10 text-emerald-400 text-[8px] font-black uppercase tracking-widest rounded-xl hover:bg-emerald-500 hover:text-white transition-all shadow-lg active:scale-95">Access Data</button>
                         </div>
                     </div>
                 ))}
-                {notes.length === 0 && <div className="col-span-full py-20 text-center text-white/5 font-black uppercase tracking-[0.5em] text-[10px]">No Study Intel Available.</div>}
+                {notes.length === 0 && <div className="col-span-full py-20 text-center text-white/5 font-black uppercase tracking-[0.5em] text-[10px] border-2 border-dashed border-white/5 rounded-[40px]">No Intel Logs Found</div>}
             </div>
         </div>
     );
@@ -374,7 +373,7 @@ const ExamsModule = ({ student, refreshTrigger }: { student: Student, refreshTri
 
     const submitExam = async () => {
         if (!activeExam) return;
-        alert("Exam protocol terminated. Session logged.");
+        alert("Evaluation terminated. Answer sheet uploaded.");
         setActiveExam(null);
     };
 
@@ -386,51 +385,51 @@ const ExamsModule = ({ student, refreshTrigger }: { student: Student, refreshTri
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8">
                 {exams.map(e => (
-                    <div key={e.id} className="relative p-[1px] rounded-[48px] bg-gradient-to-br from-rose-500/20 to-orange-500/20 group">
+                    <div key={e.id} className="relative p-[1px] rounded-[48px] bg-gradient-to-br from-rose-500/20 to-orange-500/20 group hover:from-rose-500/40 hover:to-orange-500/40 transition-all">
                         <div className="bg-[#0A0A0E] rounded-[47px] p-10 h-full relative overflow-hidden transition-all group-hover:bg-black">
-                            <div className="absolute top-0 right-0 p-10 opacity-[0.03] group-hover:opacity-[0.08]"><PenTool size={160}/></div>
+                            <div className="absolute top-0 right-0 p-10 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity"><PenTool size={160}/></div>
                             <div className="flex justify-between items-start mb-8 relative z-10">
-                                <span className="bg-rose-500/10 text-rose-400 text-[9px] font-black uppercase tracking-[0.3em] px-4 py-1.5 rounded-full border border-rose-500/20">Target: {e.targetType}</span>
-                                <Flame size={24} className="text-orange-500 animate-pulse" />
+                                <span className="bg-rose-500/10 text-rose-400 text-[9px] font-black uppercase tracking-[0.3em] px-4 py-1.5 rounded-full border border-rose-500/20 shadow-rose-500/10 shadow-lg">Target: {e.targetType}</span>
+                                <Flame size={24} className="text-orange-500 animate-pulse shadow-orange-500/20" />
                             </div>
-                            <h3 className="text-4xl font-black text-white italic uppercase mb-2">{e.subject}</h3>
-                            <p className="text-white/40 text-sm font-bold mb-10 border-l border-white/10 pl-6 uppercase tracking-widest">{e.title}</p>
+                            <h3 className="text-4xl font-black text-white italic uppercase mb-2 group-hover:text-premium-accent transition-colors">{e.subject}</h3>
+                            <p className="text-white/40 text-sm font-bold mb-10 border-l border-white/10 pl-6 uppercase tracking-widest leading-relaxed line-clamp-2">{e.title}</p>
                             <div className="grid grid-cols-2 gap-4 mb-10">
-                                <div className="bg-white/5 rounded-2xl p-5 text-center"><p className="text-[8px] text-white/20 font-black uppercase mb-1">Duration</p><p className="text-xl font-mono font-bold text-white">{e.duration}m</p></div>
-                                <div className="bg-white/5 rounded-2xl p-5 text-center"><p className="text-[8px] text-white/20 font-black uppercase mb-1">Max Score</p><p className="text-xl font-mono font-bold text-white">{e.totalMarks}pt</p></div>
+                                <div className="bg-white/5 rounded-2xl p-5 text-center border border-white/5"><p className="text-[8px] text-white/20 font-black uppercase mb-1">Time Slice</p><p className="text-xl font-mono font-bold text-white">{e.duration}m</p></div>
+                                <div className="bg-white/5 rounded-2xl p-5 text-center border border-white/5"><p className="text-[8px] text-white/20 font-black uppercase mb-1">Max Weight</p><p className="text-xl font-mono font-bold text-white">{e.totalMarks}pt</p></div>
                             </div>
-                            <button onClick={() => startExam(e)} className="w-full bg-white text-black py-5 rounded-2xl font-black text-xs uppercase tracking-[0.4em] shadow-xl hover:bg-rose-600 hover:text-white">Enter Exam</button>
+                            <button onClick={() => startExam(e)} className="w-full bg-white text-black py-5 rounded-2xl font-black text-xs uppercase tracking-[0.4em] shadow-xl hover:bg-rose-600 hover:text-white transition-all active:scale-95">Synchronize Entry</button>
                         </div>
                     </div>
                 ))}
-                {exams.length === 0 && <div className="col-span-full py-20 text-center text-white/5 font-black uppercase tracking-[0.5em] text-[10px]">No Active Assessment Modules.</div>}
+                {exams.length === 0 && <div className="col-span-full py-20 text-center text-white/5 font-black uppercase tracking-[0.5em] text-[10px] border-2 border-dashed border-white/5 rounded-[48px]">No Cycles Scheduled</div>}
             </div>
 
             <AnimatePresence>
                 {activeExam && (
-                    <div className="fixed inset-0 z-[300] bg-black p-4 md:p-12 flex flex-col overflow-hidden">
-                        <div className="max-w-4xl mx-auto w-full flex-1 flex flex-col bg-[#0A0A0E] border border-white/10 rounded-[60px] relative overflow-hidden shadow-2xl">
-                            <div className="p-8 border-b border-white/5 flex items-center justify-between shrink-0">
-                                <div className="flex items-center gap-4"><div className="w-12 h-12 bg-rose-500/10 rounded-2xl flex items-center justify-center text-rose-500"><Target size={24}/></div><div><h4 className="text-xl font-bold italic serif-font">{activeExam.title}</h4><p className="text-[8px] font-black uppercase text-white/20">AUTHORIZED EVALUATION MODE</p></div></div>
-                                <div className="text-right"><p className="text-[8px] font-black uppercase text-white/30 mb-1">Clock Sync</p><p className="text-3xl font-mono font-black text-rose-500 animate-pulse">{Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, '0')}</p></div>
+                    <div className="fixed inset-0 z-[300] bg-black p-4 md:p-12 flex flex-col overflow-hidden backdrop-blur-xl">
+                        <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="max-w-4xl mx-auto w-full flex-1 flex flex-col bg-[#0A0A0E] border border-white/10 rounded-[60px] relative overflow-hidden shadow-2xl">
+                            <div className="p-8 border-b border-white/5 flex items-center justify-between shrink-0 bg-black/20">
+                                <div className="flex items-center gap-4"><div className="w-12 h-12 bg-rose-500/10 rounded-2xl flex items-center justify-center text-rose-500 shadow-inner border border-rose-500/10"><Target size={24}/></div><div><h4 className="text-xl font-bold italic serif-font">{activeExam.title}</h4><p className="text-[8px] font-black uppercase text-white/20">SECURED ASSESSMENT TERMINAL</p></div></div>
+                                <div className="text-right"><p className="text-[8px] font-black uppercase text-white/30 mb-1">Session Remaining</p><p className="text-3xl font-mono font-black text-rose-500 animate-pulse">{Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, '0')}</p></div>
                             </div>
-                            <div className="flex-1 overflow-y-auto p-12 space-y-12 scrollbar-hide">
+                            <div className="flex-1 overflow-y-auto p-12 space-y-16 scrollbar-hide">
                                 {activeExam.questions.map((q, idx) => (
-                                    <div key={q.id} className="space-y-6">
-                                        <div className="flex items-start gap-6"><span className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center text-sm font-black italic text-white/40 shrink-0">#0{idx+1}</span><h5 className="text-2xl font-medium text-white/90 leading-tight">{q.text}</h5></div>
+                                    <div key={q.id} className="space-y-8">
+                                        <div className="flex items-start gap-6"><span className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center text-sm font-black italic text-indigo-400 shrink-0 border border-white/10 shadow-inner">#0{idx+1}</span><h5 className="text-2xl font-medium text-white/90 leading-snug">{q.text}</h5></div>
                                         {q.type === 'mcq' && q.options && (
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pl-16">
                                                 {q.options.map((opt, oIdx) => (
-                                                    <button key={oIdx} onClick={() => setAnswers({...answers, [q.id]: opt})} className={`p-5 rounded-2xl border text-left text-sm font-bold uppercase tracking-wider transition-all ${answers[q.id] === opt ? 'bg-indigo-600 border-indigo-500 text-white shadow-lg' : 'bg-white/5 border-white/5 text-white/40 hover:bg-white/10'}`}><span className="text-white/20 mr-4 font-black">{String.fromCharCode(65+oIdx)}</span> {opt}</button>
+                                                    <button key={oIdx} onClick={() => setAnswers({...answers, [q.id]: opt})} className={`p-6 rounded-2xl border text-left text-sm font-bold uppercase tracking-wider transition-all duration-300 ${answers[q.id] === opt ? 'bg-indigo-600 border-indigo-400 text-white shadow-lg shadow-indigo-500/20 translate-x-2' : 'bg-white/5 border-white/5 text-white/40 hover:bg-white/10 hover:border-white/20'}`}><span className={`mr-4 font-black transition-colors ${answers[q.id] === opt ? 'text-white' : 'text-white/10'}`}>{String.fromCharCode(65+oIdx)}</span> {opt}</button>
                                                 ))}
                                             </div>
                                         )}
-                                        {(q.type === 'short' || q.type === 'paragraph') && (<textarea placeholder="Input formulated response..." className="w-full bg-white/5 border border-white/5 rounded-3xl p-8 ml-16 text-sm outline-none focus:border-indigo-500 h-32 resize-none" value={answers[q.id] || ''} onChange={e => setAnswers({...answers, [q.id]: e.target.value})} />)}
+                                        {(q.type === 'short' || q.type === 'paragraph') && (<textarea placeholder="Input formulated intelligence response..." className="w-full bg-white/5 border border-white/10 rounded-[32px] p-8 ml-16 text-sm outline-none focus:border-indigo-500 h-40 resize-none text-white font-medium shadow-inner transition-all" value={answers[q.id] || ''} onChange={e => setAnswers({...answers, [q.id]: e.target.value})} />)}
                                     </div>
                                 ))}
                             </div>
-                            <div className="p-8 border-t border-white/5 bg-black/40 flex justify-center shrink-0"><button onClick={submitExam} className="bg-white text-black px-16 py-5 rounded-2xl font-black text-xs uppercase tracking-[0.5em] shadow-xl hover:bg-emerald-500 hover:text-white transition-all">Authorize Finish</button></div>
-                        </div>
+                            <div className="p-8 border-t border-white/5 bg-black/40 flex justify-center shrink-0"><button onClick={submitExam} className="bg-white text-black px-16 py-5 rounded-2xl font-black text-xs uppercase tracking-[0.5em] shadow-xl hover:bg-emerald-500 hover:text-white transition-all active:scale-95">Complete Assessment Cycle</button></div>
+                        </motion.div>
                     </div>
                 )}
             </AnimatePresence>
@@ -450,20 +449,23 @@ const ResultsModule = ({ student }: { student: Student }) => {
         <div className="space-y-8">
             <div className="pb-4 border-b border-white/5">
                 <h2 className="text-3xl md:text-5xl font-light serif-font italic luxury-text-gradient tracking-tighter">Result.</h2>
-                <p className="text-[8px] font-black uppercase tracking-[0.5em] text-white/20 mt-1">Post-Assessment Intel</p>
+                <p className="text-[8px] font-black uppercase tracking-[0.5em] text-white/20 mt-1">Post-Assessment intelligence</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {results.map(r => (
-                    <div key={r.id} className="bg-white/[0.02] p-8 rounded-[40px] border border-white/5 shadow-2xl relative group overflow-hidden">
-                        <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity"><Award size={80}/></div>
-                        <h4 className="text-xl font-bold text-white/80 italic mb-8 border-l-2 border-indigo-500 pl-6 uppercase tracking-widest">EXAM: {r.examId.slice(0, 8)}</h4>
+                    <div key={r.id} className="bg-white/[0.02] p-10 rounded-[48px] border border-white/5 shadow-2xl relative group overflow-hidden">
+                        <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity"><Award size={100}/></div>
+                        <h4 className="text-xl font-bold text-white/80 italic mb-10 border-l-2 border-indigo-500 pl-6 uppercase tracking-widest">MODULE: {r.examId.slice(0, 8)}</h4>
                         <div className="flex items-end justify-between">
-                            <div><p className="text-[8px] font-black uppercase text-white/20 mb-1">Performance Rating</p><p className="text-5xl font-light luxury-text-gradient serif-font italic">{r.totalObtained}pt</p></div>
-                            <span className="bg-emerald-500/10 text-emerald-400 text-[8px] font-black uppercase px-4 py-2 rounded-xl border border-emerald-500/20">Certified</span>
+                            <div><p className="text-[8px] font-black uppercase text-white/20 mb-2 tracking-widest">Performance Score</p><p className="text-6xl font-light luxury-text-gradient serif-font italic">{r.totalObtained}pt</p></div>
+                            <div className="flex flex-col items-center gap-2">
+                                <Check size={24} className="text-emerald-500 shadow-emerald-500/20" />
+                                <span className="text-[8px] font-black uppercase text-emerald-400 tracking-widest">Validated</span>
+                            </div>
                         </div>
                     </div>
                 ))}
-                {results.length === 0 && <div className="col-span-full py-40 text-center opacity-10 font-black uppercase text-[10px] tracking-[0.5em]">Result Database Clear</div>}
+                {results.length === 0 && <div className="col-span-full py-40 text-center opacity-10 font-black uppercase text-[10px] tracking-[0.8em]">Archive Void</div>}
             </div>
         </div>
     );
@@ -481,26 +483,29 @@ const UpcomingExamsModule = ({ student }: { student: Student }) => {
         await db.addStudentExam({ studentId: student.id, studentName: student.name, gradeId: student.gradeId, subdivisionId: student.subdivisionId, ...form });
         setForm({ subject: '', examDate: '', description: '' });
         load();
-        alert("Upcoming exam logged.");
+        alert("Upcoming external module indexed.");
     };
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
             <div className="bg-white/[0.02] p-10 rounded-[50px] border border-white/5 shadow-2xl h-fit">
-                <h3 className="text-3xl font-light serif-font italic luxury-text-gradient mb-8">Upcoming School Exam.</h3>
+                <h3 className="text-3xl font-light serif-font italic luxury-text-gradient mb-8">School Module Log.</h3>
                 <form onSubmit={submit} className="space-y-6">
-                    <div className="space-y-1"><label className="text-[8px] font-black uppercase text-white/30 ml-2">Objective</label><input required placeholder="Subject Name..." value={form.subject} onChange={e => setForm({...form, subject: e.target.value})} className="w-full bg-black border border-white/10 rounded-2xl px-6 py-4 text-xs" /></div>
-                    <div className="space-y-1"><label className="text-[8px] font-black uppercase text-white/30 ml-2">Timeline</label><input required type="date" value={form.examDate} onChange={e => setForm({...form, examDate: e.target.value})} className="w-full bg-black border border-white/10 rounded-2xl px-6 py-4 text-xs [color-scheme:dark]" /></div>
-                    <div className="space-y-1"><label className="text-[8px] font-black uppercase text-white/30 ml-2">Syllabus Details</label><textarea placeholder="Specify topics and modules..." value={form.description} onChange={e => setForm({...form, description: e.target.value})} className="w-full bg-black border border-white/10 rounded-2xl px-6 py-4 text-xs h-32 resize-none" /></div>
-                    <button className="w-full bg-white text-black py-5 rounded-2xl font-black text-xs uppercase tracking-[0.4em] shadow-xl hover:bg-indigo-600 hover:text-white transition-all">Authorize Log</button>
+                    <div className="space-y-1"><label className="text-[8px] font-black uppercase text-white/30 ml-2 tracking-widest">Core Domain</label><input required placeholder="Enter Subject..." value={form.subject} onChange={e => setForm({...form, subject: e.target.value})} className="w-full bg-black border border-white/10 rounded-2xl px-6 py-4 text-xs font-bold outline-none focus:border-indigo-500 transition-all text-white" /></div>
+                    <div className="space-y-1"><label className="text-[8px] font-black uppercase text-white/30 ml-2 tracking-widest">Chronological Coordinate</label><input required type="date" value={form.examDate} onChange={e => setForm({...form, examDate: e.target.value})} className="w-full bg-black border border-white/10 rounded-2xl px-6 py-4 text-xs font-bold outline-none focus:border-indigo-500 transition-all text-white [color-scheme:dark]" /></div>
+                    <div className="space-y-1"><label className="text-[8px] font-black uppercase text-white/30 ml-2 tracking-widest">Syllabus Parameters</label><textarea placeholder="Specify coverage..." value={form.description} onChange={e => setForm({...form, description: e.target.value})} className="w-full bg-black border border-white/10 rounded-2xl px-6 py-4 text-xs font-medium h-32 resize-none outline-none focus:border-indigo-500 transition-all text-white" /></div>
+                    <button type="submit" className="w-full bg-white text-black py-5 rounded-2xl font-black text-xs uppercase tracking-[0.4em] shadow-xl hover:bg-indigo-500 hover:text-white transition-all active:scale-[0.98]">Index External Entry</button>
                 </form>
             </div>
             <div className="space-y-6 overflow-y-auto max-h-[70vh] pr-2 scrollbar-hide">
-                <h4 className="text-[9px] font-black uppercase tracking-[0.5em] text-white/20 ml-2">Exam Schedule Registry</h4>
+                <h4 className="text-[9px] font-black uppercase tracking-[0.5em] text-white/20 ml-2">External Registry</h4>
                 {list.map(ex => (
-                    <div key={ex.id} className="bg-white/[0.02] p-8 rounded-[40px] border border-white/5 flex items-center justify-between hover:bg-white/[0.04] transition-all group">
-                        <div><h4 className="text-2xl font-black text-white italic uppercase mb-1">{ex.subject}</h4><p className="text-[8px] font-black uppercase text-white/20 tracking-widest">{ex.description}</p></div>
-                        <div className="text-right"><p className="text-[7px] font-black uppercase text-indigo-400 mb-1">Date</p><p className="text-xl font-mono font-bold text-white">{ex.examDate}</p></div>
+                    <div key={ex.id} className="bg-white/[0.02] p-8 rounded-[40px] border border-white/5 flex items-center justify-between hover:bg-white/[0.04] transition-all group shadow-lg">
+                        <div><h4 className="text-2xl font-black text-white italic uppercase mb-1 group-hover:text-premium-accent transition-colors">{ex.subject}</h4><p className="text-[8px] font-black uppercase text-white/20 tracking-widest line-clamp-1">{ex.description}</p></div>
+                        <div className="text-right shrink-0">
+                            <p className="text-[7px] font-black uppercase text-indigo-400 mb-1 tracking-widest">Date</p>
+                            <p className="text-xl font-mono font-bold text-white shadow-indigo-500/10">{ex.examDate}</p>
+                        </div>
                     </div>
                 ))}
             </div>
@@ -520,7 +525,7 @@ const LeaveModule = ({ student }: { student: Student }) => {
         await db.addLeaveApplication({ studentId: student.id, studentName: student.name, gradeId: student.gradeId, subdivisionId: student.subdivisionId, ...form });
         setForm({ startDate: '', endDate: '', reason: '' });
         load();
-        alert("Leave application transmitted.");
+        alert("Absence protocol transmitted.");
     };
 
     return (
@@ -529,20 +534,20 @@ const LeaveModule = ({ student }: { student: Student }) => {
                 <h3 className="text-3xl font-light serif-font italic luxury-text-gradient mb-8">Apply Leave.</h3>
                 <form onSubmit={submit} className="space-y-6">
                     <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-1"><label className="text-[8px] font-black uppercase text-white/30 ml-2">Initiation</label><input required type="date" value={form.startDate} onChange={e => setForm({...form, startDate: e.target.value})} className="w-full bg-black border border-white/10 rounded-2xl px-6 py-4 text-xs [color-scheme:dark]" /></div>
-                        <div className="space-y-1"><label className="text-[8px] font-black uppercase text-white/30 ml-2">Conclusion</label><input required type="date" value={form.endDate} onChange={e => setForm({...form, endDate: e.target.value})} className="w-full bg-black border border-white/10 rounded-2xl px-6 py-4 text-xs [color-scheme:dark]" /></div>
+                        <div className="space-y-1"><label className="text-[8px] font-black uppercase text-white/30 ml-2 tracking-widest">Initiation</label><input required type="date" value={form.startDate} onChange={e => setForm({...form, startDate: e.target.value})} className="w-full bg-black border border-white/10 rounded-2xl px-6 py-4 text-xs font-bold [color-scheme:dark] outline-none focus:border-indigo-500" /></div>
+                        <div className="space-y-1"><label className="text-[8px] font-black uppercase text-white/30 ml-2 tracking-widest">Conclusion</label><input required type="date" value={form.endDate} onChange={e => setForm({...form, endDate: e.target.value})} className="w-full bg-black border border-white/10 rounded-2xl px-6 py-4 text-xs font-bold [color-scheme:dark] outline-none focus:border-indigo-500" /></div>
                     </div>
-                    <div className="space-y-1"><label className="text-[8px] font-black uppercase text-white/30 ml-2">Justification</label><textarea required placeholder="Basis for leave application..." value={form.reason} onChange={e => setForm({...form, reason: e.target.value})} className="w-full bg-black border border-white/10 rounded-2xl px-6 py-4 text-xs h-32 resize-none" /></div>
-                    <button className="w-full bg-white text-black py-5 rounded-2xl font-black text-xs uppercase tracking-[0.4em] shadow-xl hover:bg-rose-600 hover:text-white transition-all">Transmit Application</button>
+                    <div className="space-y-1"><label className="text-[8px] font-black uppercase text-white/30 ml-2 tracking-widest">Justification</label><textarea required placeholder="Absence rationale..." value={form.reason} onChange={e => setForm({...form, reason: e.target.value})} className="w-full bg-black border border-white/10 rounded-2xl px-6 py-4 text-xs font-medium h-32 resize-none outline-none focus:border-indigo-500" /></div>
+                    <button type="submit" className="w-full bg-white text-black py-5 rounded-2xl font-black text-xs uppercase tracking-[0.4em] shadow-xl hover:bg-rose-600 hover:text-white transition-all active:scale-[0.98]">Transmit Packet</button>
                 </form>
             </div>
             <div className="space-y-6 overflow-y-auto max-h-[70vh] pr-2 scrollbar-hide">
-                <h4 className="text-[9px] font-black uppercase tracking-[0.5em] text-white/20 ml-2">Leave Request History</h4>
+                <h4 className="text-[9px] font-black uppercase tracking-[0.5em] text-white/20 ml-2">Request History</h4>
                 {list.map(l => (
-                    <div key={l.id} className="bg-white/[0.02] p-8 rounded-[40px] border border-white/5 group hover:bg-white/[0.04] transition-all">
-                         <div className="flex items-center gap-2 mb-2"><span className={`w-1.5 h-1.5 rounded-full ${l.status === 'Approved' ? 'bg-emerald-500' : l.status === 'Rejected' ? 'bg-rose-500' : 'bg-amber-500'}`} /><span className="text-[8px] font-black uppercase tracking-widest text-white/40">{l.status} Protocol</span></div>
-                         <h4 className="text-xl font-bold text-white mb-1 italic">"{l.reason}"</h4>
-                         <p className="text-[8px] font-black uppercase text-white/20 tracking-widest">{l.startDate} » {l.endDate}</p>
+                    <div key={l.id} className="bg-white/[0.02] p-8 rounded-[40px] border border-white/5 group hover:bg-white/[0.04] transition-all shadow-md">
+                         <div className="flex items-center gap-3 mb-3"><span className={`w-2 h-2 rounded-full shadow-lg ${l.status === 'Approved' ? 'bg-emerald-500 shadow-emerald-500/20' : l.status === 'Rejected' ? 'bg-rose-500 shadow-rose-500/20' : 'bg-amber-500 shadow-amber-500/20'}`} /><span className="text-[9px] font-black uppercase tracking-widest text-white/50">{l.status} Protocol</span></div>
+                         <h4 className="text-xl font-bold text-white mb-2 italic truncate">"{l.reason}"</h4>
+                         <p className="text-[8px] font-black uppercase text-white/20 tracking-widest font-mono">{l.startDate} » {l.endDate}</p>
                     </div>
                 ))}
             </div>
@@ -565,37 +570,37 @@ const DoubtsModule = ({ student, refreshTrigger }: { student: Student, refreshTr
         await db.addQuery({ studentId: student.id, studentName: student.name, subject: form.subject, queryText: form.text });
         setForm({ subject: '', text: '' });
         load();
-        alert("Intel Doubt Inquiry Secured.");
+        alert("Inquiry Dispatched.");
     };
 
     return (
         <div className="max-w-4xl mx-auto space-y-12">
             <div className="pb-4 border-b border-white/5">
                 <h3 className="text-3xl md:text-5xl font-light serif-font italic luxury-text-gradient tracking-tighter">Doubts.</h3>
-                <p className="text-[8px] font-black uppercase tracking-[0.5em] text-white/20 mt-1">Faculty Transmission Channel</p>
+                <p className="text-[8px] font-black uppercase tracking-[0.5em] text-white/20 mt-1">Faculty Communication Channel</p>
             </div>
             
             <div className="flex flex-col gap-6 max-h-[50vh] overflow-y-auto scrollbar-hide p-4 mb-10">
                 {queries.map(q => (
-                    <div key={q.id} className="flex flex-col gap-3">
-                        <div className="self-end bg-indigo-600/20 border border-indigo-500/20 p-6 rounded-[32px] rounded-tr-lg max-w-[85%]">
-                            <p className="text-[8px] font-black uppercase text-indigo-400 mb-2 tracking-widest">{q.subject}</p>
-                            <p className="text-sm font-medium leading-relaxed italic">"{q.queryText}"</p>
+                    <div key={q.id} className="flex flex-col gap-4">
+                        <div className="self-end bg-indigo-600/10 border border-indigo-500/10 p-6 rounded-[32px] rounded-tr-lg max-w-[85%] shadow-xl">
+                            <p className="text-[8px] font-black uppercase text-indigo-400 mb-2 tracking-widest">{q.subject} Domain</p>
+                            <p className="text-sm font-medium leading-relaxed italic text-white/90">"{q.queryText}"</p>
                         </div>
                         {q.status === 'Answered' && (
-                            <div className="self-start bg-emerald-500/5 border border-emerald-500/10 p-6 rounded-[32px] rounded-tl-lg max-w-[85%] animate-fade-in">
-                                <div className="flex items-center gap-2 mb-3"><span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" /><span className="text-[8px] font-black uppercase text-emerald-400 tracking-widest">Faculty Response Transmission</span></div>
-                                <p className="text-sm text-white/70 leading-relaxed font-bold tracking-tight">"{q.replyText}"</p>
+                            <div className="self-start bg-emerald-500/5 border border-emerald-500/10 p-6 rounded-[32px] rounded-tl-lg max-w-[85%] animate-fade-in shadow-xl">
+                                <div className="flex items-center gap-2 mb-3"><span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse shadow-emerald-500/40 shadow-lg" /><span className="text-[8px] font-black uppercase text-emerald-400 tracking-widest">Faculty Transmission Received</span></div>
+                                <p className="text-sm text-white/70 leading-relaxed font-bold tracking-tight italic">"{q.replyText}"</p>
                             </div>
                         )}
                     </div>
                 ))}
             </div>
 
-            <form onSubmit={submit} className="bg-white/[0.02] p-2 rounded-[32px] border border-white/10 flex gap-2 shadow-2xl relative z-20">
-                <input required placeholder="Domain..." value={form.subject} onChange={e => setForm({...form, subject: e.target.value})} className="w-1/4 bg-transparent px-6 py-4 text-[10px] font-black uppercase tracking-widest text-white outline-none border-r border-white/5" />
-                <input required placeholder="Formulate transmission..." value={form.text} onChange={e => setForm({...form, text: e.target.value})} className="flex-1 bg-transparent px-6 py-4 text-sm text-white outline-none font-medium italic" />
-                <button className="bg-white text-black p-4 rounded-[24px] hover:bg-indigo-600 hover:text-white transition-all shadow-xl active:scale-95"><Send size={20}/></button>
+            <form onSubmit={submit} className="bg-white/[0.02] p-2 rounded-[32px] border border-white/10 flex flex-col sm:flex-row gap-2 shadow-2xl relative z-20 backdrop-blur-md">
+                <input required placeholder="Subject..." value={form.subject} onChange={e => setForm({...form, subject: e.target.value})} className="w-full sm:w-1/4 bg-transparent px-6 py-4 text-[10px] font-black uppercase tracking-widest text-white outline-none border-b sm:border-b-0 sm:border-r border-white/5" />
+                <input required placeholder="Formulate transmission..." value={form.text} onChange={e => setForm({...form, text: e.target.value})} className="flex-1 bg-transparent px-6 py-4 text-sm text-white outline-none font-medium italic placeholder:text-white/10" />
+                <button type="submit" className="bg-white text-black p-4 rounded-[24px] hover:bg-indigo-600 hover:text-white transition-all shadow-xl active:scale-95 flex items-center justify-center"><Send size={20}/></button>
             </form>
         </div>
     );
@@ -607,28 +612,28 @@ const SettingsModule = ({ student }: { student: Student }) => {
 
     const update = async (e: any) => {
         e.preventDefault();
-        if(form.new !== form.confirm) return alert('Hash Mismatch Detected');
+        if(form.new !== form.confirm) return alert('Encryption Mismatch: Keys do not align.');
         setLoading(true);
         try { 
             await db.changePassword(student.id, 'student', form.current, form.new); 
-            alert('Security keys updated successfully.'); 
+            alert('Security keys re-indexed.'); 
             setForm({current:'',new:'',confirm:''}); 
         } catch(e:any) { alert(e.message); } finally { setLoading(false); }
     };
 
     return (
         <div className="max-w-md mx-auto py-20 space-y-12 text-center">
-            <div className="bg-[#0A0A0E] p-12 rounded-[60px] border border-white/10 shadow-2xl relative overflow-hidden">
-                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 to-purple-600" />
-                <div className="w-20 h-20 bg-white/5 rounded-[30px] flex items-center justify-center mx-auto mb-10 text-indigo-400 border border-white/10 shadow-inner group">
-                    <Lock size={32} className="group-hover:scale-110 transition-transform duration-500" />
+            <div className="bg-[#0A0A0E] p-12 rounded-[60px] border border-white/10 shadow-2xl relative overflow-hidden group">
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 to-cyan-500 opacity-50 group-hover:opacity-100 transition-opacity" />
+                <div className="w-20 h-20 bg-white/5 rounded-[30px] flex items-center justify-center mx-auto mb-10 text-indigo-400 border border-white/10 shadow-inner">
+                    <Lock size={32} className="group-hover:scale-110 transition-transform duration-700" />
                 </div>
-                <h3 className="text-3xl font-light serif-font mb-10 luxury-text-gradient italic">Settings.</h3>
+                <h3 className="text-3xl font-light serif-font mb-10 luxury-text-gradient italic">Terminal Settings.</h3>
                 <form onSubmit={update} className="space-y-4">
-                    <input required type="password" placeholder="CURRENT KEY" value={form.current} onChange={e=>setForm({...form, current:e.target.value})} className="w-full bg-black border border-white/10 rounded-2xl px-6 py-4 text-[10px] text-white font-mono tracking-[0.4em] text-center outline-none focus:border-indigo-500 uppercase" />
-                    <input required type="password" placeholder="NEW KEY" value={form.new} onChange={e=>setForm({...form, new:e.target.value})} className="w-full bg-black border border-white/10 rounded-2xl px-6 py-4 text-[10px] text-white font-mono tracking-[0.4em] text-center outline-none focus:border-indigo-500 uppercase" />
-                    <input required type="password" placeholder="VERIFY KEY" value={form.confirm} onChange={e=>setForm({...form, confirm:e.target.value})} className="w-full bg-black border border-white/10 rounded-2xl px-6 py-4 text-[10px] text-white font-mono tracking-[0.4em] text-center outline-none focus:border-indigo-500 uppercase" />
-                    <button disabled={loading} className="w-full py-5 bg-white text-black font-black text-[11px] uppercase tracking-[0.6em] rounded-2xl hover:shadow-[0_0_50px_rgba(255,255,255,0.2)] transition-all mt-8 active:scale-95 disabled:opacity-50">Authorize Security Update</button>
+                    <input required type="password" placeholder="CURRENT KEY" value={form.current} onChange={e=>setForm({...form, current:e.target.value})} className="w-full bg-black border border-white/10 rounded-2xl px-6 py-5 text-[10px] text-white font-mono tracking-[0.4em] text-center outline-none focus:border-indigo-500 uppercase transition-all" />
+                    <input required type="password" placeholder="NEW KEY" value={form.new} onChange={e=>setForm({...form, new:e.target.value})} className="w-full bg-black border border-white/10 rounded-2xl px-6 py-5 text-[10px] text-white font-mono tracking-[0.4em] text-center outline-none focus:border-indigo-500 uppercase transition-all" />
+                    <input required type="password" placeholder="VERIFY KEY" value={form.confirm} onChange={e=>setForm({...form, confirm:e.target.value})} className="w-full bg-black border border-white/10 rounded-2xl px-6 py-5 text-[10px] text-white font-mono tracking-[0.4em] text-center outline-none focus:border-indigo-500 uppercase transition-all" />
+                    <button disabled={loading} className="w-full py-5 bg-white text-black font-black text-[11px] uppercase tracking-[0.6em] rounded-2xl hover:shadow-[0_0_50px_rgba(255,255,255,0.2)] transition-all mt-8 active:scale-95 disabled:opacity-50">Authorize Key Rotation</button>
                 </form>
             </div>
         </div>

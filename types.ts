@@ -101,7 +101,7 @@ export interface AttendanceRecord {
   studentId: string;
   divisionId: string;
   date: string;
-  status: 'Present' | 'Absent';
+  status: 'Present' | 'Absent' | 'Leave';
 }
 
 export interface Homework {

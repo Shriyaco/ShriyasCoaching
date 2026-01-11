@@ -252,10 +252,10 @@ class DatabaseService {
           student_custom_id: customId,
           name: data.name,
           mobile: data.mobile,
-          parent_name: data.parentName,
+          parent_name: data.parent_name,
           grade_id: data.gradeId || null,
           subdivision_id: data.subdivision_id || null,
-          joining_date: data.joiningDate,
+          joining_date: data.joining_date,
           monthly_fees: data.monthlyFees,
           total_fees: data.monthlyFees,
           school_name: data.school_name,
@@ -317,7 +317,7 @@ class DatabaseService {
           grade_id: data.grade_id || null,
           subdivision_id: data.subdivision_id || null,
           specialization: data.specialization || 'General',
-          // joining_date removed to avoid schema errors if column is missing
+          joining_date: new Date().toISOString().split('T')[0],
           password: password,
           status: 'Active'
       });
@@ -406,8 +406,9 @@ class DatabaseService {
           studentId: f.student_id,
           studentName: f.student_name,
           amount: f.amount,
-          transaction_ref: f.transaction_ref,
-          payment_method: f.payment_method,
+          transactionRef: f.transaction_ref,
+          // Corrected mapping: paymentMethod instead of payment_method
+          paymentMethod: f.payment_method,
           status: f.status as any,
           date: f.date
       }));
@@ -452,7 +453,7 @@ class DatabaseService {
   async markAttendance(records: any[]) { 
       const payload = records.map(r => ({
           student_id: r.studentId,
-          division_id: r.division_id,
+          division_id: r.divisionId,
           date: r.date,
           status: r.status
       }));
@@ -476,7 +477,7 @@ class DatabaseService {
   }
 
   async getHomeworkForStudent(gradeId: string, subdivisionId: string, studentId: string): Promise<Homework[]> {
-       // Comprehensive filter for Grade-wide, Division-specific, or Individual targeting
+       // Support OR logic for Grade, Division, or Individual targeting
        const { data } = await supabase.from('homework')
         .select('*')
         .or(`and(target_type.eq.Grade,grade_id.eq.${gradeId}),and(target_type.eq.Division,subdivision_id.eq.${subdivisionId}),and(target_type.eq.Individual,target_student_id.eq.${studentId})`);
@@ -573,7 +574,6 @@ class DatabaseService {
   }
 
   async getExamsForStudent(gradeId: string, subdivisionId: string, studentId: string): Promise<Exam[]> {
-      // Enhanced filter for Grade-wide, Division-specific, or Individual targeting
       const { data } = await supabase.from('exams')
         .select('*')
         .or(`and(target_type.eq.Grade,grade_id.eq.${gradeId}),and(target_type.eq.Division,subdivision_id.eq.${subdivisionId}),and(target_type.eq.Individual,target_student_id.eq.${studentId})`);
@@ -732,10 +732,8 @@ class DatabaseService {
           student_id: data.studentId,
           student_name: data.studentName,
           product_id: data.productId,
-          // Fix: Property 'product_name' should use data.productName from Omit<Order, 'id' | 'createdAt'>
           product_name: data.productName,
-          // Fix: Property 'product_image' should use data.productImage from Omit<Order, 'id' | 'createdAt'>
-          product_image: data.productImage,
+          product_image: data.product_image,
           custom_name: data.customName,
           change_request: data.changeRequest,
           address: data.address,
@@ -768,11 +766,9 @@ class DatabaseService {
   async getNotes(gradeId?: string, divisionId?: string, studentId?: string): Promise<StudyNote[]> {
     let query = supabase.from('study_notes').select('*');
     
-    // For students: Use multi-target logic
-    if (studentId && gradeId && divisionId) {
+    if (studentId && gradeId) {
         query = query.or(`and(target_type.eq.Grade,grade_id.eq.${gradeId}),and(target_type.eq.Individual,target_student_id.eq.${studentId})`);
     } else {
-        // For teachers/admin: Use provided filters
         if (gradeId) query = query.eq('grade_id', gradeId);
         if (divisionId) query = query.eq('division_id', divisionId);
     }
@@ -804,7 +800,6 @@ class DatabaseService {
           student_id: data.studentId,
           student_name: data.studentName,
           grade_id: data.gradeId,
-          // Fix: Property 'subdivision_id' should use data.subdivisionId from Omit<LeaveApplication, 'id' | 'status'>
           subdivision_id: data.subdivisionId,
           start_date: data.startDate,
           end_date: data.endDate,
@@ -831,7 +826,7 @@ class DatabaseService {
           student_id: data.studentId,
           student_name: data.studentName,
           grade_id: data.gradeId,
-          // Fix: Property 'subdivision_id' should use data.subdivisionId from Omit<StudentOwnExam, 'id'>
+          // Corrected property name from subdivision_id to subdivisionId
           subdivision_id: data.subdivisionId,
           subject: data.subject,
           exam_date: data.examDate,
@@ -848,7 +843,6 @@ class DatabaseService {
       return (data || []).map(mapStudentExam);
   }
 
-  // Fix: Added pushNotification method for BroadCastModule
   async pushNotification(data: Omit<StudentNotification, 'id' | 'createdAt'>) {
       const { error } = await supabase.from('app_notifications').insert({
           target_type: data.targetType,
