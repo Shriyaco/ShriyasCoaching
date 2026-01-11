@@ -1017,8 +1017,8 @@ const TeachersModule = ({ teachers, onNotify, refresh, grades, subdivisions }: a
                                         <p className="text-[10px] font-mono text-slate-400 uppercase tracking-tighter">{t.teacherCustomId}</p>
                                     </td>
                                     <td className="p-4 text-slate-500 text-xs">
-                                        {t.gradeId ? `Grade ${grades.find((g:any)=>g.id===t.gradeId)?.gradeName || t.gradeId}` : 'N/A'} 
-                                        {t.subdivisionId && ` - ${subdivisions.find((s:any)=>s.id===t.subdivisionId)?.divisionName || t.subdivisionId}`}
+                                        {t.gradeId ? `Grade ${grades.find((g:any)=>g.id===t.gradeId)?.gradeName || t.gradeId}` : 'All Grades'} 
+                                        {t.subdivisionId ? ` - ${subdivisions.find((s:any)=>s.id===t.subdivisionId)?.divisionName || t.subdivisionId}` : ''}
                                     </td>
                                     <td className="p-4 text-slate-500 font-mono">{t.mobile}</td>
                                     <td className="p-4"><span className="px-3 py-1 bg-indigo-50 text-indigo-600 rounded-lg text-[10px] font-black uppercase">{t.specialization}</span></td>
@@ -1054,13 +1054,13 @@ const TeachersModule = ({ teachers, onNotify, refresh, grades, subdivisions }: a
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-1"><label className="text-[10px] font-black uppercase text-slate-400 ml-1">Grade (Optional)</label>
                                         <select className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-4 outline-none font-bold text-slate-900 text-xs" value={form.gradeId} onChange={e => setForm({...form, gradeId: e.target.value, subdivisionId: ''})}>
-                                            <option value="">None</option>
+                                            <option value="">All Grades</option>
                                             {grades.map((g: any) => <option key={g.id} value={g.id}>{g.gradeName}</option>)}
                                         </select>
                                     </div>
                                     <div className="space-y-1"><label className="text-[10px] font-black uppercase text-slate-400 ml-1">Division</label>
                                         <select className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-4 outline-none font-bold text-slate-900 text-xs" value={form.subdivisionId} onChange={e => setForm({...form, subdivisionId: e.target.value})}>
-                                            <option value="">None</option>
+                                            <option value="">All Divisions</option>
                                             {subdivisions.filter((sd: any) => sd.gradeId === form.gradeId).map((sd: any) => <option key={sd.id} value={sd.id}>{sd.divisionName}</option>)}
                                         </select>
                                     </div>

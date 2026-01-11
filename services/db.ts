@@ -32,7 +32,7 @@ const mapTeacher = (t: any): Teacher => ({
     mobile: t.mobile,
     gradeId: t.grade_id,
     subdivisionId: t.subdivision_id,
-    joiningDate: t.joining_date,
+    joiningDate: t.joining_date || new Date().toISOString().split('T')[0],
     status: t.status as any || 'Active',
     specialization: t.specialization || 'General',
     password: t.password
@@ -254,7 +254,7 @@ class DatabaseService {
           mobile: data.mobile,
           parent_name: data.parentName,
           grade_id: data.gradeId || null,
-          subdivision_id: data.subdivisionId || null,
+          subdivision_id: data.subdivision_id || null,
           joining_date: data.joiningDate,
           monthly_fees: data.monthlyFees,
           total_fees: data.monthlyFees,
@@ -315,9 +315,9 @@ class DatabaseService {
           name: data.name,
           mobile: data.mobile,
           grade_id: data.gradeId || null,
-          subdivision_id: data.subdivisionId || null,
+          subdivision_id: data.subdivision_id || null,
           specialization: data.specialization || 'General',
-          joining_date: new Date().toISOString().split('T')[0],
+          // joining_date removed to avoid schema errors if column is missing
           password: password,
           status: 'Active'
       });
