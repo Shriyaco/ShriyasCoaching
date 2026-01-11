@@ -249,6 +249,13 @@ const AttendanceModule = ({ gradeId, divisionId, refreshTrigger }: any) => {
                                 );
                             })}
                         </div>
+                        {!gradeId && (
+                            <div className="mt-6 text-center">
+                                <p className="text-[9px] font-black uppercase tracking-widest text-indigo-400 bg-indigo-500/10 px-3 py-1.5 rounded-full inline-block border border-indigo-500/20">
+                                    Global Mode Active
+                                </p>
+                            </div>
+                        )}
                     </motion.div>
                 </div>
             ) : (

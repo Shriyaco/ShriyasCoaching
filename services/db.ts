@@ -474,13 +474,22 @@ class DatabaseService {
   }
 
   async getHomeworkForStudent(gradeId: string, subdivisionId: string, studentId: string): Promise<Homework[]> {
-       // Corrected: Added single quotes around string IDs in the OR filter to ensure Supabase PostgREST processes them correctly.
-       // Added check for 'Global' gradeId so students see "All Grades" homework.
-       const { data } = await supabase.from('homework')
-        .select('*')
-        .or(`and(target_type.eq.Grade,grade_id.eq.'${gradeId}'),and(target_type.eq.Grade,grade_id.eq.'Global'),and(target_type.eq.Division,subdivision_id.eq.'${subdivisionId}'),and(target_type.eq.Individual,target_student_id.eq.'${studentId}')`);
+       // REPLACEMENT: Fetch all homework and filter in-memory to avoid Supabase OR string syntax issues.
+       const { data } = await supabase.from('homework').select('*');
+       if (!data) return [];
 
-       return (data || []).map(h => ({
+       const filtered = data.filter(h => {
+           // 1. Individual assignment
+           if (h.target_type === 'Individual' && h.target_student_id === studentId) return true;
+           // 2. Division assignment (matches specific division OR Global division)
+           if (h.target_type === 'Division' && (h.subdivision_id === subdivisionId || h.subdivision_id === 'Global')) return true;
+           // 3. Grade assignment (matches specific grade OR Global grade)
+           if (h.target_type === 'Grade' && (h.grade_id === gradeId || h.grade_id === 'Global')) return true;
+           
+           return false;
+       });
+
+       return filtered.map(h => ({
           id: h.id, 
           gradeId: h.grade_id, 
           subdivisionId: h.subdivision_id, 
@@ -490,7 +499,7 @@ class DatabaseService {
           task: h.task, 
           dueDate: h.due_date, 
           assignedBy: h.assigned_by
-      }));
+      })).sort((a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime());
   }
 
   async getAllHomework(): Promise<Homework[]> {
@@ -572,13 +581,18 @@ class DatabaseService {
   }
 
   async getExamsForStudent(gradeId: string, subdivisionId: string, studentId: string): Promise<Exam[]> {
-      // Corrected: Added single quotes around string IDs in the OR filter.
-      // Added support for 'Global' gradeId so students see "All Grades" exams.
-      const { data } = await supabase.from('exams')
-        .select('*')
-        .or(`and(target_type.eq.Grade,grade_id.eq.'${gradeId}'),and(target_type.eq.Grade,grade_id.eq.'Global'),and(target_type.eq.Division,subdivision_id.eq.'${subdivisionId}'),and(target_type.eq.Individual,target_student_id.eq.'${studentId}')`);
+      // REPLACEMENT: Client-side filtering for Exams to ensure visibility
+      const { data } = await supabase.from('exams').select('*');
+      if (!data) return [];
+
+      const filtered = data.filter(e => {
+           if (e.target_type === 'Individual' && e.target_student_id === studentId) return true;
+           if (e.target_type === 'Division' && (e.subdivision_id === subdivisionId || e.subdivision_id === 'Global')) return true;
+           if (e.target_type === 'Grade' && (e.grade_id === gradeId || e.grade_id === 'Global')) return true;
+           return false;
+      });
         
-      return (data || []).map(e => ({
+      return filtered.map(e => ({
           id: e.id, 
           title: e.title, 
           gradeId: e.grade_id, 
@@ -593,7 +607,7 @@ class DatabaseService {
           questions: e.questions, 
           reopenable: e.reopenable || false,
           createdBy: e.created_by 
-      }));
+      })).sort((a, b) => new Date(a.examDate).getTime() - new Date(b.examDate).getTime());
   }
   
   async addExam(data: Omit<Exam, 'id'>) {
@@ -764,19 +778,25 @@ class DatabaseService {
   }
 
   async getNotes(gradeId?: string, divisionId?: string, studentId?: string): Promise<StudyNote[]> {
-    let query = supabase.from('study_notes').select('*');
+    // REPLACEMENT: Client-side filtering for Notes
+    const { data } = await supabase.from('study_notes').select('*');
+    if (!data) return [];
+
+    let filtered = data;
     
-    // Corrected: Added single quotes around string IDs in the OR filter.
-    // Added support for 'Global' gradeId so students see "All Grades" notes.
     if (studentId && gradeId) {
-        query = query.or(`and(target_type.eq.Grade,grade_id.eq.'${gradeId}'),and(target_type.eq.Grade,grade_id.eq.'Global'),and(target_type.eq.Individual,target_student_id.eq.'${studentId}')`);
+        filtered = data.filter(n => {
+            if (n.target_type === 'Individual' && n.target_student_id === studentId) return true;
+            if (n.target_type === 'Grade' && (n.grade_id === gradeId || n.grade_id === 'Global')) return true;
+            return false;
+        });
     } else {
-        if (gradeId) query = query.eq('grade_id', gradeId);
-        if (divisionId) query = query.eq('division_id', divisionId);
+        // Teacher view logic
+        if (gradeId) filtered = filtered.filter(n => n.grade_id === gradeId || n.grade_id === 'Global');
+        if (divisionId) filtered = filtered.filter(n => n.division_id === divisionId || n.division_id === 'Global');
     }
     
-    const { data } = await query.order('created_at', { ascending: false });
-    return (data || []).map(mapNote);
+    return filtered.map(mapNote).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }
 
   async addNote(data: Omit<StudyNote, 'id' | 'createdAt'>) {
